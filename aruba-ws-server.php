@@ -20,6 +20,7 @@
   // ----- Global server options
   $g_att = array();
   $g_att['display_ping'] = false;
+  $g_att['display_raw_data'] = false;
   $g_att['use_testing_file'] = '';
   $g_att['server_ip'] = '0.0.0.0';
   $g_att['server_port'] = '8081';
@@ -62,17 +63,13 @@
    *
    */
   function AwssReceivedMessage(&$connection, $p_msg) {
+    global $g_att;
 
     $v_name = ($connection==''?'test':$connection->my_name);
     echo "Received message from ".$v_name."\n";
 
     $telemetry_msg = new aruba_telemetry\Telemetry($p_msg);
 
-    //echo "--------- Telemetry Message :\n";
-    //echo $telemetry_msg;
-    //echo "---------\n";
-
-    //$meta = new aruba_telemetry\Meta();
     $meta = $telemetry_msg->getMeta();
 
     echo "--------- Meta :\n";
@@ -82,7 +79,6 @@
     echo "\n";
     echo "\n";
 
-    //$reporter = new aruba_telemetry\Reporter();
     $reporter = $telemetry_msg->getReporter();
 
     echo "--------- Reporter :\n";
@@ -104,18 +100,41 @@
       $connection->my_name = $reporter->getName().'('.MacToString($reporter->getMac()).')';
     }
 
-    // ----- List reported device using embedded display feature
-    if ($telemetry_msg->hasReportedList()) {
-      $v_col = $telemetry_msg->getReportedList();
-      foreach ($v_col as $v_object) {
-        echo "--------- Reported device :\n";
-        echo "mac: ".($v_object->hasMac() ? MacToString($v_object->getMac()) : '')."\n";
-        echo $v_object;
-        echo "\n---------\n";
-      }
-
-
+    if ($g_att['display_raw_data']) {
+      echo "--------- Raw Telemetry data :\n";
+      echo $telemetry_msg;
+      echo "\n";
     }
+    else {
+      // ----- List reported device using embedded display feature
+      if ($telemetry_msg->hasReportedList()) {
+        $v_col = $telemetry_msg->getReportedList();
+        echo "+------------------------------------------------------------------------------------------------------------------+\n";
+        echo "| MAC@ Address      | Class List          | Model      | RSSI     |\n";
+        foreach ($v_col as $v_object) {
+          echo "+------------------------------------------------------------------------------------------------------------------+\n";
+          echo "|";
+          printf(" %17s ", ($v_object->hasMac() ? MacToString($v_object->getMac()) : ' '));
+          echo "|";
+          $v_class_list = '';
+          if ($v_object->hasDeviceClassList()) {
+            foreach ($v_object->getDeviceClassList() as $v_class) {
+              $v_class_list .= ' '.$v_class->name();
+            }
+          }
+          printf("%20s ", $v_class_list);
+          echo "|";
+          printf(" %10s ", ($v_object->hasModel() ? $v_object->getModel() : ' '));
+          echo "|";
+          printf(" %8s ", ($v_object->hasRSSI() ? trim($v_object->getRSSI()) : ' '));
+          //echo "|";
+          //printf(" %19s ", ($v_object->hasLastSeen() ? date("Y-m-d H:i:s", $v_object->getLastSeen()) : ' '));
+          echo "|\n";
+        }
+        echo "+------------------------------------------------------------------------------------------------------------------+\n";
+      }
+    }
+
   }
 
   /**
@@ -182,13 +201,17 @@
       $g_att['display_ping'] = true;
     }
 
+    if ($arg == '-display_raw_data') {
+      $g_att['display_raw_data'] = true;
+    }
+
     if ($arg == '-file') {
       $g_att['use_testing_file'] = (isset($argv[$v_count+1]) ? $argv[$v_count+1] : '');
     }
 
     if (($arg == '-help') || ($arg == '--help')) {
       echo "----- \n";
-      echo "php aruba-ws-server [-help] [-server_ip X.X.X.X] [-server_port XXX] [-display_ping] [-file <debug_message_filename>]\n";
+      echo "php aruba-ws-server [-help] [-server_ip X.X.X.X] [-server_port XXX] [-display_ping] [-display_raw_data] [-file <debug_message_filename>]\n";
       echo "----- \n";
       exit();
     }
@@ -198,15 +221,21 @@
 
   // ----- Debug
   // Look for parsing a local stored file (not listening to real websocket client) - debug purpose only
-  if ($g_att['use_testing_file'] != '') {
-            $fd = fopen($g_att['use_testing_file'], 'r');
-            $len = filesize($g_att['use_testing_file']);
-            $msg = fread($fd, $len);
-            //$msg = fread($fd, 1);
-            fclose($fd);
-            $v_temp = '';
-           AwssReceivedMessage($v_temp, $msg);
-           exit();
+  if ($g_att['use_testing_file'] != '')  {
+    if (!is_file($g_att['use_testing_file'])) {
+      echo "Bad filename\n";
+      exit;
+    }
+
+    $fd = fopen($g_att['use_testing_file'], 'r');
+    $len = filesize($g_att['use_testing_file']);
+    $msg = fread($fd, $len);
+    //$msg = fread($fd, 1);
+    fclose($fd);
+    $v_temp = '';
+    AwssReceivedMessage($v_temp, $msg);
+
+    exit;
   }
 
 
