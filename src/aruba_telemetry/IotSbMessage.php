@@ -60,6 +60,20 @@ class IotSbMessage extends \Protobuf\AbstractMessage
     protected $status = null;
 
     /**
+     * zigbee optional message = 6
+     *
+     * @var \aruba_telemetry\SbZbMsg
+     */
+    protected $zigbee = null;
+
+    /**
+     * sbSData repeated message = 7
+     *
+     * @var \Protobuf\Collection<\aruba_telemetry\SbSerialData>
+     */
+    protected $sbSData = null;
+
+    /**
      * Check if 'meta' has a value
      *
      * @return bool
@@ -224,6 +238,80 @@ class IotSbMessage extends \Protobuf\AbstractMessage
     }
 
     /**
+     * Check if 'zigbee' has a value
+     *
+     * @return bool
+     */
+    public function hasZigbee()
+    {
+        return $this->zigbee !== null;
+    }
+
+    /**
+     * Get 'zigbee' value
+     *
+     * @return \aruba_telemetry\SbZbMsg
+     */
+    public function getZigbee()
+    {
+        return $this->zigbee;
+    }
+
+    /**
+     * Set 'zigbee' value
+     *
+     * @param \aruba_telemetry\SbZbMsg $value
+     */
+    public function setZigbee(\aruba_telemetry\SbZbMsg $value = null)
+    {
+        $this->zigbee = $value;
+    }
+
+    /**
+     * Check if 'sbSData' has a value
+     *
+     * @return bool
+     */
+    public function hasSbSDataList()
+    {
+        return $this->sbSData !== null;
+    }
+
+    /**
+     * Get 'sbSData' value
+     *
+     * @return \Protobuf\Collection<\aruba_telemetry\SbSerialData>
+     */
+    public function getSbSDataList()
+    {
+        return $this->sbSData;
+    }
+
+    /**
+     * Set 'sbSData' value
+     *
+     * @param \Protobuf\Collection<\aruba_telemetry\SbSerialData> $value
+     */
+    public function setSbSDataList(\Protobuf\Collection $value = null)
+    {
+        $this->sbSData = $value;
+    }
+
+    /**
+     * Add a new element to 'sbSData'
+     *
+     * @param \aruba_telemetry\SbSerialData $value
+     */
+    public function addSbSData(\aruba_telemetry\SbSerialData $value)
+    {
+        if ($this->sbSData === null) {
+            $this->sbSData = new \Protobuf\MessageCollection();
+        }
+
+        $this->sbSData->add($value);
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function extensions()
@@ -265,16 +353,23 @@ class IotSbMessage extends \Protobuf\AbstractMessage
             'receiver' => null,
             'actions' => [],
             'config' => null,
-            'status' => null
+            'status' => null,
+            'zigbee' => null,
+            'sbSData' => []
         ], $values);
 
         $message->setMeta($values['meta']);
         $message->setReceiver($values['receiver']);
         $message->setConfig($values['config']);
         $message->setStatus($values['status']);
+        $message->setZigbee($values['zigbee']);
 
         foreach ($values['actions'] as $item) {
             $message->addActions($item);
+        }
+
+        foreach ($values['sbSData'] as $item) {
+            $message->addSbSData($item);
         }
 
         return $message;
@@ -322,6 +417,20 @@ class IotSbMessage extends \Protobuf\AbstractMessage
                     'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
                     'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
                     'type_name' => '.aruba_telemetry.ConnectStatus'
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 6,
+                    'name' => 'zigbee',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
+                    'type_name' => '.aruba_telemetry.SbZbMsg'
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 7,
+                    'name' => 'sbSData',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_REPEATED(),
+                    'type_name' => '.aruba_telemetry.SbSerialData'
                 ]),
             ],
         ]);
@@ -385,6 +494,20 @@ class IotSbMessage extends \Protobuf\AbstractMessage
             $writer->writeVarint($stream, 42);
             $writer->writeVarint($stream, $this->status->serializedSize($sizeContext));
             $this->status->writeTo($context);
+        }
+
+        if ($this->zigbee !== null) {
+            $writer->writeVarint($stream, 50);
+            $writer->writeVarint($stream, $this->zigbee->serializedSize($sizeContext));
+            $this->zigbee->writeTo($context);
+        }
+
+        if ($this->sbSData !== null) {
+            foreach ($this->sbSData as $val) {
+                $writer->writeVarint($stream, 58);
+                $writer->writeVarint($stream, $val->serializedSize($sizeContext));
+                $val->writeTo($context);
+            }
         }
 
         if ($this->extensions !== null) {
@@ -500,6 +623,40 @@ class IotSbMessage extends \Protobuf\AbstractMessage
                 continue;
             }
 
+            if ($tag === 6) {
+                \Protobuf\WireFormat::assertWireType($wire, 11);
+
+                $innerSize    = $reader->readVarint($stream);
+                $innerMessage = new \aruba_telemetry\SbZbMsg();
+
+                $this->zigbee = $innerMessage;
+
+                $context->setLength($innerSize);
+                $innerMessage->readFrom($context);
+                $context->setLength($length);
+
+                continue;
+            }
+
+            if ($tag === 7) {
+                \Protobuf\WireFormat::assertWireType($wire, 11);
+
+                $innerSize    = $reader->readVarint($stream);
+                $innerMessage = new \aruba_telemetry\SbSerialData();
+
+                if ($this->sbSData === null) {
+                    $this->sbSData = new \Protobuf\MessageCollection();
+                }
+
+                $this->sbSData->add($innerMessage);
+
+                $context->setLength($innerSize);
+                $innerMessage->readFrom($context);
+                $context->setLength($length);
+
+                continue;
+            }
+
             $extensions = $context->getExtensionRegistry();
             $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
@@ -571,6 +728,24 @@ class IotSbMessage extends \Protobuf\AbstractMessage
             $size += $calculator->computeVarintSize($innerSize);
         }
 
+        if ($this->zigbee !== null) {
+            $innerSize = $this->zigbee->serializedSize($context);
+
+            $size += 1;
+            $size += $innerSize;
+            $size += $calculator->computeVarintSize($innerSize);
+        }
+
+        if ($this->sbSData !== null) {
+            foreach ($this->sbSData as $val) {
+                $innerSize = $val->serializedSize($context);
+
+                $size += 1;
+                $size += $innerSize;
+                $size += $calculator->computeVarintSize($innerSize);
+            }
+        }
+
         if ($this->extensions !== null) {
             $size += $this->extensions->serializedSize($context);
         }
@@ -588,6 +763,8 @@ class IotSbMessage extends \Protobuf\AbstractMessage
         $this->actions = null;
         $this->config = null;
         $this->status = null;
+        $this->zigbee = null;
+        $this->sbSData = null;
     }
 
     /**
@@ -604,6 +781,8 @@ class IotSbMessage extends \Protobuf\AbstractMessage
         $this->actions = ($message->actions !== null) ? $message->actions : $this->actions;
         $this->config = ($message->config !== null) ? $message->config : $this->config;
         $this->status = ($message->status !== null) ? $message->status : $this->status;
+        $this->zigbee = ($message->zigbee !== null) ? $message->zigbee : $this->zigbee;
+        $this->sbSData = ($message->sbSData !== null) ? $message->sbSData : $this->sbSData;
     }
 
 

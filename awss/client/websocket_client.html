@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Aruba Iot Websocket Server</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/3/w3.css">
+<link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-blue-grey.css">
+<link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Open+Sans'>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<!-- Bootstrap -->
+<!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+<!-- jQuery library -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<!-- Latest compiled JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+<style>
+html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
+</style>
+
+</head>
+
+
+<script type="text/javascript">
+
+  // ----- Global value
+  var g_server = {
+    "ip_address":"",
+    "tcp_port":"8081",
+    "api_key":"123",
+    
+    "url":"",
+    "ws_url":"",
+    "cnx_status":false,
+    
+    "current_device_mac":"",
+    
+    "current_service_uuid":"",
+    "current_char_uuid":""
+    };
+  var g_socket = null;
+  
+
+  // ----- Actions to do at page load
+  $(document).ready(function(){
+  
+    awss_server_change_to_disconnected();
+    awss_device_change_to_disconnected('');
+    awss_banner_message('');
+
+    // ----- Get IP from window URL    
+    g_server['ip_address'] = window.location.hostname;
+
+    document.getElementById("server_ip").value = g_server['ip_address'];
+    document.getElementById("server_tcp").value = g_server['tcp_port'];
+    document.getElementById("server_apikey").value = g_server['api_key']; 
+
+  });
+
+  function awss_timestamp() {
+    var d = new Date();
+    var n = d.getHours()+':'+d.getMinutes()+':'+d.getSeconds();
+    //alert('date:'+n);
+    return(n);
+  }
+
+  function awss_log(p_log) {
+    v_msg = '['+awss_timestamp()+']: '+p_log;    
+    console.log(v_msg);
+  }
+
+  function awss_server_connect() {
+  
+    // ----- Check if already connected
+    if (g_server['cnx_status'] == true) {
+      return;
+    }
+    
+    // ----- Reset any banner message
+    awss_banner_message('');
+  
+    g_server['ip_address'] = document.getElementById("server_ip").value;
+    g_server['tcp_port'] = document.getElementById("server_tcp").value;
+    g_server['api_key'] = document.getElementById("server_apikey").value;
+    
+    g_server['url'] = "http://"+g_server['ip_address']+":"+g_server['tcp_port']+"/api";
+    g_server['ws_url'] = "ws://"+g_server['ip_address']+":"+g_server['tcp_port']+"/api";
+    
+    g_socket = new WebSocket(g_server['ws_url']);
+
+    g_socket.onopen = function(e) {
+      awss_server_change_to_connected();
+    };
+    
+    g_socket.onmessage = function(event) {
+      var val = event.data;
+
+        try {
+          var obj = JSON.parse(val);
+        } catch (err) { alert('Error while parsing JSON result : '+val); return; }
+        
+        // ----- Logs
+        if (obj.from_event == 'notification') {
+          v_msg = obj.from_event+'->'+obj.data.type+','+obj.status;
+        }
+        else if (obj.from_event == 'notification_add') {
+          v_msg = obj.from_event+'->'+obj.data.type+','+obj.status;
+        }
+        else {
+          v_msg = obj.from_event+','+obj.status;
+        }        
+        awss_log(v_msg);
+
+        if ((obj.from_event) && (obj.from_event == 'ble_connect') && (obj.status)) {
+          if (obj.status == 'success') {
+            awss_device_change_to_connected(obj.data.device_mac);
+          }
+          else {
+            awss_device_change_to_disconnected(obj.data.device_mac);
+          }
+          // Nothing to do yet ?
+        }
+        else if ((obj.from_event) && (obj.from_event == 'ble_disconnect') && (obj.status)) {
+          if (obj.status == 'success') {
+            //alert('Received ble_disconnect for :'+obj.data.device_mac);
+            awss_device_change_to_disconnected(obj.data.device_mac);
+          }
+          else {
+              //alert('Received device status: '+obj.status+' for :'+obj.data.device_mac);
+          }
+        }
+        else if ((obj.from_event) && (obj.from_event == 'ble_discover') && (obj.status)) {
+          if (obj.status == 'success') {
+            //alert('Received ble_discover for :'+obj.data.device_mac);
+            if (g_server['current_device_mac'] == obj.data.device_mac) {
+              awss_device_open(g_server['current_device_mac']);
+            }
+          }
+          else {
+              //alert('Received device status: '+obj.status+' for :'+obj.data.device_mac);
+          }
+        }
+        else if ((obj.from_event) && (obj.from_event == 'device_list') && (obj.data.devices)) {
+          awss_device_list_display(obj.data.devices);
+        }
+        else if ((obj.from_event) && (obj.from_event == 'reporter_list') && (obj.data.reporters)) {
+          awss_reporter_list_display(obj.data.reporters);
+        }
+        else if ((obj.from_event) && (obj.from_event == 'device_info') && (obj.data)) {
+          awss_device_display(obj.data);
+        }
+        else if ((obj.from_event) && (obj.from_event == 'websocket_info') && (obj.data)) {
+          awss_server_info_update(obj.data);
+        }
+        else if ((obj.from_event) && (obj.from_event == 'reporter_info') && (obj.data)) {
+          awss_reporter_display(obj.data);
+        }
+        else if ((obj.from_event) && (obj.from_event == 'include_mode') && (obj.status == 'success') ) {
+          // Nothing to do ... may be log message
+          if (typeof obj.data.state !== 'undefined') {
+            awss_server_change_include_mode(obj.data.state);
+          }
+        }
+        else if ((obj.from_event) && (obj.from_event == 'ble_read') && (obj.status == 'initiated') ) {
+          // Nothing to do ... may be log message
+        }
+        else if ((obj.from_event) && (obj.from_event == 'ble_read') && (obj.status == 'success') ) {
+          // For now, just releoad all the device
+          // TBC : to  be optimized, update only the value ?
+          if ((obj.data.device_mac) && (obj.data.device_mac == g_server['current_device_mac']) ) {
+            awss_api_device_info(g_server['current_device_mac']);
+          }
+        }
+        else if ((obj.from_event) && (obj.from_event == 'ble_notify') && (obj.status == 'initiated') ) {
+          // TBC : update display
+        }
+        else if ((obj.from_event) && (obj.from_event == 'ble_notify') && (obj.status == 'starting') ) {
+          // TBC : update display
+        }
+        else if ((obj.from_event) && (obj.from_event == 'ble_notify') && (obj.status == 'success') ) {
+          awss_modal_new_value(obj.data);
+        }
+        else if ((obj.from_event) && (obj.from_event == 'notification_add')) {
+          if (obj.status == 'success') {
+          }
+          else {
+          }
+        }
+        else if ((obj.from_event) && (obj.from_event == 'notification') && (obj.status == 'success') ) {
+          if (obj.data.type == 'device_status') {
+            if (obj.data.status == 'connected')
+              awss_device_change_to_connected(obj.data.device_mac);
+            else if (obj.data.status == 'disconnected') {
+              awss_device_change_to_disconnected(obj.data.device_mac);
+            }
+            else {
+              awss_log('Received unexpected device status: '+obj.data.status+' for :'+obj.data.device_mac);
+            }
+          }
+          
+          else if (obj.data.type == 'reporter_status') {
+            if (obj.data.status == 'active') {
+              //awss_device_change_to_connected(obj.data.device_mac);
+            }
+            else if (obj.data.status == 'inactive') {
+              //awss_device_change_to_disconnected(obj.data.device_mac);
+            }
+            else {
+              awss_log('Received unexpected reporter status: '+obj.data.status+' for :'+obj.data.device_mac);
+            }
+          }
+          
+        }
+        else {
+          awss_log('Received unexpected data from server: '+val);
+        }
+    };
+    
+    g_socket.onclose = function(event) {
+      if (event.wasClean) {
+        //alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+        awss_banner_message(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+      } else {
+        // e.g. server process killed or network down
+        // event.code is usually 1006 in this case
+        //alert('[close] Connection died');
+        awss_banner_message('[close] Connection died');
+      }
+
+      awss_server_change_to_disconnected();
+    };
+    
+    g_socket.onerror = function(error) {
+      //alert(`[error] ${error.message}`);
+      awss_banner_message('Fail to connect to websocket server.');
+      awss_server_change_to_disconnected();
+    };
+
+  }
+  
+  function awss_server_disconnect() {
+    if ((g_server['cnx_status']) || (g_socket != null)) {
+      g_socket.close(1000, "Bye bye");
+    }
+     
+    awss_server_change_to_disconnected();  
+  }
+    
+  function awss_server_change_to_connected() {
+      g_server['cnx_status'] = true;
+      
+      $('#server_cnx_ok').show();
+      $('#server_cnx_nok').hide();
+  
+      $('#bt_cnx').hide();
+      $('#bt_dcnx').show();
+  
+    $('#grid_device').hide();
+    $('#grid_reporter').hide();
+    $('#grid_server').show();
+  
+    $('#div_include_mode').show();
+    $('#div_actions').show();
+    
+    // ----- Load websocket infos
+    awss_api_server_info();
+    
+    // ----- Register to reporter_status
+    awss_api_reporter_status_notify('');
+  }
+  
+  function awss_server_change_to_disconnected() {
+      g_server['cnx_status'] = false;
+      
+      $('#server_cnx_ok').hide();
+      $('#server_cnx_nok').show();
+      
+      // TBC : should read the value from websocket config ... when available
+      awss_server_change_include_mode(0);      
+
+      $('#bt_cnx').show();
+      $('#bt_dcnx').hide();
+  
+    $('#grid_device').hide();
+    $('#grid_reporter').hide();
+    $('#grid_server').show();
+  
+    $('#div_include_mode').hide();
+    $('#div_actions').hide();
+    
+    // ----- Reset some lists
+    document.getElementById("tbody_device_list").innerHTML = '';
+  }
+    
+  
+  function awss_server_info_update(p_data) {
+  
+    document.getElementById("span_nb_reporters").innerHTML = p_data.websocket.reporters_nb;
+    document.getElementById("span_nb_devices").innerHTML = p_data.websocket.devices_nb;
+    
+    awss_server_change_include_mode(p_data.websocket.include_mode);
+  
+  }
+  
+  function awss_api_server_info() {
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"websocket_info",
+        "data": {
+          "xx":"xx"
+        }
+      }
+    };
+    
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+    
+  }
+      
+  function awss_server_div_open() {
+    $('#grid_device').hide();
+    $('#grid_reporter').hide();
+    $('#grid_server').show();
+  
+  }
+  
+  function awss_server_change_include_mode(p_mode) {
+    if (p_mode == 1) {
+      $('#include_mode_on').show();
+      $('#start_include_bt').hide();
+      $('#stop_include_bt').show();
+      
+      
+    }
+    else {
+      $('#include_mode_on').hide();
+      $('#start_include_bt').show();
+      $('#stop_include_bt').hide();
+    }
+
+    return;
+  }
+
+      
+  
+  function awss_api_include_mode(p_include_mode) {
+
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+          "name":"include_mode",
+          "data": {
+            "state":p_include_mode,
+            "type":"generic,enoceanSensor,enoceanSwitch",
+            "generic_with_local":"",
+            "generic_with_mac":0,
+            "generic_mac_prefix":"",
+            "generic_max_devices":10
+          }
+      }
+    };
+
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+
+    return;
+  }
+
+  function awss_device_char_read(p_mac, p_service, p_char) {
+  //alert('look for :'+p_mac+','+p_service+','+p_char);
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"ble_read",
+        "data": {
+        "device_mac":p_mac,
+          "service_uuid":p_service,
+          "char_uuid":p_char
+        }
+      }
+    };
+
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+
+    return;  
+  }
+  
+  function awss_device_char_notify(p_mac, p_service, p_char, p_mode) {
+  //alert('look for :'+p_mac+','+p_service+','+p_char);
+  
+    g_server['current_device_mac'] = p_mac;
+    if (p_mode == 1) {
+      g_server['current_service_uuid'] = p_service;
+      g_server['current_char_uuid'] = p_char;
+    }
+    else {
+      g_server['current_service_uuid'] = "";
+      g_server['current_char_uuid'] = "";
+    }
+
+    awss_modal_open();
+    
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"ble_notify",
+        "data": {
+          "device_mac":p_mac,
+          "service_uuid":p_service,
+          "char_uuid":p_char,
+          "timeout":60,
+          "mode":p_mode
+        }
+      }
+    };
+
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+
+    return;  
+  }
+
+
+  function awss_device_change_to_connected(p_mac) {
+    if (p_mac != g_server['current_device_mac']) {
+      return;
+    }
+        
+    $('#device_cnx_ok').show();
+    
+    $('#bt_ble_cnx').hide(); 
+    $('#bt_ble_discover').hide(); 
+    $('#bt_ble_dcnx').show(); 
+    
+  }
+  
+  function awss_device_change_to_disconnected(p_mac) {
+    // if mac empty for disconnect
+    if ((p_mac != g_server['current_device_mac']) && (p_mac != '')) {
+      return;
+    }
+    
+    $('#device_cnx_ok').hide();
+    $('#bt_ble_cnx').show(); 
+    $('#bt_ble_discover').show(); 
+    $('#bt_ble_dcnx').hide(); 
+  }
+  
+  function awss_api_device_info(p_mac) {
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"device_info",
+        "data": {
+          "device_mac":p_mac
+        }
+      }
+    };
+    
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+    
+  }
+    
+  function awss_api_device_notify(p_mac) {
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"notification_add",
+        "data": {
+          "type":"device_status",
+          "device_mac":p_mac
+        }
+      }
+    };
+    
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+    
+  }
+    
+  function awss_api_device_notify_stop(p_mac) {
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"notification_remove",
+        "data": {
+          "type":"device_status",
+          "device_mac":p_mac
+        }
+      }
+    };
+    
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+    
+  }
+    
+  function awss_device_open(p_mac) {
+  
+    // ----- Look for changing device
+    if ((g_server['current_device_mac'] != p_mac) && (g_server['current_device_mac'] != '')) {
+      awss_api_device_notify_stop(g_server['current_device_mac']);
+    }
+    
+    g_server['current_device_mac'] = p_mac;
+    
+    awss_device_change_to_disconnected(p_mac);
+     
+    awss_api_device_info(p_mac);
+   
+    awss_api_device_notify(p_mac);
+   
+    return;
+  }
+    
+  function awss_device_display(p_data) {
+  
+    if (p_data.device.connect_status == 'connected') {
+      awss_device_change_to_connected(p_data.device.mac);
+    }
+    else {
+      awss_device_change_to_disconnected(p_data.device.mac);
+    }
+    
+    document.getElementById("device_name").innerHTML = p_data.device.name;
+    document.getElementById("device_mac").innerHTML = p_data.device.mac;
+    document.getElementById("device_classname").innerHTML = p_data.device.classname;
+    document.getElementById("device_vendor_id").innerHTML = p_data.device.vendor_id;
+    document.getElementById("device_model_id").innerHTML = p_data.device.model_id;
+    document.getElementById("device_nearest_ap_mac").innerHTML = p_data.device.nearest_ap_mac;
+    document.getElementById("device_vendor_name").innerHTML = p_data.device.vendor_name;
+    document.getElementById("device_local_name").innerHTML = p_data.device.local_name;
+    document.getElementById("device_model").innerHTML = p_data.device.model;
+    document.getElementById("device_rssi").innerHTML = p_data.device.rssi;
+
+    document.getElementById("tbody_telemetry_list").innerHTML = '';
+    v_count_top_1 = 0;
+    for (i in p_data.device.telemetry_values) {
+      var v_html = '';
+
+      v_html += '<td>';
+      v_html += '<span class="bt_modal_doc" >';
+      v_html += '<label class="w3-text-black" style="cursor: pointer;">'+p_data.device.telemetry_values[i].name+' ('+p_data.device.telemetry_values[i].type+') : '+p_data.device.telemetry_values[i].value+'</label>';
+      v_html += '</span>';
+      v_html += '</td>';
+      v_count_top_1++;
+
+      document.getElementById("tbody_telemetry_list").innerHTML += '<tr>'+v_html+'</tr>';
+    }
+    document.getElementById("telemetry_list_nb").innerHTML = v_count_top_1;
+
+    $('#div_telemetry_list').show();
+
+    document.getElementById("tbody_char_list").innerHTML = '';
+    v_count_top_1 = 0;
+    for (i in p_data.device.services) {
+      var v_html = '';
+
+      v_html += '<td>';
+      v_html += '<span class="bt_modal_doc" >';
+      v_html += '<label class="w3-text-black" style="cursor: pointer;">Service '+p_data.device.services[i].uuid+'</label>';
+      v_html += '</span>';
+      v_html += '</td>';
+      v_count_top_1++;
+
+      document.getElementById("tbody_char_list").innerHTML += '<tr>'+v_html+'</tr>';
+
+      for (j in p_data.device.services[i].char_list) {
+        var v_html = '';
+        
+        var v_str = '';
+        if (p_data.device.services[i].char_list[j].value_string != '') {
+          v_str = ' ('+p_data.device.services[i].char_list[j].value_string+')';
+        }
+        
+        var v_types = p_data.device.services[i].char_list[j].types.split(",");
+  
+        v_html += '<td>';
+        v_html += '<span class="bt_modal_doc" >';
+        v_html += '<label class="w3-text-black" style="cursor: pointer;">&nbsp;&nbsp; '+p_data.device.services[i].char_list[j].uuid+' ('+p_data.device.services[i].char_list[j].types+') : '+p_data.device.services[i].char_list[j].value+v_str+'</label>';
+        //v_html += '<span class="w3-right"><label class="w3-text-black" style="cursor: pointer;" onclick="awss_device_char_read(\''+p_data.device.mac+'\', \''+p_data.device.services[i].uuid+'\', \''+p_data.device.services[i].char_list[j].uuid+'\');">&nbsp;&nbsp; read</label></span>';
+        v_html += '<span class="w3-right">';
+        if (v_types.includes('read')) {
+          v_html += '<button type="button" class="btn btn-xs" onclick="awss_device_char_read(\''+p_data.device.mac+'\', \''+p_data.device.services[i].uuid+'\', \''+p_data.device.services[i].char_list[j].uuid+'\');">read</button>';
+        } 
+        /*
+        Removed : this API is not anymore available until further analysis
+        if (v_types.includes('notify')) {
+          v_html += '&nbsp;<button type="button" class="btn btn-xs" onclick="awss_device_char_notify(\''+p_data.device.mac+'\', \''+p_data.device.services[i].uuid+'\', \''+p_data.device.services[i].char_list[j].uuid+'\', 1);">notify</button>';
+        } 
+        */
+        v_html += '</span>';
+        v_html += '</span>';
+        v_html += '</td>';
+        v_count_top_1++;
+          
+        document.getElementById("tbody_char_list").innerHTML += '<tr>'+v_html+'</tr>';
+      }
+
+    }
+    document.getElementById("char_list_nb").innerHTML = v_count_top_1;
+
+    $('#div_char_list').show();
+
+    return;
+  }
+  
+  function awss_device_list_div_open() {
+  
+    if (!g_server['cnx_status']) {
+      awss_banner_message('Need to connect before accessing device list !');
+      return;
+    }
+
+    awss_api_device_list();
+    
+    $('#grid_device').show();
+    $('#grid_reporter').hide();
+    $('#grid_server').hide();
+
+    $('#div_device_list').show();
+  }
+  
+  function awss_api_device_list() {
+
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"device_list",
+        "data": {
+        "data":"192.168.22.156",
+        "data_2":"value_2"
+        }
+      }
+    };
+    
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+    
+    return;
+  }
+
+  function awss_device_list_display(v_list) {
+
+    document.getElementById("tbody_device_list").innerHTML = '';
+    v_count_top_1 = 0;
+    for (i in v_list) {
+      var v_html = '';
+      
+      var v_name = v_list[i].name;
+      if (v_name == '') {
+        var v_name = v_list[i].mac;
+      }
+
+      v_html += '<td>';
+      v_html += '<span class="bt_modal_doc" onClick="awss_device_open(\''+v_list[i].mac+'\');" >';
+      v_html += '<label class="w3-text-black" style="cursor: pointer;">'+v_name+'</label>';
+      v_html += '</span>';
+      v_html += '</td>';
+      v_count_top_1++;
+
+      document.getElementById("tbody_device_list").innerHTML += '<tr>'+v_html+'</tr>';
+    }
+    document.getElementById("device_list_nb").innerHTML = v_count_top_1;
+    document.getElementById("span_nb_devices").innerHTML = v_count_top_1;
+
+
+
+    return;
+  }
+
+
+  function awss_api_device_connect(p_mac, p_mode) {
+
+    g_server['current_device_mac'] = p_mac;
+    
+    var v_event = 'ble_connect';
+    if (p_mode != 1)
+      v_event = 'ble_disconnect';
+
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":v_event,
+        "data": {
+        "device_mac":p_mac
+        }
+      }
+    };
+
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+
+    return;
+  }
+
+  function awss_api_device_discover(p_mac) {
+
+    g_server['current_device_mac'] = p_mac;
+    
+    var v_event = 'ble_discover';
+
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":v_event,
+        "data": {
+        "device_mac":p_mac
+        }
+      }
+    };
+
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+
+    return;
+  }
+
+  function awss_reporter_div_open(p_mac) {
+    awss_api_reporter_info(p_mac);
+  }
+  
+
+  function awss_reporter_list_div_open(p_mac) {
+    if (!g_server['cnx_status']) {
+      awss_banner_message('Need to connect before accessing reporter list !');
+      return;
+    }
+
+    $('#grid_device').hide();
+    $('#grid_reporter').show();
+    $('#grid_server').hide();
+    
+    awss_api_reporter_list();
+  }
+  
+
+  function awss_reporter_list_display(p_list) {
+
+    document.getElementById("tbody_reporter_list").innerHTML = '';
+    v_count_top_1 = 0;
+    v_mac_default = '';
+    for (i in p_list) {
+      if (v_mac_default == '') {
+        v_mac_default = p_list[i].mac;
+      } 
+      var v_html = '';
+    
+      v_html += '<td>';
+      v_html += '<span class="bt_modal_doc" onClick="awss_reporter_div_open(\''+p_list[i].mac+'\');" >';
+      v_html += '<label class="w3-text-black" style="cursor: pointer;">'+p_list[i].name+'</label>';
+      v_html += '</span>';
+      v_html += '</td>';
+      v_count_top_1++;
+    
+      document.getElementById("tbody_reporter_list").innerHTML += '<tr>'+v_html+'</tr>';
+    }
+    document.getElementById("reporter_list_nb").innerHTML = v_count_top_1;
+    document.getElementById("span_nb_reporters").innerHTML = v_count_top_1;
+    
+    $('#div_reporter_list').show();
+    
+    if (v_mac_default != '') {
+      awss_reporter_div_open(v_mac_default);
+    }
+
+    return;
+  }
+
+  function awss_api_reporter_list() {
+
+    $('#grid_device').hide();
+    $('#grid_reporter').show();
+      $('#grid_server').hide();
+
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"reporter_list",
+        "data": {
+        "data":"xxx",
+        "data_2":"xxx"
+        }
+      }
+    };
+
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+
+    return;
+  }
+
+  function awss_api_reporter_info(p_mac) {
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"reporter_info",
+        "data": {
+          "reporter_mac":p_mac
+        }
+      }
+    };
+    
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+    
+  }
+   
+  function awss_api_reporter_status_notify(p_mac) {
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"notification_add",
+        "data": {
+          "type":"reporter_status",
+          "device_mac":p_mac
+        }
+      }
+    };
+    
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+    
+  }
+    
+  function awss_api_reporter_status_notify_stop(p_mac) {
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"notification_remove",
+        "data": {
+          "type":"reporter_status",
+          "device_mac":p_mac
+        }
+      }
+    };
+    
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+    
+  }
+        
+  function awss_reporter_display(p_data) {
+  
+    document.getElementById("reporter_name").innerHTML = p_data.reporter.name;
+    document.getElementById("reporter_mac").innerHTML = p_data.reporter.mac;
+    document.getElementById("reporter_status").innerHTML = p_data.reporter.status;
+    document.getElementById("reporter_remote_ip").innerHTML = p_data.reporter.remote_ip;
+    document.getElementById("reporter_local_ip").innerHTML = p_data.reporter.local_ip;
+    document.getElementById("reporter_hardware_type").innerHTML = p_data.reporter.hardware_type;
+    document.getElementById("reporter_software_version").innerHTML = p_data.reporter.software_version;
+    document.getElementById("reporter_software_build").innerHTML = p_data.reporter.software_build;
+    document.getElementById("reporter_uptime").innerHTML = p_data.reporter.uptime;
+
+    return;
+  }
+  
+
+  function awss_onsubmit() {
+    return(false);
+  }
+
+
+  function awss_banner_message(v_text) {
+    document.getElementById("banner_msg_text").innerHTML = v_text;
+    if (v_text == '') {
+      $('#banner_msg_div').hide();
+    }
+    else {
+      document.getElementById("banner_msg_text").innerHTML = v_text;
+      $('#banner_msg_div').show();
+    }
+  }
+
+  function awss_modal_open() {
+  
+    document.getElementById("awss_modal_value_list").innerHTML = '';
+    
+    $('#device_overview_modal').modal('show');
+
+
+  }
+
+  function awss_modal_close() {
+  
+    // ----- Send the stop api message
+    awss_device_char_notify(g_server['current_device_mac'], g_server['current_service_uuid'], g_server['current_char_uuid'], 0);
+    
+    document.getElementById("awss_modal_value_list").innerHTML = '';
+    
+    $('#device_overview_modal').modal('hide');
+
+  }
+
+  function awss_modal_new_value(p_data) {
+  
+    var v_value = '';
+    v_value = p_data.value;
+    if (p_data.value_string)
+      v_value += ' ('+p_data.value_string+')';
+    v_value += '<br>';
+ 
+    document.getElementById("awss_modal_value_list").innerHTML += v_value;
+
+  }
+
+</script>
+
+
+<body class="w3-theme-l5">
+
+<div class="w3-top">
+ <div class="w3-bar w3-theme-d2 w3-left-align w3-large">
+  <a class="w3-bar-item w3-button w3-hide-medium w3-hide-large w3-right w3-padding-large w3-hover-white w3-large w3-theme-d2" href="javascript:void(0);" onclick="openNav()"><i class="fa fa-bars"></i></a>
+  <a href="#" class="w3-bar-item w3-button w3-padding-large w3-theme-d4"><i class="fa fa-home w3-margin-right"></i> Aruba Iot Websocket Server</a>
+  	
+
+<a href="#" onClick="awss_server_div_open();" class="w3-bar-item w3-button w3-hide-small w3-padding-large w3-hover-white">Dashboard</a>
+   
+  <div class="w3-dropdown-hover w3-button w3-hide-small w3-padding-large w3-hover-white">Devices
+    <div class="w3-dropdown-content w3-card-4 w3-bar-block" style="width:300px">
+
+            <a href="#" class="w3-bar-item w3-button" onClick="awss_device_list_div_open();">List</a>
+	
+    </div>
+  </div>
+  
+
+  <div class="w3-dropdown-hover w3-button w3-hide-small w3-padding-large w3-hover-white">Reporters
+    <div class="w3-dropdown-content w3-card-4 w3-bar-block" style="width:300px">
+
+             <a href="#" class="w3-bar-item w3-button" onClick="awss_reporter_list_div_open();">List</a>
+			    
+	
+    </div>
+  </div>
+  
+
+  <div class="w3-dropdown-hover w3-button w3-hide-small w3-padding-large w3-hover-white">Server
+    <div class="w3-dropdown-content w3-card-4 w3-bar-block" style="width:300px">
+
+             <a href="#" class="w3-bar-item w3-button" onClick="awss_server_div_open();">Dashboard</a>
+			    
+	
+    </div>
+  </div>
+  
+
+  <div class="w3-dropdown-hover w3-button w3-hide-small w3-right w3-padding-large w3-hover-white"><span class="glyphicon glyphicon-cog"></span>&nbsp;&nbsp; Settings &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <div class="w3-dropdown-content w3-card-4 w3-bar-block" style="width:300px">
+      <a href="#" class="w3-bar-item w3-button">Settings</a>
+
+      <a href="#" class="w3-bar-item w3-button" onClick="awss_server_disconnect();">Disconnect</a>
+    </div>
+  </div>
+
+ </div>
+</div>
+
+<!-- Navbar on small screens -->
+<div id="navDemo" class="w3-bar-block w3-theme-d2 w3-hide w3-hide-large w3-hide-medium w3-large">
+  <a href="#" class="w3-bar-item w3-button w3-padding-large">Link 1</a>
+  <a href="#" class="w3-bar-item w3-button w3-padding-large">Link 2</a>
+  <a href="#" class="w3-bar-item w3-button w3-padding-large">Link 3</a>
+  <a href="#" class="w3-bar-item w3-button w3-padding-large">My Profile</a>
+</div>
+
+
+<!-- Page Container -->
+<div id="pce_page_container" class="w3-container w3-content" style="max-width:1600px;margin-top:80px">
+
+
+
+<form id="main_form" action="#" method="post" autocomplete="off" class="w3-container" onsubmit="return(awss_onsubmit());">
+
+  <!-- The Grid -->
+  <div class="w3-row" id="grid_banner">
+
+    <!-- Left Column -->
+    <div class="w3-col m12">
+
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+              <h4>
+              <button type="button" class="btn btn-success btn-xs" id="server_cnx_ok">Connected</button> 
+              <button type="button" class="btn btn-danger btn-xs" id="server_cnx_nok">Disconnected</button>
+              <button type="button" class="btn btn-info btn-xs" id="include_mode_on">Include Mode is ON</button> 
+              &nbsp;to Websocket Server
+              
+              
+              <span class="w3-right">
+              <span id="span_nb_reporters">0</span> Reporter(s) - <span id="span_nb_devices">0</span> Device(s)
+              <span id="banner_msg_div">
+              <button type="button" class="btn btn-warning btn-xs" id="server_cnx_nok">
+              <span id="banner_msg_text"></span>
+              &nbsp;<span class="glyphicon glyphicon-remove-sign" onclick="$('#banner_msg_div').hide();" style="cursor: pointer;"></span>
+              </button>            
+              &nbsp;
+              </span>
+              </span>
+              </h4>
+      </div>
+      <!-- Block -->
+
+    </div>
+    <!-- End Left Column -->
+
+  </div>
+  <!-- End Row The Grid -->
+
+  <!-- The Grid -->
+  <div class="w3-row" id="grid_server">
+
+    <!-- Left Column -->
+    <div class="w3-col m5">
+
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
+      
+      
+              <h2>Aruba Websocket Server</h2>
+
+              <table class="table">
+                  <tbody>
+                    <tr>
+                      <td>
+              
+        <h4><i>Server IP :&nbsp;&nbsp;</i>
+          <input class="w3-border w3-round-large" type="text" id="server_ip" value="0.0.0.0">
+        </h4>
+
+        <h4><i>Server TCP Port :&nbsp;&nbsp;</i>
+          <input class="w3-border w3-round-large" type="text" id="server_tcp" value="8081">
+        </h4>
+
+        <h4><i>API Key :&nbsp;&nbsp;</i>
+          <input class="w3-border w3-round-large" type="text" id="server_apikey" value="123">
+        </h4>
+              
+                      </td>
+                    </tr>
+                  </tbody>
+              </table>
+
+        <h4 class="w3-center">
+          <button id="bt_cnx" class="w3-btn w3-blue  w3-round-large" onclick="awss_server_connect();">Connect</button>
+          &nbsp;<button  id="bt_dcnx" class="w3-btn w3-blue  w3-round-large" onclick="awss_server_disconnect();">Disconnect</button>
+        </h4>
+
+        <br>&nbsp;<br>
+      </div>
+      <!-- Block -->
+
+    </div>
+    <!-- End Left Column -->
+
+    <!-- begin central Column -->
+    <div id="div_include_mode" class="w3-col m4">
+
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
+
+              <h2>Include Mode</h2>
+
+              <table class="table">
+                  <tbody>
+                    <tr>
+                      <td>
+              
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" id="start_include_bt" onclick="awss_api_include_mode(1);">Start Include Mode</button>
+        </h4>
+
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" id="stop_include_bt" onclick="awss_api_include_mode(0);">Stop Include Mode</button>
+        </h4>
+              
+                      </td>
+                    </tr>
+                  </tbody>
+              </table>
+
+      
+
+
+      </div>
+      <!-- Block -->
+
+    </div>
+    <!-- End central Column -->
+
+    <!-- begin Right Column -->
+    <div id="div_actions" class="w3-col m3">
+
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
+
+              <h2>Actions</h2>
+
+              <table class="table">
+                  <tbody>
+                    <tr>
+                      <td>
+              
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_device_list_div_open();">Device List</button>
+        </h4>
+
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_reporter_list_div_open();">Reporter List</button>
+        </h4>
+
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_modal_open(1);">Modal Test</button>
+        </h4>
+              
+              
+                      </td>
+                    </tr>
+                  </tbody>
+              </table>
+
+      
+
+
+      </div>
+      <!-- Block -->
+
+    </div>
+    <!-- End Right Column -->
+
+  </div>
+  <!-- End Row The Grid -->
+
+
+  <!-- The Grid -->
+  <div class="w3-row" id="grid_device">
+
+    <!-- Left Column -->
+    <div class="w3-col m4">
+
+      <!-- Block -->
+      <div id="div_device_list" class="w3-container w3-card-2 w3-white w3-round w3-margin">
+
+        <h2><span class="glyphicon glyphicon-list-alt"></span>&nbsp;
+        <span id="device_list_name">Devices List</span>&nbsp;<span class="w3-badge w3-green w3-medium" id="device_list_nb" style="vertical-align: top;">0</span>
+        <span class="w3-right">
+        <span class="glyphicon glyphicon-refresh" onclick="" style="cursor: pointer;"></span>&nbsp;
+        </span>
+        </h2>
+        <input type="hidden" id="device_list_id" value="aruba">
+
+        <div class="table-responsive" style="min-height:10px; max-height:400px;">
+          <table class="table table-hover">
+            <tbody id="tbody_device_list">
+              <!-- Filled by Javascript -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      <!-- Block -->
+
+
+
+      <!-- Empty Block pour garder l'espace-->
+      <div class="">
+        &nbsp;
+      </div>
+      <!-- Block -->
+
+    <!-- End Left Column -->
+    </div>
+
+
+    <!-- Begin Central Column -->
+    <div class="w3-col m8">
+
+      <!-- Block -->
+      <div id="div_docs_exact" class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+
+              <h2>Device "<span id="device_name"></span>" 
+              <span class="w3-right">
+              <button type="button" class="btn btn-success btn-xs" id="device_cnx_ok">Connected</button>
+              <span class="glyphicon glyphicon-refresh" onclick="awss_device_open(g_server['current_device_mac']);" style="cursor: pointer;"></span>&nbsp;
+              </span>
+              </h2>
+
+              <table class="table">
+                  <tbody>
+                    <tr>             
+              <td><h4><b>Device MAC</b> : <span id="device_mac"></span></h4></td>
+                    </tr>
+                    <tr><td>
+              <h4><i>Aruba Classname : </i><span id="device_classname"></span></h4>
+              <h4><i>BLE Vendor Name : </i><span id="device_vendor_name"></span></h4>
+              <h4><i>BLE Local Name : </i><span id="device_local_name"></span></h4>
+              <h4><i>BLE Model : </i><span id="device_model"></span></h4>
+                    </td></tr>
+                    <tr><td>
+              <h4><i>Vendor : </i><span id="device_vendor_id"></span></h4>
+              <h4><i>Model : </i><span id="device_model_id"></span></h4>
+                    </td></tr>
+                    <tr><td>
+              <h4><i>Nearest AP MAC : </i><span id="device_nearest_ap_mac"></span></h4>
+              <h4><i>RSSI : </i><span id="device_rssi"></span></h4>
+                    </td></tr>
+                  </tbody>
+              </table>
+
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_device_open(g_server['current_device_mac']);">Refresh</button>
+          &nbsp;&nbsp;  
+          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_discover" onclick="awss_api_device_discover(g_server['current_device_mac']);">Characteristics Discovery</button>
+          &nbsp;&nbsp;  
+          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_cnx" onclick="awss_api_device_connect(g_server['current_device_mac'], 1);">BLE Connect</button>
+          &nbsp;&nbsp;  
+          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_dcnx" onclick="awss_api_device_connect(g_server['current_device_mac'], 0);">BLE Disconnect</button>
+        </h4>
+
+
+      </div>
+      <!-- Block -->
+
+      <!-- Block -->
+      <div id="div_telemetry_list" class="w3-container w3-card-2 w3-white w3-round w3-margin">
+
+        <h2><span class="glyphicon glyphicon-tag"></span>
+        <span id="telemetry_list_name">Device Telemetry</span>&nbsp;<span class="w3-badge w3-green w3-medium" id="telemetry_list_nb" style="vertical-align: top;">0</span>
+        </h2>
+        <input type="hidden" id="telemetry_list_id" value="central">
+
+        <div class="table-responsive table-condensed" style="min-height:10px; max-height:400px;">
+          <table class="table table-hover">
+            <tbody id="tbody_telemetry_list">
+              <!-- Filled by Javascript -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      <!-- Block -->
+
+      <!-- Block -->
+      <div id="div_char_list" class="w3-container w3-card-2 w3-white w3-round w3-margin">
+
+        <h2><span class="glyphicon glyphicon-tag"></span>
+        <span id="char_list_name">Device Characteristics</span>&nbsp;<span class="w3-badge w3-green w3-medium" id="char_list_nb" style="vertical-align: top;">0</span>
+        </h2>
+        <input type="hidden" id="char_list_id" value="aruba ">
+
+        <div class="table-responsive table-condensed" style="min-height:10px; max-height:400px;">
+          <table class="table table-hover">
+            <tbody id="tbody_char_list">
+              <!-- Filled by Javascript -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      <!-- Block -->
+
+      <!-- Empty Block pour garder l'espace-->
+      <div class="">
+        &nbsp;
+      </div>
+      <!-- Block -->
+
+
+
+    <!-- End Central Column -->
+    </div>
+
+
+
+  <!-- End Grid -->
+  </div>
+  <!-- End Row The Grid -->
+
+
+  <!-- The Grid -->
+  <div class="w3-row" id="grid_reporter">
+
+    <!-- Left Column -->
+    <div class="w3-col m4">
+
+      <!-- Block -->
+      <div id="div_reporter_list" class="w3-container w3-card-2 w3-white w3-round w3-margin">
+
+        <h2><span class="glyphicon glyphicon-tag"></span>
+        <span id="reporter_list_name">Reporters List</span>&nbsp;<span class="w3-badge w3-green w3-medium" id="reporter_list_nb" style="vertical-align: top;">0</span>
+        </h2>
+        <input type="hidden" id="reporter_list_id" value="aruba">
+
+        <div class="table-responsive" style="min-height:10px; max-height:400px;">
+          <table class="table table-hover">
+            <tbody id="tbody_reporter_list">
+              <!-- Filled by Javascript -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      <!-- Block -->
+
+
+
+      <!-- Empty Block pour garder l'espace-->
+      <div class="">
+        &nbsp;
+      </div>
+      <!-- Block -->
+
+    <!-- End Left Column -->
+    </div>
+
+
+    <!-- Begin Central Column -->
+    <div class="w3-col m8">
+
+      <!-- Block -->
+      <div id="div_docs_exact" class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+
+              <h2>Reporter "<span id="reporter_name"></span>"</h2>
+
+              <table class="table">
+                  <tbody>
+                    <tr>
+                      <td>
+              
+              <table class="table">
+                  <tbody>
+                    <tr>             
+              <td><h4><b>Reporter MAC</b> : <span id="reporter_mac"></span></h4></td>
+              <h4><i>status : </i><span id="reporter_status"></span></h4>
+                    </tr>
+                    <tr><td>
+              <h4><i>Remote IP : </i><span id="reporter_remote_ip"></span></h4>
+              <h4><i>Local IP : </i><span id="reporter_local_ip"></span></h4>
+                    </td></tr>
+                    <tr><td>
+              <h4><i>Hardware Type : </i><span id="reporter_hardware_type"></span></h4>
+              <h4><i>Software Version : </i><span id="reporter_software_version"></span></h4>
+              <h4><i>Software Build : </i><span id="reporter_software_build"></span></h4>
+                    </td></tr>
+                    <tr><td>
+              <h4><i>Uptime : </i><span id="reporter_uptime"></span></h4>
+                    </td></tr>
+                  </tbody>
+              </table>
+              
+                      </td>
+                    </tr>
+                  </tbody>
+              </table>
+
+      </div>
+      <!-- Block -->
+
+      <!-- Empty Block pour garder l'espace-->
+      <div class="">
+        &nbsp;
+      </div>
+      <!-- Block -->
+
+
+
+    <!-- End Central Column -->
+    </div>
+
+
+
+  <!-- End Grid -->
+  </div>
+
+
+</form>
+
+
+
+
+
+
+
+
+
+<!-- Include Modals -->
+<div>
+
+<div id="device_overview_modal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+    <form action="#" method="post" class="w3-container">
+
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">×</button>
+        <h2 class="modal-title" id="awss_modal_title">Device</h2>
+      </div>
+      <div class="modal-body" id="awss_modal_body">
+
+        <div class="well" id="awss_modal_description">
+        Service UUID :
+        <br>
+        Characteristic UUID : 
+        </div>
+
+        <label class="w3-text-black"><h4>Characteristic Values</h4> </label>
+
+        <table class="table">
+            <tbody>
+              <tr>
+                <td>
+                  <div class="w3-left" id="awss_modal_value_list">
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+        </table>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal" onclick="awss_modal_close()">Fermer</button>
+      </div>
+    </form>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+
+
+
+<!-- End Page Container -->
+</div>
+<br>
+
+<!-- Footer -->
+<footer class="w3-container w3-theme-d5">
+
+<span class="w3-text-white"><i> Aruba Iot Websocket Server - Demo client v.0.0.1
+    - <a href="http://www.phpconcept.net/" target="_blank" class="w3-text-white">©
+    PhpConcept 2021</a></i>
+</span>
+
+</footer>
+
+</body></html>

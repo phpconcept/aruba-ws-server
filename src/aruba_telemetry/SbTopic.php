@@ -30,6 +30,16 @@ class SbTopic extends \Protobuf\Enum
     const sbStatus_VALUE = 2;
 
     /**
+     * zbSbData = 3
+     */
+    const zbSbData_VALUE = 3;
+
+    /**
+     * serialDataSb = 4
+     */
+    const serialDataSb_VALUE = 4;
+
+    /**
      * @var \aruba_telemetry\SbTopic
      */
     protected static $actions = null;
@@ -43,6 +53,16 @@ class SbTopic extends \Protobuf\Enum
      * @var \aruba_telemetry\SbTopic
      */
     protected static $sbStatus = null;
+
+    /**
+     * @var \aruba_telemetry\SbTopic
+     */
+    protected static $zbSbData = null;
+
+    /**
+     * @var \aruba_telemetry\SbTopic
+     */
+    protected static $serialDataSb = null;
 
     /**
      * @return \aruba_telemetry\SbTopic
@@ -81,6 +101,30 @@ class SbTopic extends \Protobuf\Enum
     }
 
     /**
+     * @return \aruba_telemetry\SbTopic
+     */
+    public static function zbSbData()
+    {
+        if (self::$zbSbData !== null) {
+            return self::$zbSbData;
+        }
+
+        return self::$zbSbData = new self('zbSbData', self::zbSbData_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\SbTopic
+     */
+    public static function serialDataSb()
+    {
+        if (self::$serialDataSb !== null) {
+            return self::$serialDataSb;
+        }
+
+        return self::$serialDataSb = new self('serialDataSb', self::serialDataSb_VALUE);
+    }
+
+    /**
      * @param int $value
      * @return \aruba_telemetry\SbTopic
      */
@@ -90,6 +134,8 @@ class SbTopic extends \Protobuf\Enum
             case 0: return self::actions();
             case 1: return self::config();
             case 2: return self::sbStatus();
+            case 3: return self::zbSbData();
+            case 4: return self::serialDataSb();
             default: return null;
         }
     }

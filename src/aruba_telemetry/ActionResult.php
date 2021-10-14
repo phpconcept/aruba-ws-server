@@ -60,6 +60,13 @@ class ActionResult extends \Protobuf\AbstractMessage
     protected $statusString = null;
 
     /**
+     * bondingKey optional message = 6
+     *
+     * @var \aruba_telemetry\BleBondingKey
+     */
+    protected $bondingKey = null;
+
+    /**
      * Check if 'actionId' has a value
      *
      * @return bool
@@ -214,6 +221,36 @@ class ActionResult extends \Protobuf\AbstractMessage
     }
 
     /**
+     * Check if 'bondingKey' has a value
+     *
+     * @return bool
+     */
+    public function hasBondingKey()
+    {
+        return $this->bondingKey !== null;
+    }
+
+    /**
+     * Get 'bondingKey' value
+     *
+     * @return \aruba_telemetry\BleBondingKey
+     */
+    public function getBondingKey()
+    {
+        return $this->bondingKey;
+    }
+
+    /**
+     * Set 'bondingKey' value
+     *
+     * @param \aruba_telemetry\BleBondingKey $value
+     */
+    public function setBondingKey(\aruba_telemetry\BleBondingKey $value = null)
+    {
+        $this->bondingKey = $value;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function extensions()
@@ -252,7 +289,8 @@ class ActionResult extends \Protobuf\AbstractMessage
             'type' => null,
             'deviceMac' => null,
             'status' => null,
-            'statusString' => null
+            'statusString' => null,
+            'bondingKey' => null
         ], $values);
 
         $message->setActionId($values['actionId']);
@@ -260,6 +298,7 @@ class ActionResult extends \Protobuf\AbstractMessage
         $message->setDeviceMac($values['deviceMac']);
         $message->setStatus($values['status']);
         $message->setStatusString($values['statusString']);
+        $message->setBondingKey($values['bondingKey']);
 
         return $message;
     }
@@ -303,6 +342,13 @@ class ActionResult extends \Protobuf\AbstractMessage
                     'name' => 'statusString',
                     'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_STRING(),
                     'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 6,
+                    'name' => 'bondingKey',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
+                    'type_name' => '.aruba_telemetry.BleBondingKey'
                 ]),
             ],
         ]);
@@ -355,6 +401,12 @@ class ActionResult extends \Protobuf\AbstractMessage
         if ($this->statusString !== null) {
             $writer->writeVarint($stream, 42);
             $writer->writeString($stream, $this->statusString);
+        }
+
+        if ($this->bondingKey !== null) {
+            $writer->writeVarint($stream, 50);
+            $writer->writeVarint($stream, $this->bondingKey->serializedSize($sizeContext));
+            $this->bondingKey->writeTo($context);
         }
 
         if ($this->extensions !== null) {
@@ -431,6 +483,21 @@ class ActionResult extends \Protobuf\AbstractMessage
                 continue;
             }
 
+            if ($tag === 6) {
+                \Protobuf\WireFormat::assertWireType($wire, 11);
+
+                $innerSize    = $reader->readVarint($stream);
+                $innerMessage = new \aruba_telemetry\BleBondingKey();
+
+                $this->bondingKey = $innerMessage;
+
+                $context->setLength($innerSize);
+                $innerMessage->readFrom($context);
+                $context->setLength($length);
+
+                continue;
+            }
+
             $extensions = $context->getExtensionRegistry();
             $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
@@ -485,6 +552,14 @@ class ActionResult extends \Protobuf\AbstractMessage
             $size += $calculator->computeStringSize($this->statusString);
         }
 
+        if ($this->bondingKey !== null) {
+            $innerSize = $this->bondingKey->serializedSize($context);
+
+            $size += 1;
+            $size += $innerSize;
+            $size += $calculator->computeVarintSize($innerSize);
+        }
+
         if ($this->extensions !== null) {
             $size += $this->extensions->serializedSize($context);
         }
@@ -502,6 +577,7 @@ class ActionResult extends \Protobuf\AbstractMessage
         $this->deviceMac = null;
         $this->status = null;
         $this->statusString = null;
+        $this->bondingKey = null;
     }
 
     /**
@@ -518,6 +594,7 @@ class ActionResult extends \Protobuf\AbstractMessage
         $this->deviceMac = ($message->deviceMac !== null) ? $message->deviceMac : $this->deviceMac;
         $this->status = ($message->status !== null) ? $message->status : $this->status;
         $this->statusString = ($message->statusString !== null) ? $message->statusString : $this->statusString;
+        $this->bondingKey = ($message->bondingKey !== null) ? $message->bondingKey : $this->bondingKey;
     }
 
 

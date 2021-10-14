@@ -45,6 +45,21 @@ class ActionType extends \Protobuf\Enum
     const gattNotification_VALUE = 5;
 
     /**
+     * gattIndication = 6
+     */
+    const gattIndication_VALUE = 6;
+
+    /**
+     * bleAuthenticate = 7
+     */
+    const bleAuthenticate_VALUE = 7;
+
+    /**
+     * bleEncrypt = 8
+     */
+    const bleEncrypt_VALUE = 8;
+
+    /**
      * @var \aruba_telemetry\ActionType
      */
     protected static $bleConnect = null;
@@ -73,6 +88,21 @@ class ActionType extends \Protobuf\Enum
      * @var \aruba_telemetry\ActionType
      */
     protected static $gattNotification = null;
+
+    /**
+     * @var \aruba_telemetry\ActionType
+     */
+    protected static $gattIndication = null;
+
+    /**
+     * @var \aruba_telemetry\ActionType
+     */
+    protected static $bleAuthenticate = null;
+
+    /**
+     * @var \aruba_telemetry\ActionType
+     */
+    protected static $bleEncrypt = null;
 
     /**
      * @return \aruba_telemetry\ActionType
@@ -147,6 +177,42 @@ class ActionType extends \Protobuf\Enum
     }
 
     /**
+     * @return \aruba_telemetry\ActionType
+     */
+    public static function gattIndication()
+    {
+        if (self::$gattIndication !== null) {
+            return self::$gattIndication;
+        }
+
+        return self::$gattIndication = new self('gattIndication', self::gattIndication_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\ActionType
+     */
+    public static function bleAuthenticate()
+    {
+        if (self::$bleAuthenticate !== null) {
+            return self::$bleAuthenticate;
+        }
+
+        return self::$bleAuthenticate = new self('bleAuthenticate', self::bleAuthenticate_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\ActionType
+     */
+    public static function bleEncrypt()
+    {
+        if (self::$bleEncrypt !== null) {
+            return self::$bleEncrypt;
+        }
+
+        return self::$bleEncrypt = new self('bleEncrypt', self::bleEncrypt_VALUE);
+    }
+
+    /**
      * @param int $value
      * @return \aruba_telemetry\ActionType
      */
@@ -159,6 +225,9 @@ class ActionType extends \Protobuf\Enum
             case 3: return self::gattWrite();
             case 4: return self::gattWriteWithResponse();
             case 5: return self::gattNotification();
+            case 6: return self::gattIndication();
+            case 7: return self::bleAuthenticate();
+            case 8: return self::bleEncrypt();
             default: return null;
         }
     }

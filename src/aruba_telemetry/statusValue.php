@@ -25,6 +25,11 @@ class statusValue extends \Protobuf\Enum
     const inactivityTimeout_VALUE = 1;
 
     /**
+     * connectionUpdate = 2
+     */
+    const connectionUpdate_VALUE = 2;
+
+    /**
      * @var \aruba_telemetry\statusValue
      */
     protected static $deviceDisconnected = null;
@@ -33,6 +38,11 @@ class statusValue extends \Protobuf\Enum
      * @var \aruba_telemetry\statusValue
      */
     protected static $inactivityTimeout = null;
+
+    /**
+     * @var \aruba_telemetry\statusValue
+     */
+    protected static $connectionUpdate = null;
 
     /**
      * @return \aruba_telemetry\statusValue
@@ -59,6 +69,18 @@ class statusValue extends \Protobuf\Enum
     }
 
     /**
+     * @return \aruba_telemetry\statusValue
+     */
+    public static function connectionUpdate()
+    {
+        if (self::$connectionUpdate !== null) {
+            return self::$connectionUpdate;
+        }
+
+        return self::$connectionUpdate = new self('connectionUpdate', self::connectionUpdate_VALUE);
+    }
+
+    /**
      * @param int $value
      * @return \aruba_telemetry\statusValue
      */
@@ -67,6 +89,7 @@ class statusValue extends \Protobuf\Enum
         switch ($value) {
             case 0: return self::deviceDisconnected();
             case 1: return self::inactivityTimeout();
+            case 2: return self::connectionUpdate();
             default: return null;
         }
     }

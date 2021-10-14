@@ -165,6 +165,55 @@ class DeviceCount extends \Protobuf\AbstractMessage
     protected $dev_sBeacon = null;
 
     /**
+     * dev_onity optional int32 = 21
+     *
+     * @var int
+     */
+    protected $dev_onity = null;
+
+    /**
+     * dev_minew optional int32 = 22
+     *
+     * @var int
+     */
+    protected $dev_minew = null;
+
+    /**
+     * dev_google optional int32 = 23
+     *
+     * @var int
+     */
+    protected $dev_google = null;
+
+    /**
+     * dev_polestar optional int32 = 24
+     *
+     * @var int
+     */
+    protected $dev_polestar = null;
+
+    /**
+     * dev_blyott optional int32 = 25
+     *
+     * @var int
+     */
+    protected $dev_blyott = null;
+
+    /**
+     * dev_diract optional int32 = 26
+     *
+     * @var int
+     */
+    protected $dev_diract = null;
+
+    /**
+     * dev_gwahygiene optional int32 = 27
+     *
+     * @var int
+     */
+    protected $dev_gwahygiene = null;
+
+    /**
      * Check if 'dev_unclassified' has a value
      *
      * @return bool
@@ -765,6 +814,216 @@ class DeviceCount extends \Protobuf\AbstractMessage
     }
 
     /**
+     * Check if 'dev_onity' has a value
+     *
+     * @return bool
+     */
+    public function hasDevOnity()
+    {
+        return $this->dev_onity !== null;
+    }
+
+    /**
+     * Get 'dev_onity' value
+     *
+     * @return int
+     */
+    public function getDevOnity()
+    {
+        return $this->dev_onity;
+    }
+
+    /**
+     * Set 'dev_onity' value
+     *
+     * @param int $value
+     */
+    public function setDevOnity($value = null)
+    {
+        $this->dev_onity = $value;
+    }
+
+    /**
+     * Check if 'dev_minew' has a value
+     *
+     * @return bool
+     */
+    public function hasDevMinew()
+    {
+        return $this->dev_minew !== null;
+    }
+
+    /**
+     * Get 'dev_minew' value
+     *
+     * @return int
+     */
+    public function getDevMinew()
+    {
+        return $this->dev_minew;
+    }
+
+    /**
+     * Set 'dev_minew' value
+     *
+     * @param int $value
+     */
+    public function setDevMinew($value = null)
+    {
+        $this->dev_minew = $value;
+    }
+
+    /**
+     * Check if 'dev_google' has a value
+     *
+     * @return bool
+     */
+    public function hasDevGoogle()
+    {
+        return $this->dev_google !== null;
+    }
+
+    /**
+     * Get 'dev_google' value
+     *
+     * @return int
+     */
+    public function getDevGoogle()
+    {
+        return $this->dev_google;
+    }
+
+    /**
+     * Set 'dev_google' value
+     *
+     * @param int $value
+     */
+    public function setDevGoogle($value = null)
+    {
+        $this->dev_google = $value;
+    }
+
+    /**
+     * Check if 'dev_polestar' has a value
+     *
+     * @return bool
+     */
+    public function hasDevPolestar()
+    {
+        return $this->dev_polestar !== null;
+    }
+
+    /**
+     * Get 'dev_polestar' value
+     *
+     * @return int
+     */
+    public function getDevPolestar()
+    {
+        return $this->dev_polestar;
+    }
+
+    /**
+     * Set 'dev_polestar' value
+     *
+     * @param int $value
+     */
+    public function setDevPolestar($value = null)
+    {
+        $this->dev_polestar = $value;
+    }
+
+    /**
+     * Check if 'dev_blyott' has a value
+     *
+     * @return bool
+     */
+    public function hasDevBlyott()
+    {
+        return $this->dev_blyott !== null;
+    }
+
+    /**
+     * Get 'dev_blyott' value
+     *
+     * @return int
+     */
+    public function getDevBlyott()
+    {
+        return $this->dev_blyott;
+    }
+
+    /**
+     * Set 'dev_blyott' value
+     *
+     * @param int $value
+     */
+    public function setDevBlyott($value = null)
+    {
+        $this->dev_blyott = $value;
+    }
+
+    /**
+     * Check if 'dev_diract' has a value
+     *
+     * @return bool
+     */
+    public function hasDevDiract()
+    {
+        return $this->dev_diract !== null;
+    }
+
+    /**
+     * Get 'dev_diract' value
+     *
+     * @return int
+     */
+    public function getDevDiract()
+    {
+        return $this->dev_diract;
+    }
+
+    /**
+     * Set 'dev_diract' value
+     *
+     * @param int $value
+     */
+    public function setDevDiract($value = null)
+    {
+        $this->dev_diract = $value;
+    }
+
+    /**
+     * Check if 'dev_gwahygiene' has a value
+     *
+     * @return bool
+     */
+    public function hasDevGwahygiene()
+    {
+        return $this->dev_gwahygiene !== null;
+    }
+
+    /**
+     * Get 'dev_gwahygiene' value
+     *
+     * @return int
+     */
+    public function getDevGwahygiene()
+    {
+        return $this->dev_gwahygiene;
+    }
+
+    /**
+     * Set 'dev_gwahygiene' value
+     *
+     * @param int $value
+     */
+    public function setDevGwahygiene($value = null)
+    {
+        $this->dev_gwahygiene = $value;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function extensions()
@@ -818,7 +1077,14 @@ class DeviceCount extends \Protobuf\AbstractMessage
             'dev_wifiAssocSta' => null,
             'dev_wifiUnassocSta' => null,
             'dev_mysphera' => null,
-            'dev_sBeacon' => null
+            'dev_sBeacon' => null,
+            'dev_onity' => null,
+            'dev_minew' => null,
+            'dev_google' => null,
+            'dev_polestar' => null,
+            'dev_blyott' => null,
+            'dev_diract' => null,
+            'dev_gwahygiene' => null
         ], $values);
 
         $message->setDevUnclassified($values['dev_unclassified']);
@@ -841,6 +1107,13 @@ class DeviceCount extends \Protobuf\AbstractMessage
         $message->setDevWifiUnassocSta($values['dev_wifiUnassocSta']);
         $message->setDevMysphera($values['dev_mysphera']);
         $message->setDevSBeacon($values['dev_sBeacon']);
+        $message->setDevOnity($values['dev_onity']);
+        $message->setDevMinew($values['dev_minew']);
+        $message->setDevGoogle($values['dev_google']);
+        $message->setDevPolestar($values['dev_polestar']);
+        $message->setDevBlyott($values['dev_blyott']);
+        $message->setDevDiract($values['dev_diract']);
+        $message->setDevGwahygiene($values['dev_gwahygiene']);
 
         return $message;
     }
@@ -973,6 +1246,48 @@ class DeviceCount extends \Protobuf\AbstractMessage
                     'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_INT32(),
                     'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
                 ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 21,
+                    'name' => 'dev_onity',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_INT32(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 22,
+                    'name' => 'dev_minew',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_INT32(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 23,
+                    'name' => 'dev_google',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_INT32(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 24,
+                    'name' => 'dev_polestar',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_INT32(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 25,
+                    'name' => 'dev_blyott',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_INT32(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 26,
+                    'name' => 'dev_diract',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_INT32(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 27,
+                    'name' => 'dev_gwahygiene',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_INT32(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
+                ]),
             ],
         ]);
     }
@@ -1099,6 +1414,41 @@ class DeviceCount extends \Protobuf\AbstractMessage
         if ($this->dev_sBeacon !== null) {
             $writer->writeVarint($stream, 160);
             $writer->writeVarint($stream, $this->dev_sBeacon);
+        }
+
+        if ($this->dev_onity !== null) {
+            $writer->writeVarint($stream, 168);
+            $writer->writeVarint($stream, $this->dev_onity);
+        }
+
+        if ($this->dev_minew !== null) {
+            $writer->writeVarint($stream, 176);
+            $writer->writeVarint($stream, $this->dev_minew);
+        }
+
+        if ($this->dev_google !== null) {
+            $writer->writeVarint($stream, 184);
+            $writer->writeVarint($stream, $this->dev_google);
+        }
+
+        if ($this->dev_polestar !== null) {
+            $writer->writeVarint($stream, 192);
+            $writer->writeVarint($stream, $this->dev_polestar);
+        }
+
+        if ($this->dev_blyott !== null) {
+            $writer->writeVarint($stream, 200);
+            $writer->writeVarint($stream, $this->dev_blyott);
+        }
+
+        if ($this->dev_diract !== null) {
+            $writer->writeVarint($stream, 208);
+            $writer->writeVarint($stream, $this->dev_diract);
+        }
+
+        if ($this->dev_gwahygiene !== null) {
+            $writer->writeVarint($stream, 216);
+            $writer->writeVarint($stream, $this->dev_gwahygiene);
         }
 
         if ($this->extensions !== null) {
@@ -1295,6 +1645,62 @@ class DeviceCount extends \Protobuf\AbstractMessage
                 continue;
             }
 
+            if ($tag === 21) {
+                \Protobuf\WireFormat::assertWireType($wire, 5);
+
+                $this->dev_onity = $reader->readVarint($stream);
+
+                continue;
+            }
+
+            if ($tag === 22) {
+                \Protobuf\WireFormat::assertWireType($wire, 5);
+
+                $this->dev_minew = $reader->readVarint($stream);
+
+                continue;
+            }
+
+            if ($tag === 23) {
+                \Protobuf\WireFormat::assertWireType($wire, 5);
+
+                $this->dev_google = $reader->readVarint($stream);
+
+                continue;
+            }
+
+            if ($tag === 24) {
+                \Protobuf\WireFormat::assertWireType($wire, 5);
+
+                $this->dev_polestar = $reader->readVarint($stream);
+
+                continue;
+            }
+
+            if ($tag === 25) {
+                \Protobuf\WireFormat::assertWireType($wire, 5);
+
+                $this->dev_blyott = $reader->readVarint($stream);
+
+                continue;
+            }
+
+            if ($tag === 26) {
+                \Protobuf\WireFormat::assertWireType($wire, 5);
+
+                $this->dev_diract = $reader->readVarint($stream);
+
+                continue;
+            }
+
+            if ($tag === 27) {
+                \Protobuf\WireFormat::assertWireType($wire, 5);
+
+                $this->dev_gwahygiene = $reader->readVarint($stream);
+
+                continue;
+            }
+
             $extensions = $context->getExtensionRegistry();
             $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
@@ -1424,6 +1830,41 @@ class DeviceCount extends \Protobuf\AbstractMessage
             $size += $calculator->computeVarintSize($this->dev_sBeacon);
         }
 
+        if ($this->dev_onity !== null) {
+            $size += 2;
+            $size += $calculator->computeVarintSize($this->dev_onity);
+        }
+
+        if ($this->dev_minew !== null) {
+            $size += 2;
+            $size += $calculator->computeVarintSize($this->dev_minew);
+        }
+
+        if ($this->dev_google !== null) {
+            $size += 2;
+            $size += $calculator->computeVarintSize($this->dev_google);
+        }
+
+        if ($this->dev_polestar !== null) {
+            $size += 2;
+            $size += $calculator->computeVarintSize($this->dev_polestar);
+        }
+
+        if ($this->dev_blyott !== null) {
+            $size += 2;
+            $size += $calculator->computeVarintSize($this->dev_blyott);
+        }
+
+        if ($this->dev_diract !== null) {
+            $size += 2;
+            $size += $calculator->computeVarintSize($this->dev_diract);
+        }
+
+        if ($this->dev_gwahygiene !== null) {
+            $size += 2;
+            $size += $calculator->computeVarintSize($this->dev_gwahygiene);
+        }
+
         if ($this->extensions !== null) {
             $size += $this->extensions->serializedSize($context);
         }
@@ -1456,6 +1897,13 @@ class DeviceCount extends \Protobuf\AbstractMessage
         $this->dev_wifiUnassocSta = null;
         $this->dev_mysphera = null;
         $this->dev_sBeacon = null;
+        $this->dev_onity = null;
+        $this->dev_minew = null;
+        $this->dev_google = null;
+        $this->dev_polestar = null;
+        $this->dev_blyott = null;
+        $this->dev_diract = null;
+        $this->dev_gwahygiene = null;
     }
 
     /**
@@ -1487,6 +1935,13 @@ class DeviceCount extends \Protobuf\AbstractMessage
         $this->dev_wifiUnassocSta = ($message->dev_wifiUnassocSta !== null) ? $message->dev_wifiUnassocSta : $this->dev_wifiUnassocSta;
         $this->dev_mysphera = ($message->dev_mysphera !== null) ? $message->dev_mysphera : $this->dev_mysphera;
         $this->dev_sBeacon = ($message->dev_sBeacon !== null) ? $message->dev_sBeacon : $this->dev_sBeacon;
+        $this->dev_onity = ($message->dev_onity !== null) ? $message->dev_onity : $this->dev_onity;
+        $this->dev_minew = ($message->dev_minew !== null) ? $message->dev_minew : $this->dev_minew;
+        $this->dev_google = ($message->dev_google !== null) ? $message->dev_google : $this->dev_google;
+        $this->dev_polestar = ($message->dev_polestar !== null) ? $message->dev_polestar : $this->dev_polestar;
+        $this->dev_blyott = ($message->dev_blyott !== null) ? $message->dev_blyott : $this->dev_blyott;
+        $this->dev_diract = ($message->dev_diract !== null) ? $message->dev_diract : $this->dev_diract;
+        $this->dev_gwahygiene = ($message->dev_gwahygiene !== null) ? $message->dev_gwahygiene : $this->dev_gwahygiene;
     }
 
 

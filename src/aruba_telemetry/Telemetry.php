@@ -88,6 +88,27 @@ class Telemetry extends \Protobuf\AbstractMessage
     protected $status = null;
 
     /**
+     * zigbee optional message = 10
+     *
+     * @var \aruba_telemetry\NbZbMsg
+     */
+    protected $zigbee = null;
+
+    /**
+     * nbSData repeated message = 11
+     *
+     * @var \Protobuf\Collection<\aruba_telemetry\NbSerialData>
+     */
+    protected $nbSData = null;
+
+    /**
+     * apHealth optional message = 12
+     *
+     * @var \aruba_telemetry\ApHealthUpdate
+     */
+    protected $apHealth = null;
+
+    /**
      * Check if 'meta' has a value
      *
      * @return bool
@@ -428,6 +449,110 @@ class Telemetry extends \Protobuf\AbstractMessage
     }
 
     /**
+     * Check if 'zigbee' has a value
+     *
+     * @return bool
+     */
+    public function hasZigbee()
+    {
+        return $this->zigbee !== null;
+    }
+
+    /**
+     * Get 'zigbee' value
+     *
+     * @return \aruba_telemetry\NbZbMsg
+     */
+    public function getZigbee()
+    {
+        return $this->zigbee;
+    }
+
+    /**
+     * Set 'zigbee' value
+     *
+     * @param \aruba_telemetry\NbZbMsg $value
+     */
+    public function setZigbee(\aruba_telemetry\NbZbMsg $value = null)
+    {
+        $this->zigbee = $value;
+    }
+
+    /**
+     * Check if 'nbSData' has a value
+     *
+     * @return bool
+     */
+    public function hasNbSDataList()
+    {
+        return $this->nbSData !== null;
+    }
+
+    /**
+     * Get 'nbSData' value
+     *
+     * @return \Protobuf\Collection<\aruba_telemetry\NbSerialData>
+     */
+    public function getNbSDataList()
+    {
+        return $this->nbSData;
+    }
+
+    /**
+     * Set 'nbSData' value
+     *
+     * @param \Protobuf\Collection<\aruba_telemetry\NbSerialData> $value
+     */
+    public function setNbSDataList(\Protobuf\Collection $value = null)
+    {
+        $this->nbSData = $value;
+    }
+
+    /**
+     * Add a new element to 'nbSData'
+     *
+     * @param \aruba_telemetry\NbSerialData $value
+     */
+    public function addNbSData(\aruba_telemetry\NbSerialData $value)
+    {
+        if ($this->nbSData === null) {
+            $this->nbSData = new \Protobuf\MessageCollection();
+        }
+
+        $this->nbSData->add($value);
+    }
+
+    /**
+     * Check if 'apHealth' has a value
+     *
+     * @return bool
+     */
+    public function hasApHealth()
+    {
+        return $this->apHealth !== null;
+    }
+
+    /**
+     * Get 'apHealth' value
+     *
+     * @return \aruba_telemetry\ApHealthUpdate
+     */
+    public function getApHealth()
+    {
+        return $this->apHealth;
+    }
+
+    /**
+     * Set 'apHealth' value
+     *
+     * @param \aruba_telemetry\ApHealthUpdate $value
+     */
+    public function setApHealth(\aruba_telemetry\ApHealthUpdate $value = null)
+    {
+        $this->apHealth = $value;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function extensions()
@@ -476,13 +601,18 @@ class Telemetry extends \Protobuf\AbstractMessage
             'bleData' => [],
             'wifiData' => [],
             'devCount' => null,
-            'status' => null
+            'status' => null,
+            'zigbee' => null,
+            'nbSData' => [],
+            'apHealth' => null
         ], $values);
 
         $message->setMeta($values['meta']);
         $message->setReporter($values['reporter']);
         $message->setDevCount($values['devCount']);
         $message->setStatus($values['status']);
+        $message->setZigbee($values['zigbee']);
+        $message->setApHealth($values['apHealth']);
 
         foreach ($values['reported'] as $item) {
             $message->addReported($item);
@@ -502,6 +632,10 @@ class Telemetry extends \Protobuf\AbstractMessage
 
         foreach ($values['wifiData'] as $item) {
             $message->addWifiData($item);
+        }
+
+        foreach ($values['nbSData'] as $item) {
+            $message->addNbSData($item);
         }
 
         return $message;
@@ -577,6 +711,27 @@ class Telemetry extends \Protobuf\AbstractMessage
                     'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
                     'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
                     'type_name' => '.aruba_telemetry.Status'
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 10,
+                    'name' => 'zigbee',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
+                    'type_name' => '.aruba_telemetry.NbZbMsg'
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 11,
+                    'name' => 'nbSData',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_REPEATED(),
+                    'type_name' => '.aruba_telemetry.NbSerialData'
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 12,
+                    'name' => 'apHealth',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
+                    'type_name' => '.aruba_telemetry.ApHealthUpdate'
                 ]),
             ],
         ]);
@@ -676,6 +831,26 @@ class Telemetry extends \Protobuf\AbstractMessage
             $writer->writeVarint($stream, 74);
             $writer->writeVarint($stream, $this->status->serializedSize($sizeContext));
             $this->status->writeTo($context);
+        }
+
+        if ($this->zigbee !== null) {
+            $writer->writeVarint($stream, 82);
+            $writer->writeVarint($stream, $this->zigbee->serializedSize($sizeContext));
+            $this->zigbee->writeTo($context);
+        }
+
+        if ($this->nbSData !== null) {
+            foreach ($this->nbSData as $val) {
+                $writer->writeVarint($stream, 90);
+                $writer->writeVarint($stream, $val->serializedSize($sizeContext));
+                $val->writeTo($context);
+            }
+        }
+
+        if ($this->apHealth !== null) {
+            $writer->writeVarint($stream, 98);
+            $writer->writeVarint($stream, $this->apHealth->serializedSize($sizeContext));
+            $this->apHealth->writeTo($context);
         }
 
         if ($this->extensions !== null) {
@@ -867,6 +1042,55 @@ class Telemetry extends \Protobuf\AbstractMessage
                 continue;
             }
 
+            if ($tag === 10) {
+                \Protobuf\WireFormat::assertWireType($wire, 11);
+
+                $innerSize    = $reader->readVarint($stream);
+                $innerMessage = new \aruba_telemetry\NbZbMsg();
+
+                $this->zigbee = $innerMessage;
+
+                $context->setLength($innerSize);
+                $innerMessage->readFrom($context);
+                $context->setLength($length);
+
+                continue;
+            }
+
+            if ($tag === 11) {
+                \Protobuf\WireFormat::assertWireType($wire, 11);
+
+                $innerSize    = $reader->readVarint($stream);
+                $innerMessage = new \aruba_telemetry\NbSerialData();
+
+                if ($this->nbSData === null) {
+                    $this->nbSData = new \Protobuf\MessageCollection();
+                }
+
+                $this->nbSData->add($innerMessage);
+
+                $context->setLength($innerSize);
+                $innerMessage->readFrom($context);
+                $context->setLength($length);
+
+                continue;
+            }
+
+            if ($tag === 12) {
+                \Protobuf\WireFormat::assertWireType($wire, 11);
+
+                $innerSize    = $reader->readVarint($stream);
+                $innerMessage = new \aruba_telemetry\ApHealthUpdate();
+
+                $this->apHealth = $innerMessage;
+
+                $context->setLength($innerSize);
+                $innerMessage->readFrom($context);
+                $context->setLength($length);
+
+                continue;
+            }
+
             $extensions = $context->getExtensionRegistry();
             $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
@@ -978,6 +1202,32 @@ class Telemetry extends \Protobuf\AbstractMessage
             $size += $calculator->computeVarintSize($innerSize);
         }
 
+        if ($this->zigbee !== null) {
+            $innerSize = $this->zigbee->serializedSize($context);
+
+            $size += 1;
+            $size += $innerSize;
+            $size += $calculator->computeVarintSize($innerSize);
+        }
+
+        if ($this->nbSData !== null) {
+            foreach ($this->nbSData as $val) {
+                $innerSize = $val->serializedSize($context);
+
+                $size += 1;
+                $size += $innerSize;
+                $size += $calculator->computeVarintSize($innerSize);
+            }
+        }
+
+        if ($this->apHealth !== null) {
+            $innerSize = $this->apHealth->serializedSize($context);
+
+            $size += 1;
+            $size += $innerSize;
+            $size += $calculator->computeVarintSize($innerSize);
+        }
+
         if ($this->extensions !== null) {
             $size += $this->extensions->serializedSize($context);
         }
@@ -999,6 +1249,9 @@ class Telemetry extends \Protobuf\AbstractMessage
         $this->wifiData = null;
         $this->devCount = null;
         $this->status = null;
+        $this->zigbee = null;
+        $this->nbSData = null;
+        $this->apHealth = null;
     }
 
     /**
@@ -1019,6 +1272,9 @@ class Telemetry extends \Protobuf\AbstractMessage
         $this->wifiData = ($message->wifiData !== null) ? $message->wifiData : $this->wifiData;
         $this->devCount = ($message->devCount !== null) ? $message->devCount : $this->devCount;
         $this->status = ($message->status !== null) ? $message->status : $this->status;
+        $this->zigbee = ($message->zigbee !== null) ? $message->zigbee : $this->zigbee;
+        $this->nbSData = ($message->nbSData !== null) ? $message->nbSData : $this->nbSData;
+        $this->apHealth = ($message->apHealth !== null) ? $message->apHealth : $this->apHealth;
     }
 
 

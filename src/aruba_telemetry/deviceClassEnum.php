@@ -115,6 +115,61 @@ class deviceClassEnum extends \Protobuf\Enum
     const sBeacon_VALUE = 19;
 
     /**
+     * wiliot = 20
+     */
+    const wiliot_VALUE = 20;
+
+    /**
+     * ZSD = 21
+     */
+    const ZSD_VALUE = 21;
+
+    /**
+     * serialdata = 22
+     */
+    const serialdata_VALUE = 22;
+
+    /**
+     * exposureNotification = 23
+     */
+    const exposureNotification_VALUE = 23;
+
+    /**
+     * onity = 24
+     */
+    const onity_VALUE = 24;
+
+    /**
+     * minew = 25
+     */
+    const minew_VALUE = 25;
+
+    /**
+     * google = 26
+     */
+    const google_VALUE = 26;
+
+    /**
+     * polestar = 27
+     */
+    const polestar_VALUE = 27;
+
+    /**
+     * blyott = 28
+     */
+    const blyott_VALUE = 28;
+
+    /**
+     * diract = 29
+     */
+    const diract_VALUE = 29;
+
+    /**
+     * gwahygiene = 30
+     */
+    const gwahygiene_VALUE = 30;
+
+    /**
      * @var \aruba_telemetry\deviceClassEnum
      */
     protected static $unclassified = null;
@@ -213,6 +268,61 @@ class deviceClassEnum extends \Protobuf\Enum
      * @var \aruba_telemetry\deviceClassEnum
      */
     protected static $sBeacon = null;
+
+    /**
+     * @var \aruba_telemetry\deviceClassEnum
+     */
+    protected static $wiliot = null;
+
+    /**
+     * @var \aruba_telemetry\deviceClassEnum
+     */
+    protected static $ZSD = null;
+
+    /**
+     * @var \aruba_telemetry\deviceClassEnum
+     */
+    protected static $serialdata = null;
+
+    /**
+     * @var \aruba_telemetry\deviceClassEnum
+     */
+    protected static $exposureNotification = null;
+
+    /**
+     * @var \aruba_telemetry\deviceClassEnum
+     */
+    protected static $onity = null;
+
+    /**
+     * @var \aruba_telemetry\deviceClassEnum
+     */
+    protected static $minew = null;
+
+    /**
+     * @var \aruba_telemetry\deviceClassEnum
+     */
+    protected static $google = null;
+
+    /**
+     * @var \aruba_telemetry\deviceClassEnum
+     */
+    protected static $polestar = null;
+
+    /**
+     * @var \aruba_telemetry\deviceClassEnum
+     */
+    protected static $blyott = null;
+
+    /**
+     * @var \aruba_telemetry\deviceClassEnum
+     */
+    protected static $diract = null;
+
+    /**
+     * @var \aruba_telemetry\deviceClassEnum
+     */
+    protected static $gwahygiene = null;
 
     /**
      * @return \aruba_telemetry\deviceClassEnum
@@ -455,6 +565,138 @@ class deviceClassEnum extends \Protobuf\Enum
     }
 
     /**
+     * @return \aruba_telemetry\deviceClassEnum
+     */
+    public static function wiliot()
+    {
+        if (self::$wiliot !== null) {
+            return self::$wiliot;
+        }
+
+        return self::$wiliot = new self('wiliot', self::wiliot_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\deviceClassEnum
+     */
+    public static function ZSD()
+    {
+        if (self::$ZSD !== null) {
+            return self::$ZSD;
+        }
+
+        return self::$ZSD = new self('ZSD', self::ZSD_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\deviceClassEnum
+     */
+    public static function serialdata()
+    {
+        if (self::$serialdata !== null) {
+            return self::$serialdata;
+        }
+
+        return self::$serialdata = new self('serialdata', self::serialdata_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\deviceClassEnum
+     */
+    public static function exposureNotification()
+    {
+        if (self::$exposureNotification !== null) {
+            return self::$exposureNotification;
+        }
+
+        return self::$exposureNotification = new self('exposureNotification', self::exposureNotification_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\deviceClassEnum
+     */
+    public static function onity()
+    {
+        if (self::$onity !== null) {
+            return self::$onity;
+        }
+
+        return self::$onity = new self('onity', self::onity_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\deviceClassEnum
+     */
+    public static function minew()
+    {
+        if (self::$minew !== null) {
+            return self::$minew;
+        }
+
+        return self::$minew = new self('minew', self::minew_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\deviceClassEnum
+     */
+    public static function google()
+    {
+        if (self::$google !== null) {
+            return self::$google;
+        }
+
+        return self::$google = new self('google', self::google_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\deviceClassEnum
+     */
+    public static function polestar()
+    {
+        if (self::$polestar !== null) {
+            return self::$polestar;
+        }
+
+        return self::$polestar = new self('polestar', self::polestar_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\deviceClassEnum
+     */
+    public static function blyott()
+    {
+        if (self::$blyott !== null) {
+            return self::$blyott;
+        }
+
+        return self::$blyott = new self('blyott', self::blyott_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\deviceClassEnum
+     */
+    public static function diract()
+    {
+        if (self::$diract !== null) {
+            return self::$diract;
+        }
+
+        return self::$diract = new self('diract', self::diract_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\deviceClassEnum
+     */
+    public static function gwahygiene()
+    {
+        if (self::$gwahygiene !== null) {
+            return self::$gwahygiene;
+        }
+
+        return self::$gwahygiene = new self('gwahygiene', self::gwahygiene_VALUE);
+    }
+
+    /**
      * @param int $value
      * @return \aruba_telemetry\deviceClassEnum
      */
@@ -481,6 +723,17 @@ class deviceClassEnum extends \Protobuf\Enum
             case 17: return self::wifiUnassocSta();
             case 18: return self::mysphera();
             case 19: return self::sBeacon();
+            case 20: return self::wiliot();
+            case 21: return self::ZSD();
+            case 22: return self::serialdata();
+            case 23: return self::exposureNotification();
+            case 24: return self::onity();
+            case 25: return self::minew();
+            case 26: return self::google();
+            case 27: return self::polestar();
+            case 28: return self::blyott();
+            case 29: return self::diract();
+            case 30: return self::gwahygiene();
             default: return null;
         }
     }

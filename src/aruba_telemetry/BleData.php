@@ -53,6 +53,13 @@ class BleData extends \Protobuf\AbstractMessage
     protected $rssi = null;
 
     /**
+     * addrType optional enum = 5
+     *
+     * @var \aruba_telemetry\MacAddrType
+     */
+    protected $addrType = null;
+
+    /**
      * Check if 'mac' has a value
      *
      * @return bool
@@ -181,6 +188,36 @@ class BleData extends \Protobuf\AbstractMessage
     }
 
     /**
+     * Check if 'addrType' has a value
+     *
+     * @return bool
+     */
+    public function hasAddrType()
+    {
+        return $this->addrType !== null;
+    }
+
+    /**
+     * Get 'addrType' value
+     *
+     * @return \aruba_telemetry\MacAddrType
+     */
+    public function getAddrType()
+    {
+        return $this->addrType;
+    }
+
+    /**
+     * Set 'addrType' value
+     *
+     * @param \aruba_telemetry\MacAddrType $value
+     */
+    public function setAddrType(\aruba_telemetry\MacAddrType $value = null)
+    {
+        $this->addrType = $value;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function extensions()
@@ -218,13 +255,15 @@ class BleData extends \Protobuf\AbstractMessage
             'mac' => null,
             'frameType' => null,
             'data' => null,
-            'rssi' => null
+            'rssi' => null,
+            'addrType' => null
         ], $values);
 
         $message->setMac($values['mac']);
         $message->setFrameType($values['frameType']);
         $message->setData($values['data']);
         $message->setRssi($values['rssi']);
+        $message->setAddrType($values['addrType']);
 
         return $message;
     }
@@ -261,6 +300,13 @@ class BleData extends \Protobuf\AbstractMessage
                     'name' => 'rssi',
                     'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_SINT32(),
                     'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 5,
+                    'name' => 'addrType',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_ENUM(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
+                    'type_name' => '.aruba_telemetry.MacAddrType'
                 ]),
             ],
         ]);
@@ -308,6 +354,11 @@ class BleData extends \Protobuf\AbstractMessage
         if ($this->rssi !== null) {
             $writer->writeVarint($stream, 32);
             $writer->writeZigzag32($stream, $this->rssi);
+        }
+
+        if ($this->addrType !== null) {
+            $writer->writeVarint($stream, 40);
+            $writer->writeVarint($stream, $this->addrType->value());
         }
 
         if ($this->extensions !== null) {
@@ -376,6 +427,14 @@ class BleData extends \Protobuf\AbstractMessage
                 continue;
             }
 
+            if ($tag === 5) {
+                \Protobuf\WireFormat::assertWireType($wire, 14);
+
+                $this->addrType = \aruba_telemetry\MacAddrType::valueOf($reader->readVarint($stream));
+
+                continue;
+            }
+
             $extensions = $context->getExtensionRegistry();
             $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
@@ -425,6 +484,11 @@ class BleData extends \Protobuf\AbstractMessage
             $size += $calculator->computeZigzag32Size($this->rssi);
         }
 
+        if ($this->addrType !== null) {
+            $size += 1;
+            $size += $calculator->computeVarintSize($this->addrType->value());
+        }
+
         if ($this->extensions !== null) {
             $size += $this->extensions->serializedSize($context);
         }
@@ -441,6 +505,7 @@ class BleData extends \Protobuf\AbstractMessage
         $this->frameType = null;
         $this->data = null;
         $this->rssi = null;
+        $this->addrType = null;
     }
 
     /**
@@ -456,6 +521,7 @@ class BleData extends \Protobuf\AbstractMessage
         $this->frameType = ($message->frameType !== null) ? $message->frameType : $this->frameType;
         $this->data = ($message->data !== null) ? $message->data : $this->data;
         $this->rssi = ($message->rssi !== null) ? $message->rssi : $this->rssi;
+        $this->addrType = ($message->addrType !== null) ? $message->addrType : $this->addrType;
     }
 
 

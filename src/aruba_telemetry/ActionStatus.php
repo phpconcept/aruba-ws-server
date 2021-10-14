@@ -90,6 +90,11 @@ class ActionStatus extends \Protobuf\Enum
     const gattError_VALUE = 14;
 
     /**
+     * encryptionFailed = 15
+     */
+    const encryptionFailed_VALUE = 15;
+
+    /**
      * @var \aruba_telemetry\ActionStatus
      */
     protected static $failureGeneric = null;
@@ -163,6 +168,11 @@ class ActionStatus extends \Protobuf\Enum
      * @var \aruba_telemetry\ActionStatus
      */
     protected static $gattError = null;
+
+    /**
+     * @var \aruba_telemetry\ActionStatus
+     */
+    protected static $encryptionFailed = null;
 
     /**
      * @return \aruba_telemetry\ActionStatus
@@ -345,6 +355,18 @@ class ActionStatus extends \Protobuf\Enum
     }
 
     /**
+     * @return \aruba_telemetry\ActionStatus
+     */
+    public static function encryptionFailed()
+    {
+        if (self::$encryptionFailed !== null) {
+            return self::$encryptionFailed;
+        }
+
+        return self::$encryptionFailed = new self('encryptionFailed', self::encryptionFailed_VALUE);
+    }
+
+    /**
      * @param int $value
      * @return \aruba_telemetry\ActionStatus
      */
@@ -366,6 +388,7 @@ class ActionStatus extends \Protobuf\Enum
             case 12: return self::characteristicNotFound();
             case 13: return self::invalidRequest();
             case 14: return self::gattError();
+            case 15: return self::encryptionFailed();
             default: return null;
         }
     }

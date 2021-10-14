@@ -46,6 +46,13 @@ class Status extends \Protobuf\AbstractMessage
     protected $statusString = null;
 
     /**
+     * connUpdate optional message = 4
+     *
+     * @var \aruba_telemetry\ConnUpdate
+     */
+    protected $connUpdate = null;
+
+    /**
      * Check if 'deviceMac' has a value
      *
      * @return bool
@@ -140,6 +147,36 @@ class Status extends \Protobuf\AbstractMessage
     }
 
     /**
+     * Check if 'connUpdate' has a value
+     *
+     * @return bool
+     */
+    public function hasConnUpdate()
+    {
+        return $this->connUpdate !== null;
+    }
+
+    /**
+     * Get 'connUpdate' value
+     *
+     * @return \aruba_telemetry\ConnUpdate
+     */
+    public function getConnUpdate()
+    {
+        return $this->connUpdate;
+    }
+
+    /**
+     * Set 'connUpdate' value
+     *
+     * @param \aruba_telemetry\ConnUpdate $value
+     */
+    public function setConnUpdate(\aruba_telemetry\ConnUpdate $value = null)
+    {
+        $this->connUpdate = $value;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function extensions()
@@ -176,12 +213,14 @@ class Status extends \Protobuf\AbstractMessage
         $values  = array_merge([
             'deviceMac' => null,
             'status' => null,
-            'statusString' => null
+            'statusString' => null,
+            'connUpdate' => null
         ], $values);
 
         $message->setDeviceMac($values['deviceMac']);
         $message->setStatus($values['status']);
         $message->setStatusString($values['statusString']);
+        $message->setConnUpdate($values['connUpdate']);
 
         return $message;
     }
@@ -212,6 +251,13 @@ class Status extends \Protobuf\AbstractMessage
                     'name' => 'statusString',
                     'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_STRING(),
                     'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 4,
+                    'name' => 'connUpdate',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
+                    'type_name' => '.aruba_telemetry.ConnUpdate'
                 ]),
             ],
         ]);
@@ -254,6 +300,12 @@ class Status extends \Protobuf\AbstractMessage
         if ($this->statusString !== null) {
             $writer->writeVarint($stream, 26);
             $writer->writeString($stream, $this->statusString);
+        }
+
+        if ($this->connUpdate !== null) {
+            $writer->writeVarint($stream, 34);
+            $writer->writeVarint($stream, $this->connUpdate->serializedSize($sizeContext));
+            $this->connUpdate->writeTo($context);
         }
 
         if ($this->extensions !== null) {
@@ -314,6 +366,21 @@ class Status extends \Protobuf\AbstractMessage
                 continue;
             }
 
+            if ($tag === 4) {
+                \Protobuf\WireFormat::assertWireType($wire, 11);
+
+                $innerSize    = $reader->readVarint($stream);
+                $innerMessage = new \aruba_telemetry\ConnUpdate();
+
+                $this->connUpdate = $innerMessage;
+
+                $context->setLength($innerSize);
+                $innerMessage->readFrom($context);
+                $context->setLength($length);
+
+                continue;
+            }
+
             $extensions = $context->getExtensionRegistry();
             $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
@@ -358,6 +425,14 @@ class Status extends \Protobuf\AbstractMessage
             $size += $calculator->computeStringSize($this->statusString);
         }
 
+        if ($this->connUpdate !== null) {
+            $innerSize = $this->connUpdate->serializedSize($context);
+
+            $size += 1;
+            $size += $innerSize;
+            $size += $calculator->computeVarintSize($innerSize);
+        }
+
         if ($this->extensions !== null) {
             $size += $this->extensions->serializedSize($context);
         }
@@ -373,6 +448,7 @@ class Status extends \Protobuf\AbstractMessage
         $this->deviceMac = null;
         $this->status = null;
         $this->statusString = null;
+        $this->connUpdate = null;
     }
 
     /**
@@ -387,6 +463,7 @@ class Status extends \Protobuf\AbstractMessage
         $this->deviceMac = ($message->deviceMac !== null) ? $message->deviceMac : $this->deviceMac;
         $this->status = ($message->status !== null) ? $message->status : $this->status;
         $this->statusString = ($message->statusString !== null) ? $message->statusString : $this->statusString;
+        $this->connUpdate = ($message->connUpdate !== null) ? $message->connUpdate : $this->connUpdate;
     }
 
 

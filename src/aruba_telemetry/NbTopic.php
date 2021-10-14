@@ -50,6 +50,21 @@ class NbTopic extends \Protobuf\Enum
     const status_VALUE = 6;
 
     /**
+     * zbNbData = 7
+     */
+    const zbNbData_VALUE = 7;
+
+    /**
+     * serialDataNb = 8
+     */
+    const serialDataNb_VALUE = 8;
+
+    /**
+     * apHealthUpdate = 9
+     */
+    const apHealthUpdate_VALUE = 9;
+
+    /**
      * @var \aruba_telemetry\NbTopic
      */
     protected static $telemetry = null;
@@ -83,6 +98,21 @@ class NbTopic extends \Protobuf\Enum
      * @var \aruba_telemetry\NbTopic
      */
     protected static $status = null;
+
+    /**
+     * @var \aruba_telemetry\NbTopic
+     */
+    protected static $zbNbData = null;
+
+    /**
+     * @var \aruba_telemetry\NbTopic
+     */
+    protected static $serialDataNb = null;
+
+    /**
+     * @var \aruba_telemetry\NbTopic
+     */
+    protected static $apHealthUpdate = null;
 
     /**
      * @return \aruba_telemetry\NbTopic
@@ -169,6 +199,42 @@ class NbTopic extends \Protobuf\Enum
     }
 
     /**
+     * @return \aruba_telemetry\NbTopic
+     */
+    public static function zbNbData()
+    {
+        if (self::$zbNbData !== null) {
+            return self::$zbNbData;
+        }
+
+        return self::$zbNbData = new self('zbNbData', self::zbNbData_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\NbTopic
+     */
+    public static function serialDataNb()
+    {
+        if (self::$serialDataNb !== null) {
+            return self::$serialDataNb;
+        }
+
+        return self::$serialDataNb = new self('serialDataNb', self::serialDataNb_VALUE);
+    }
+
+    /**
+     * @return \aruba_telemetry\NbTopic
+     */
+    public static function apHealthUpdate()
+    {
+        if (self::$apHealthUpdate !== null) {
+            return self::$apHealthUpdate;
+        }
+
+        return self::$apHealthUpdate = new self('apHealthUpdate', self::apHealthUpdate_VALUE);
+    }
+
+    /**
      * @param int $value
      * @return \aruba_telemetry\NbTopic
      */
@@ -182,6 +248,9 @@ class NbTopic extends \Protobuf\Enum
             case 4: return self::wifiData();
             case 5: return self::deviceCount();
             case 6: return self::status();
+            case 7: return self::zbNbData();
+            case 8: return self::serialDataNb();
+            case 9: return self::apHealthUpdate();
             default: return null;
         }
     }

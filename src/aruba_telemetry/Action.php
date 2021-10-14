@@ -74,6 +74,20 @@ class Action extends \Protobuf\AbstractMessage
     protected $value = null;
 
     /**
+     * authentication optional message = 8
+     *
+     * @var \aruba_telemetry\Authentication
+     */
+    protected $authentication = null;
+
+    /**
+     * bondingKey optional message = 9
+     *
+     * @var \aruba_telemetry\BleBondingKey
+     */
+    protected $bondingKey = null;
+
+    /**
      * Check if 'actionId' has a value
      *
      * @return bool
@@ -300,6 +314,66 @@ class Action extends \Protobuf\AbstractMessage
     }
 
     /**
+     * Check if 'authentication' has a value
+     *
+     * @return bool
+     */
+    public function hasAuthentication()
+    {
+        return $this->authentication !== null;
+    }
+
+    /**
+     * Get 'authentication' value
+     *
+     * @return \aruba_telemetry\Authentication
+     */
+    public function getAuthentication()
+    {
+        return $this->authentication;
+    }
+
+    /**
+     * Set 'authentication' value
+     *
+     * @param \aruba_telemetry\Authentication $value
+     */
+    public function setAuthentication(\aruba_telemetry\Authentication $value = null)
+    {
+        $this->authentication = $value;
+    }
+
+    /**
+     * Check if 'bondingKey' has a value
+     *
+     * @return bool
+     */
+    public function hasBondingKey()
+    {
+        return $this->bondingKey !== null;
+    }
+
+    /**
+     * Get 'bondingKey' value
+     *
+     * @return \aruba_telemetry\BleBondingKey
+     */
+    public function getBondingKey()
+    {
+        return $this->bondingKey;
+    }
+
+    /**
+     * Set 'bondingKey' value
+     *
+     * @param \aruba_telemetry\BleBondingKey $value
+     */
+    public function setBondingKey(\aruba_telemetry\BleBondingKey $value = null)
+    {
+        $this->bondingKey = $value;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function extensions()
@@ -340,7 +414,9 @@ class Action extends \Protobuf\AbstractMessage
             'serviceUuid' => null,
             'characteristicUuid' => null,
             'timeOut' => null,
-            'value' => null
+            'value' => null,
+            'authentication' => null,
+            'bondingKey' => null
         ], $values);
 
         $message->setActionId($values['actionId']);
@@ -350,6 +426,8 @@ class Action extends \Protobuf\AbstractMessage
         $message->setCharacteristicUuid($values['characteristicUuid']);
         $message->setTimeOut($values['timeOut']);
         $message->setValue($values['value']);
+        $message->setAuthentication($values['authentication']);
+        $message->setBondingKey($values['bondingKey']);
 
         return $message;
     }
@@ -404,6 +482,20 @@ class Action extends \Protobuf\AbstractMessage
                     'name' => 'value',
                     'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_BYTES(),
                     'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 8,
+                    'name' => 'authentication',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
+                    'type_name' => '.aruba_telemetry.Authentication'
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 9,
+                    'name' => 'bondingKey',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
+                    'type_name' => '.aruba_telemetry.BleBondingKey'
                 ]),
             ],
         ]);
@@ -466,6 +558,18 @@ class Action extends \Protobuf\AbstractMessage
         if ($this->value !== null) {
             $writer->writeVarint($stream, 58);
             $writer->writeByteStream($stream, $this->value);
+        }
+
+        if ($this->authentication !== null) {
+            $writer->writeVarint($stream, 66);
+            $writer->writeVarint($stream, $this->authentication->serializedSize($sizeContext));
+            $this->authentication->writeTo($context);
+        }
+
+        if ($this->bondingKey !== null) {
+            $writer->writeVarint($stream, 74);
+            $writer->writeVarint($stream, $this->bondingKey->serializedSize($sizeContext));
+            $this->bondingKey->writeTo($context);
         }
 
         if ($this->extensions !== null) {
@@ -558,6 +662,36 @@ class Action extends \Protobuf\AbstractMessage
                 continue;
             }
 
+            if ($tag === 8) {
+                \Protobuf\WireFormat::assertWireType($wire, 11);
+
+                $innerSize    = $reader->readVarint($stream);
+                $innerMessage = new \aruba_telemetry\Authentication();
+
+                $this->authentication = $innerMessage;
+
+                $context->setLength($innerSize);
+                $innerMessage->readFrom($context);
+                $context->setLength($length);
+
+                continue;
+            }
+
+            if ($tag === 9) {
+                \Protobuf\WireFormat::assertWireType($wire, 11);
+
+                $innerSize    = $reader->readVarint($stream);
+                $innerMessage = new \aruba_telemetry\BleBondingKey();
+
+                $this->bondingKey = $innerMessage;
+
+                $context->setLength($innerSize);
+                $innerMessage->readFrom($context);
+                $context->setLength($length);
+
+                continue;
+            }
+
             $extensions = $context->getExtensionRegistry();
             $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
@@ -622,6 +756,22 @@ class Action extends \Protobuf\AbstractMessage
             $size += $calculator->computeByteStreamSize($this->value);
         }
 
+        if ($this->authentication !== null) {
+            $innerSize = $this->authentication->serializedSize($context);
+
+            $size += 1;
+            $size += $innerSize;
+            $size += $calculator->computeVarintSize($innerSize);
+        }
+
+        if ($this->bondingKey !== null) {
+            $innerSize = $this->bondingKey->serializedSize($context);
+
+            $size += 1;
+            $size += $innerSize;
+            $size += $calculator->computeVarintSize($innerSize);
+        }
+
         if ($this->extensions !== null) {
             $size += $this->extensions->serializedSize($context);
         }
@@ -641,6 +791,8 @@ class Action extends \Protobuf\AbstractMessage
         $this->characteristicUuid = null;
         $this->timeOut = null;
         $this->value = null;
+        $this->authentication = null;
+        $this->bondingKey = null;
     }
 
     /**
@@ -659,6 +811,8 @@ class Action extends \Protobuf\AbstractMessage
         $this->characteristicUuid = ($message->characteristicUuid !== null) ? $message->characteristicUuid : $this->characteristicUuid;
         $this->timeOut = ($message->timeOut !== null) ? $message->timeOut : $this->timeOut;
         $this->value = ($message->value !== null) ? $message->value : $this->value;
+        $this->authentication = ($message->authentication !== null) ? $message->authentication : $this->authentication;
+        $this->bondingKey = ($message->bondingKey !== null) ? $message->bondingKey : $this->bondingKey;
     }
 
 
