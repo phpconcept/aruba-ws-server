@@ -9,13 +9,47 @@ It supports today BLE objects.
 
 The Aruba Websocket Server (AWSS) was developed and tested on a Linux Debian 10 (Buster) with PHP 7.3. So you need to install it on a compatible linux system with installed PHP libraries.
 
-Download the full source code (from github) : 
-- aruba-ws-server.php file
-- awss/ folder
-- src/ folder
-- vendor/ folder
+#### Pre-requisit
 
-You can also use file "composer.json" to regenerate the vendor files if needed.
+The installation will use existing libraries and packages already available on internet. Key packages are:
+- Ratchet : A PHP library for asynchronously serving WebSockets (https://github.com/ratchetphp/Ratchet),
+- Protobuf : Protobuf for PHP is an implementation of Google's Protocol Buffers for the PHP language (https://github.com/protobuf-php/protobuf)
+
+The installation will also use development tools and frameworks, like “composer” (https://getcomposer.org/), which is a package installer for PHP libraries, and “protobuf-compiler” (https://packages.debian.org/en/jessie/protobuf-compiler) which will be used to generate the PHP classes from the protobuf description files. 
+
+#### Step by step install
+
+- Install Composer (if not already installed)
+
+```cli
+apt-get install composer
+```
+
+- Download the full source code (from github)
+- Unzip the content
+- Change folder name (if needed)
+- Move to the websocket folder
+
+```cli
+wget https://github.com/phpconcept/aruba-ws-server/archive/refs/heads/beta.zip
+unzip beta.zip
+mv aruba-ws-server-beta websocket
+```
+
+- use composer to download the additional libraries
+
+```cli
+composer install
+```
+
+- You should have an additional "vendor/" folder in your directory
+
+- Test your installation 
+
+```cli
+php aruba-ws-server.php -help
+```
+
 
 ### Starting Websocket Server
 
@@ -502,7 +536,7 @@ Using the right filtering will lower the load on the Websocket Server.
 
 ## Change Logs
 
-Release v1.0-dev (in-dev) :
+Release v1.0-beta (in-dev) :
 - Full update of the code from the initial websocket server
 - Add support for GATT protocol
 - Add support for API
@@ -523,9 +557,52 @@ As of Release v1.0, some known caveats are :
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  SOFTWARE.
 
+## Credits
 
-## Inside The Code
+This demo server is using public available libraries, and their dependencies:
+- ratchetphp/Ratchet : MIT License (https://github.com/ratchetphp/Ratchet/blob/master/LICENSE),
+- protobuf-php/protobuf : MIT License (https://github.com/protobuf-php/protobuf/blob/master/LICENSE)
 
-### Architecture
+
+## Under The Hood
+
+### Understanding Websocket Protocol for Aruba
+
+This section is a short explanation of how the websocket protocol is working, and how Aruba is using it.
+
+Aruba is following the RFC6455 (https://tools.ietf.org/html/rfc6455) for the definition of websocket dialog and use the protocol-buffers format (https://developers.google.com/protocol-buffers) to encode the transmitted frames.
+
+![Websocket Flow](doc/websocket_flow.png)
+
+The access point establish a TCP connection with the server. To perform an handshake, It sends an HTTP message with some mandatory field in the header (Upgrade, Connection and Sec-WebSocket-Key). The server must then answer with an HTTP response, including valid fields and a Sec-WebSocket-Accept key value calculated from the client one. This phase ends the handshake process between the two peers. TCP connection stay established, waiting for frames coming from either sides.
+
+RFC6455 define the format of the frames exchanged between the client and the server. Regular “ping” and “pong” frames are also exchanged between the peers, waiting for data frames.
+
+Data frames can be of various sizes, and large payloads can also be splitted on several frames.
+
+The Ratchet library is taking care of all TCP, Handshake, frame creation and parsing of the websocket protocol.
+
+In Aruba implementation, the payload transported in the websocket frames is in protocol-buffers (protobuf) binary format. In order to get access to the data, our demo server is using the PHP Protobuf library to decode/encode the Aruba Telemetry payloads.
+
+
+
+
+### Server Software Architecture
 
 ![Websocket Server Achitecture](doc/architecture.png)
+
+
+## References
+
+- Aruba IoT Basic Setup Guide :
+https://support.hpe.com/hpesc/public/docDisplay?docId=a00100701en_us
+- General information on Aruba IoT Solutions :
+https://www.arubanetworks.com/iot 
+- How to become an Aruba Technology Partner :
+https://www.arubanetworks.com/partners/programs 
+- WebSocket RFC6455 :
+https://tools.ietf.org/html/rfc6455 
+- Aruba Support Portal, for documentations, firmware downloads, Protocol-buffer description files, … :
+https://asp.arubanetworks.com 
+
+
