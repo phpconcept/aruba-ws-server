@@ -1,11 +1,11 @@
 # Aruba IoT Demonstration Websocket Server
 
-aruba-ws-server is a websocket server written in PHP which role is to test and demonstrate the IoT capabilities of Aruba Access Points.
-It supports today BLE objects.
+aruba-ws-server is a websocket server, written in PHP, to test and demonstrate the IoT capabilities of Aruba Access Points.
+Today it supports only the BLE capabilities of Aruba AP.
 
 ## Quick Start Guide
 
-### Installation
+### Install on Linux Debian
 
 The Aruba Websocket Server (AWSS) was developed and tested on a Linux Debian 10 (Buster) with PHP 7.3. So you need to install it on a compatible linux system with installed PHP libraries.
 
@@ -50,8 +50,7 @@ composer install
 php aruba-ws-server.php -help
 ```
 
-
-### Starting Websocket Server
+#### Starting Websocket Server
 
 To start the websocket server :
 
@@ -73,6 +72,120 @@ aruba-ws-server.php [-help] [-console_log] [-server_ip X.X.X.X] [-server_port XX
 -----
 ```
 
+### Install on Docker
+
+The Aruba Websocket Server (AWSS) can be used as a Docker container. The Docker image must be created before the server can be started.
+
+Docker must be installed on your system (see Docker documentation).
+
+
+#### Build the Docker Image for AWSS
+
+To build a Docker image, you need to have a "Dockerfile" which describes how to create the container image.
+
+The proposed Dockerfile is :
+
+```cli
+# ----- Based on Debian linux OS
+FROM debian:buster-slim
+
+# ----- Meta infos
+LABEL version="1.0" maintainer="Vincent Blavet <vincent@phpconcept.net>"
+
+# ----- Temp variables
+ARG APT_FLAGS="-q -y"
+ARG DOCUMENTROOT="/var/www/html"
+
+# ----- Default value for environment args
+ENV AWSS_ARGS="-console_log -api_key 123"
+
+# ----- Working folder
+WORKDIR  ${DOCUMENTROOT}
+
+# ----- Install Linux packages
+RUN apt-get update 
+RUN apt-get install ${APT_FLAGS} --no-install-recommends \
+    php composer wget unzip && \
+    rm -f ${DOCUMENTROOT}/index.html && \
+    apt-get autoclean -y && \ 
+    rm -rf /var/lib/apt/lists/* 
+
+# ----- Build variables
+ARG BRANCH_NAME="main"
+
+# ----- Download and install Aruba Websocket Server (from github branch)
+RUN wget https://github.com/phpconcept/aruba-ws-server/archive/refs/heads/${BRANCH_NAME}.zip && \
+    unzip ${BRANCH_NAME}.zip && \
+    rm -f ${BRANCH_NAME}.zip && \
+    mv aruba-ws-server-${BRANCH_NAME} websocket
+
+# ----- Install Ratchet and Protobuf PHP libraries
+RUN composer install -d ${DOCUMENTROOT}/websocket
+
+# ----- Working folder
+WORKDIR  ${DOCUMENTROOT}/websocket
+
+# ----- Expose TCP Port for wss
+EXPOSE 8081
+
+# ----- Start websocket server
+ENTRYPOINT php aruba-ws-server.php $AWSS_ARGS
+```
+
+This file can be downloaded in the folder "doc/install/install_docker/" of the github repository. 
+
+Put the Dockerfile (with the exact name of Dockerfile) in your working Docker directory.
+
+To launch the build of the Docker image for the "main" github branch, use the following comamnd :
+
+```cli
+docker build --build-arg BRANCH_NAME=main -t aruba_wss:main .
+```
+
+To launch the build of the Docker image for the "beta" github branch, use the following comamnd :
+
+```cli
+docker build --build-arg BRANCH_NAME=beta -t aruba_wss:beta .
+```
+
+As a quick summary, the Docker build will download a Docker image containing a light version of Debian Buster, will install 
+the needed packages (PHP, ...), will download the latest code from the github repository, will install the needed PHP libraries 
+(Ratchet, Protobuf, ...) and will launch the websocket server.
+ 
+#### Starting Websocket Server in Docker Container
+
+To start the websocket server in the Docker container, use the following command :
+
+```cli
+docker run -p 8081:8081 -e AWSS_ARGS="-console_log -api_key hello" --name awss aruba_wss:main
+```
+
+You can customize the arguments send to the server with the environment variable AWSS_ARGS, and select the image to use : aruba_wss:main or aruba_wss:beta.
+To change the listening TCP port change the mapping with argument -p 8081:8081.
+
+### Aruba Access Point Configuration
+
+Below is an example of an Aruba Access Point (IAP mode) configuration (AOS version 8.9) to have the IOT Gateway sending telemetry data to websocket server.
+
+Please notice that URI "/telemetry" is used for the endpointURL. For all other attributes of the transportProfile, please refer to Aruba documentation. The right configuration will improve the load on the websocket server.
+
+
+```cli
+iot transportProfile Test
+ endpointURL ws://<websocket_server_ip_address>:8081/telemetry
+ endpointType telemetry-websocket
+ payloadContent enocean-switches
+ payloadContent enocean-sensors
+ payloadContent unclassified
+ endpointToken 12346
+ transportInterval 30
+ macOuiFilter A4C138,E6FE37
+
+iot useTransportProfile Test
+```
+
+Above configuration will allow for Enocean BLE devices (sensors and switches), and for unclassified BLE devices which MAC address begins with A4:C1:38 or E6:FE:37.
+Using the right filtering will lower the load on the Websocket Server.
 
 ### AWSS Client
 
@@ -510,29 +623,6 @@ Response (sample) :
 
 ---
 
-### Aruba IOT Configuration Example
-
-Below is an example of an Aruba IAP configuration (AOS version 8.9) to have the IOT Gateway sending telemetry data to websocket server.
-
-Please notice that URI "/telemetry" is used for the endpointURL. For all other attributes of the transportProfile, please refer to Aruba documentation. The right configuration will improve the load on the websocket server.
-
-
-```cli
-iot transportProfile Test
- endpointURL ws://<websocket_server_ip_address>:8081/telemetry
- endpointType telemetry-websocket
- payloadContent enocean-switches
- payloadContent enocean-sensors
- payloadContent unclassified
- endpointToken 12346
- transportInterval 30
- macOuiFilter A4C138,E6FE37
-
-iot useTransportProfile Test
-```
-
-Above configuration will allow for Enocean BLE devices (sensors and switches), and for unclassified BLE devices which MAC address begins with A4:C1:38 or E6:FE:37.
-Using the right filtering will lower the load on the Websocket Server.
 
 ## Change Logs
 

@@ -14,11 +14,15 @@
 !README.md
 !LICENSE
 !.gitignore
+#!Dockerfile
 
 # ----- Folders to add
 !/src/aruba_telemetry/*
 !/awss
 !/doc
+!/doc/install
+!/doc/install_docker
+!/doc/install_docker/*
 
 
 
