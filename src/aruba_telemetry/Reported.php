@@ -60,9 +60,9 @@ class Reported extends \Protobuf\AbstractMessage
     protected $assetId = null;
 
     /**
-     * publicKey optional string = 6
+     * publicKey optional bytes = 6
      *
-     * @var string
+     * @var \Protobuf\Stream
      */
     protected $publicKey = null;
 
@@ -352,7 +352,7 @@ class Reported extends \Protobuf\AbstractMessage
     /**
      * Get 'publicKey' value
      *
-     * @return string
+     * @return \Protobuf\Stream
      */
     public function getPublicKey()
     {
@@ -362,10 +362,14 @@ class Reported extends \Protobuf\AbstractMessage
     /**
      * Set 'publicKey' value
      *
-     * @param string $value
+     * @param \Protobuf\Stream $value
      */
     public function setPublicKey($value = null)
     {
+        if ($value !== null && ! $value instanceof \Protobuf\Stream) {
+            $value = \Protobuf\Stream::wrap($value);
+        }
+
         $this->publicKey = $value;
     }
 
@@ -965,7 +969,7 @@ class Reported extends \Protobuf\AbstractMessage
                 \google\protobuf\FieldDescriptorProto::fromArray([
                     'number' => 6,
                     'name' => 'publicKey',
-                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_STRING(),
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_BYTES(),
                     'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
                 ]),
                 \google\protobuf\FieldDescriptorProto::fromArray([
@@ -1124,7 +1128,7 @@ class Reported extends \Protobuf\AbstractMessage
 
         if ($this->publicKey !== null) {
             $writer->writeVarint($stream, 50);
-            $writer->writeString($stream, $this->publicKey);
+            $writer->writeByteStream($stream, $this->publicKey);
         }
 
         if ($this->lastSeen !== null) {
@@ -1298,9 +1302,9 @@ class Reported extends \Protobuf\AbstractMessage
             }
 
             if ($tag === 6) {
-                \Protobuf\WireFormat::assertWireType($wire, 9);
+                \Protobuf\WireFormat::assertWireType($wire, 12);
 
-                $this->publicKey = $reader->readString($stream);
+                $this->publicKey = $reader->readByteStream($stream);
 
                 continue;
             }
@@ -1546,7 +1550,7 @@ class Reported extends \Protobuf\AbstractMessage
 
         if ($this->publicKey !== null) {
             $size += 1;
-            $size += $calculator->computeStringSize($this->publicKey);
+            $size += $calculator->computeByteStreamSize($this->publicKey);
         }
 
         if ($this->lastSeen !== null) {

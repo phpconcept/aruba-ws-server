@@ -2,7 +2,7 @@
     "name"          : "phpconcept/aruba-ws-server",
     "description"   : "PHP Websocket for Aruba IoT Transport Profils",
     "homepage"      : "https://github.com/phpconcept/aruba-ws-server",
-    "license"       : "MIT",
+    "license"       : "LGPL",
     "authors"    : [
         {
             "name"    : "Vincent Blavet",
@@ -12,11 +12,11 @@
     ],
     "autoload": {
         "psr-4": {
-            "aruba_telemetry\\": "src/aruba_telemetry/"
+            "aruba_telemetry\\": "src/aruba_telemetry/",
+            "pb\\": "src/pb/"
         }
     },
     "require": {
-        "php": ">=5.5.0",
         "cboden/ratchet": "^0.4",
         "ratchet/rfc6455": "^0.3",
         "protobuf-php/protobuf": "^0.1.3"

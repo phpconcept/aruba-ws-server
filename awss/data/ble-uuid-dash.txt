@@ -1,0 +1,341 @@
+2A-00:Device Name
+2A-01:Appearance
+2A-02:Peripheral Privacy Flag
+2A-03:Reconnection Address
+2A-04:Peripheral Preferred Connection Parameters
+2A-05:Service Changed
+2A-06:Alert Level
+2A-07:Tx Power Level
+2A-08:Date Time
+2A-09:Day of Week
+2A-0A:Day Date Time
+2A-0C:Exact Time 256
+2A-0D:DST Offset
+2A-0E:Time Zone
+2A-0F:Local Time Information
+2A-11:Time with DST
+2A-12:Time Accuracy
+2A-13:Time Source
+2A-14:Reference Time Information
+2A-16:Time Update Control Point
+2A-17:Time Update State
+2A-18:Glucose Measurement
+2A-19:Battery Level
+2A-1C:Temperature Measurement
+2A-1D:Temperature Type
+2A-1E:Intermediate Temperature
+2A-21:Measurement Interval
+2A-22:Boot Keyboard Input Report
+2A-23:System ID
+2A-24:Model Number String
+2A-25:Serial Number String
+2A-26:Firmware Revision String
+2A-27:Hardware Revision String
+2A-28:Software Revision String
+2A-29:Manufacturer Name String
+2A-2A:IEEE 11073-20601 Regulatory Certification Data List
+2A-2B:Current Time
+2A-31:Scan Refresh
+2A-32:Boot Keyboard Output Report
+2A-33:Boot Mouse Input Report
+2A-34:Glucose Measurement Context
+2A-35:Blood Pressure Measurement
+2A-36:Intermediate Cuff Pressure
+2A-37:Heart Rate Measurement
+2A-38:Body Sensor Location
+2A-39:Heart Rate Control Point
+2A-3F:Alert Status
+2A-40:Ringer Control Point
+2A-41:Ringer Setting
+2A-42:Alert Category ID Bit Mask
+2A-43:Alert Category ID
+2A-44:Alert Notification Control Point
+2A-45:Unread Alert Status
+2A-46:New Alert
+2A-47:Supported New Alert Category
+2A-48:Supported Unread Alert Category
+2A-49:Blood Pressure Feature
+2A-4A:HID Information
+2A-4B:Report Map
+2A-4C:HID Control Point
+2A-4D:Report
+2A-4E:Protocol Mode
+2A-4F:Scan Interval Window
+2A-50:PnP ID
+2A-51:Glucose Feature
+2A-52:Record Access Control Point
+2A-53:RSC Measurement
+2A-54:RSC Feature
+2A-55:SC Control Point
+2A-5A:Aggregate
+2A-5B:CSC Measurement
+2A-5C:CSC Feature
+2A-5D:Sensor Location
+2A-5E:PLX Spot-Check Measurement
+2A-5F:PLX Continuous Measurement
+2A-60:PLX Features
+2A-63:Cycling Power Measurement
+2A-64:Cycling Power Vector
+2A-65:Cycling Power Feature
+2A-66:Cycling Power Control Point
+2A-67:Location and Speed
+2A-68:Navigation
+2A-69:Position Quality
+2A-6A:LN Feature
+2A-6B:LN Control Point
+2A-6C:Elevation
+2A-6D:Pressure
+2A-6E:Temperature
+2A-6F:Humidity
+2A-70:True Wind Speed
+2A-71:True Wind Direction
+2A-72:Apparent Wind Speed
+2A-73:Apparent Wind Direction
+2A-74:Gust Factor
+2A-75:Pollen Concentration
+2A-76:UV Index
+2A-77:Irradiance
+2A-78:Rainfall
+2A-79:Wind Chill
+2A-7A:Heat Index
+2A-7B:Dew Point
+2A-7D:Descriptor Value Changed
+2A-7E:Aerobic Heart Rate Lower Limit
+2A-7F:Aerobic Threshold
+2A-80:Age
+2A-81:Anaerobic Heart Rate Lower Limit
+2A-82:Anaerobic Heart Rate Upper Limit
+2A-83:Anaerobic Threshold
+2A-84:Aerobic Heart Rate Upper Limit
+2A-85:Date of Birth
+2A-86:Date of Threshold Assessment
+2A-87:Email Address
+2A-88:Fat Burn Heart Rate Lower Limit
+2A-89:Fat Burn Heart Rate Upper Limit
+2A-8A:First Name
+2A-8B:Five Zone Heart Rate Limits
+2A-8C:Gender
+2A-8D:Heart Rate Max
+2A-8E:Height
+2A-8F:Hip Circumference
+2A-90:Last Name
+2A-91:Maximum Recommended Heart Rate
+2A-92:Resting Heart Rate
+2A-93:Sport Type for Aerobic and Anaerobic Thresholds
+2A-94:Three Zone Heart Rate Limits
+2A-95:Two Zone Heart Rate Limits
+2A-96:VO2 Max
+2A-97:Waist Circumference
+2A-98:Weight
+2A-99:Database Change Increment
+2A-9A:User Index
+2A-9B:Body Composition Feature
+2A-9C:Body Composition Measurement
+2A-9D:Weight Measurement
+2A-9E:Weight Scale Feature
+2A-9F:User Control Point
+2A-A0:Magnetic Flux Density - 2D
+2A-A1:Magnetic Flux Density - 3D
+2A-A2:Language
+2A-A3:Barometric Pressure Trend
+2A-A4:Bond Management Control Point
+2A-A5:Bond Management Feature
+2A-A6:Central Address Resolution
+2A-A7:CGM Measurement
+2A-A8:CGM Feature
+2A-A9:CGM Status
+2A-AA:CGM Session Start Time
+2A-AB:CGM Session Run Time
+2A-AC:CGM Specific Ops Control Point
+2A-AD:Indoor Positioning Configuration
+2A-AE:Latitude
+2A-AF:Longitude
+2A-B0:Local North Coordinate
+2A-B1:Local East Coordinate
+2A-B2:Floor Number
+2A-B3:Altitude
+2A-B4:Uncertainty
+2A-B5:Location Name
+2A-B6:URI
+2A-B7:HTTP Headers
+2A-B8:HTTP Status Code
+2A-B9:HTTP Entity Body
+2A-BA:HTTP Control Point
+2A-BB:HTTPS Security
+2A-BC:TDS Control Point
+2A-BD:OTS Feature
+2A-BE:object name
+2A-BF:object type
+2A-C0:object size
+2A-C1:object first created
+2A-C2:object last modified
+2A-C3:object ID
+2A-C4:object properties
+2A-C5:object actioncontrol point
+2A-C6:object list control point
+2A-C7:object list filter
+2A-C8:object changed
+2A-C9:Resolvable Private Address Only
+2A-CA:Unspecified
+2A-CB:Directory Listing
+2A-CC:Fitness Machine Feature
+2A-CD:Treadmill Data
+2A-CE:Cross Trainer Data
+2A-CF:Step Climber Data
+2A-D0:Stair Climber Data
+2A-D1:Rower Data
+2A-D2:Indoor Bike Data
+2A-D3:Training Status
+2A-D4:Supported Speed Range
+2A-D5:Supported Inclination Range
+2A-D6:Supported Resistance Level Range
+2A-D7:Supported Heart Rate Range
+2A-D8:Supported Power Range
+2A-D9:Fitness Machine Control Point
+2A-DA:Fitness Machine Status
+2A-DB:Mesh Provisioning Data In
+2B-00:Luminous Flux Range
+2B-01:Luminous Intensity
+2B-02:Mass Flow
+2B-03:Perceived Lightness
+2B-04:Percentage 8
+2B-05:Power
+2B-06:Power Specification
+2B-07:Relative Runtime In A Current Range
+2B-08:Relative Runtime In A Generic Level Range
+2B-09:Relative Value In A Voltage Range
+2B-0A:Relative Value In An Illuminance Range
+2B-0B:Relative Value In A Period Of Day
+2B-0C:Relative Value In A Temperature Range
+2B-0D:Temperature 8
+2B-0E:Temperature 8 In A Period Of Day
+2B-0F:Temperature 8 Statistics
+2B-10:Temperature Range
+2B-11:Temperature Statistics
+2B-12:Time Decihour 8
+2B-13:Time Exponential 8
+2B-14:Time Hour 24
+2B-15:Time Millisecond 24
+2B-16:Time Second 16
+2B-17:Time Second 8
+2B-18:Voltage
+2B-19:Voltage Specification
+2B-1A:Voltage Statistics
+2B-1B:Volume Flow
+2B-1C:Chromaticity Coordinate
+2B-1D:RC Feature
+2B-1E:RC Settings
+2B-1F:Reconnection Configuration Control Point
+2B-20:IDD Status Changed
+2B-21:IDD Status
+2B-22:IDD Annunciation Status
+2B-23:IDD Features
+2B-24:IDD Status Reader Control Point
+2B-25:IDD Command Control Point
+2B-26:IDD Command Data
+2B-27:IDD Record Access Control Point
+2B-28:IDD History Data
+2B-29:Client Supported Features
+2B-2A:Database Hash
+2B-2B:BSS Control Point
+2B-2C:BSS Response
+2B-2D:Emergency ID
+2B-2E:Emergency Text
+2B-34:Enhanced Blood Pressure Measurement
+2B-35:Enhanced Intermediate Cuff Pressure
+2B-36:Blood Pressure Record
+2B-38:BR-EDR Handover Data
+2B-39:Bluetooth SIG Data
+2B-3A:Server Supported Features
+2B-3B:Physical Activity Monitor Features
+2B-3C:General Activity Instantaneous Data
+2B-3D:General Activity Summary Data
+2B-3E:CardioRespiratory Activity Instantaneous Data
+2B-3F:CardioRespiratory Activity Summary Data
+2B-40:Step Counter Activity Summary Data
+2B-41:Sleep Activity Instantaneous Data
+2B-42:Sleep Activity Summary Data
+2B-43:Physical Activity Monitor Control Point
+2B-44:Current Session
+2B-45:Session
+2B-46:Preferred Units
+2B-47:High Resolution Height
+2B-48:Middle Name
+2B-49:Stride Length
+2B-4A:Handedness
+2B-4B:Device Wearing Position
+2B-4C:Four Zone Heart Rate Limits
+2B-4D:High Intensity Exercise Threshold
+2B-4E:Activity Goal
+2B-4F:Sedentary Interval Notification
+2B-50:Caloric Intake
+2B-77:Audio Input State
+2B-78:Gain Settings Attribute
+2B-79:Audio Input Type
+2B-7A:Audio Input Status
+2B-7B:Audio Input Control Point
+2B-7C:Audio Input Description
+2B-7D:Volume State
+2B-7E:Volume Control Point
+2B-7F:Volume Flags
+2B-80:Offset State
+2B-81:Audio Location
+2B-82:Volume Offset Control Point
+2B-83:Audio Output Description
+2B-84:Set Identity Resolving Key Characteristic
+2B-85:Size Characteristic
+2B-86:Lock Characteristic
+2B-87:Rank Characteristic
+2B-8E:Device Time Feature
+2B-8F:Device Time Parameters
+2B-90:Device Time
+2B-91:Device Time Control Point
+2B-92:Time Change Log Data
+2B-93:Media Player Name
+2B-94:Media Player Icon Object ID
+2B-95:Media Player Icon URL
+2B-96:Track Changed
+2B-97:Track Title
+2B-98:Track Duration
+2B-99:Track Position
+2B-9A:Playback Speed
+2B-9B:Seeking Speed
+2B-9C:Current Track Segments Object ID
+2B-9D:Current Track Object ID
+2B-9E:Next Track Object ID
+2B-9F:Parent Group Object ID
+2B-A0:Current Group Object ID
+2B-A1:Playing Order
+2B-A2:Playing Orders Supported
+2B-A3:Media State
+2B-A4:Media Control Point
+2B-A5:Media Control Point Opcodes Supported
+2B-A6:Search Results Object ID
+2B-A7:Search Control Point
+2B-A9:Media Player Icon Object Type
+2B-AA:Track Segments Object Type
+2B-AB:Track Object Type
+2B-AC:Group Object Type
+2B-AD:Constant Tone Extension Enable
+2B-AE:Advertising Constant Tone Extension Minimum Length
+2B-AF:Advertising Constant Tone Extension Minimum Transmit Count
+2B-B0:Advertising Constant Tone Extension Transmit Duration
+2B-B1:Advertising Constant Tone Extension Interval
+2B-B2:Advertising Constant Tone Extension PHY
+2B-B3:Bearer Provider Name
+2B-B4:Bearer UCI
+2B-B5:Bearer Technology
+2B-B6:Bearer URI Schemes Supported List
+2B-B7:Bearer Signal Strength
+2B-B8:Bearer Signal Strength Reporting Interval
+2B-B9:Bearer List Current Calls
+2B-BA:Content Control ID
+2B-BB:Status Flags
+2B-BC:Incoming Call Target Bearer URI
+2B-BD:Call State
+2B-BE:Call Control Point
+2B-BF:Call Control Point Optional Opcodes
+2B-C0:Termination Reason
+2B-C1:Incoming Call
+2B-C2:Call Friendly Name
+2B-C3:Mute

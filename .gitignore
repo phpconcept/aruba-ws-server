@@ -1,0 +1,22 @@
+# ----- Ignore everything
+/*
+
+# ----- Files to ignore
+*.ppr
+*.lock
+
+# ----- Folders to ignore
+/vendor
+
+# ----- Files to accept
+!aruba-ws-server.php
+!composer.json
+!README.md
+!LICENSE
+!.gitignore
+
+# ----- Folders to add
+!/src
+!/awss
+!/doc
+
