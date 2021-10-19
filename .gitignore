@@ -6,7 +6,7 @@
 *.lock
 
 # ----- Folders to ignore
-/vendor/*
+/vendor
 
 # ----- Files to accept
 !aruba-ws-server.php
@@ -14,15 +14,9 @@
 !README.md
 !LICENSE
 !.gitignore
-#!Dockerfile
 
 # ----- Folders to add
-!/src/aruba_telemetry/*
+!/src
 !/awss
 !/doc
-!/doc/install
-!/doc/install_docker
-!/doc/install_docker/*
-
-
 
