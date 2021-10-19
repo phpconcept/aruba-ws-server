@@ -14,7 +14,7 @@
  */
 
   ini_set('display_errors', '1');
-  define('ARUBA_WSS_VERSION', '1.0');
+  define('ARUBA_WSS_VERSION', '1.1-beta');
 
   /**
    * Look for specific arguments to manage extensions and console log
