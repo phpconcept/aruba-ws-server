@@ -636,7 +636,7 @@ Response (sample) :
 
 ## Change Logs
 
-Release v1.0-beta (in-dev) :
+Release v1.0 :
 - Full update of the code from the initial websocket server
 - Add support for GATT protocol
 - Add support for API
