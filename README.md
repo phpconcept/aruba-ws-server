@@ -168,6 +168,9 @@ docker run -p 8081:8081 -e AWSS_ARGS="-console_log -api_key <your_api_key>" --na
 You can customize the arguments send to the server with the environment variable AWSS_ARGS, and select the image to use : aruba_wss:main or aruba_wss:beta.
 To change the listening TCP port change the mapping with argument -p 8081:8081.
 
+Warning : If you are running the container on a device (like a windows laptop) which is protected by a firewall (like McAfee),
+don't forget to add a rule in order to accept incoming connection on port 8081 (or any port you have configured).
+
 ### Aruba Access Point Configuration
 
 Below is an example of an Aruba Access Point (IAP mode) configuration (AOS version 8.9) to have the IOT Gateway sending telemetry data to websocket server.
@@ -179,6 +182,8 @@ Please notice that URI "/telemetry" is used for the endpointURL. For all other a
 iot transportProfile Test
  endpointURL ws://<websocket_server_ip_address>:8081/telemetry
  endpointType telemetry-websocket
+ payloadContent managed-beacons
+ payloadContent managed-tags
  payloadContent enocean-switches
  payloadContent enocean-sensors
  payloadContent unclassified
