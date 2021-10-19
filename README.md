@@ -297,6 +297,7 @@ This demo server is using public available libraries, and their dependencies:
 - ratchetphp/Ratchet : MIT License (https://github.com/ratchetphp/Ratchet/blob/master/LICENSE),
 - protobuf-php/protobuf : MIT License (https://github.com/protobuf-php/protobuf/blob/master/LICENSE)
 
+---
 
 ## Under The Hood
 

@@ -349,7 +349,54 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       
   
   function awss_api_include_mode(p_include_mode) {
+  
+    var generic_selected = 0;
+    var array_type = []
+    var checkboxes = document.querySelectorAll('input[name=device_type]:checked')
+    for (var i = 0; i < checkboxes.length; i++) {
+      array_type.push(checkboxes[i].value);
+      if (checkboxes[i].value == 'generic') {
+        generic_selected = 1;
+      }
+    }
+    v_type = array_type.toString();
+    
+    v_with_local = 0;
+    v_mac_prefix = '';
+    v_max = 0;
+    if (generic_selected) {
+      if ($('#include_with_local').is(":checked")) {
+        v_with_local = 1;
+      }
+    }
 
+
+    v_mac_prefix = document.getElementById("include_mac_prefix").value;
+    v_with_mac = 0;
+    if (v_mac_prefix != '') {
+      v_with_mac = 1;
+    }
+    v_max = document.getElementById("include_max").value;
+
+
+
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+          "name":"include_mode",
+          "data": {
+            "state":p_include_mode,
+            "type":v_type,
+            "generic_with_local":v_with_local,
+            "generic_with_mac":v_with_mac,
+            "generic_mac_prefix":v_mac_prefix,
+            "generic_max_devices":v_max
+          }
+      }
+    };
+
+/*
     var v_data = {
       "api_version":"1.0",
       "api_key":g_server['api_key'],
@@ -365,6 +412,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
           }
       }
     };
+    */
 
     // ----- Send request in websocket connection
     g_socket.send(JSON.stringify(v_data));
@@ -1006,7 +1054,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     <!-- Left Column -->
     <div class="w3-col m12">
 
-      <!-- Block -->
+      <!-- Block --><!-- AWSS Banner -->
       <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
               <h4>
               <button type="button" class="btn btn-success btn-xs" id="server_cnx_ok">Connected</button> 
@@ -1041,7 +1089,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     <!-- Left Column -->
     <div class="w3-col m5">
 
-      <!-- Block -->
+      <!-- Block --><!-- AWSS Server -->
       <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
       
       
@@ -1084,7 +1132,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     <!-- begin central Column -->
     <div id="div_include_mode" class="w3-col m4">
 
-      <!-- Block -->
+      <!-- Block --><!-- AWSS Include Mode -->
       <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
 
               <h2>Include Mode</h2>
@@ -1094,6 +1142,37 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
                     <tr>
                       <td>
               
+        <div id="awss_include_params">
+
+        <h4><i>Device Types :&nbsp;&nbsp;</i>
+          <blockquote>
+          <input type="checkbox" id="type_arubaBeacon" name="device_type" value="arubaBeacon">
+          <label > arubaBeacon</label><br>          
+          <input type="checkbox" id="type_arubaTag" name="device_type" value="arubaTag">
+          <label > arubaTag</label><br>          
+          <input type="checkbox" id="type_enoceanSwitch" name="device_type" value="enoceanSwitch">
+          <label > enoceanSwitch</label><br>          
+          <input type="checkbox" id="type_enoceanSensor" name="device_type" value="enoceanSensor">
+          <label > enoceanSensor</label><br>          
+          <input type="checkbox" id="type_generic" name="device_type" value="generic">
+          <label > generic</label><br>          
+          </blockquote>
+        </h4>
+        
+        <h4>        
+          <input type="checkbox" id="include_with_local" value="1">
+          <label > Allow "generic" devices only with local info</label><br>          
+        </h4>
+        
+        <h4><i>MAC Prefix filtering for "generic" devices :&nbsp;&nbsp;</i>
+          <input class="w3-border w3-round-large" type="text" id="include_mac_prefix" value="">
+        </h4>
+        <h4><i>Max "generic" devices to include :&nbsp;&nbsp;</i>
+          <input class="w3-border w3-round-large" type="text" id="include_max" value="10">
+        </h4>
+                  
+        </div>
+        
         <h4 class="w3-center">
           <button class="w3-btn w3-blue  w3-round-large" id="start_include_bt" onclick="awss_api_include_mode(1);">Start Include Mode</button>
         </h4>
