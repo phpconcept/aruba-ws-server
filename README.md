@@ -138,7 +138,7 @@ Put the Dockerfile (with the exact name of Dockerfile) in your working Docker di
 To launch the build of the Docker image for the "main" github branch, use the following comamnd :
 
 ```cli
-docker build --build-arg BRANCH_NAME=main -t aruba_wss:main .
+docker build -t aruba_wss:main .
 ```
 
 To launch the build of the Docker image for the "beta" github branch, use the following comamnd :
@@ -147,7 +147,7 @@ To launch the build of the Docker image for the "beta" github branch, use the fo
 docker build --build-arg BRANCH_NAME=beta -t aruba_wss:beta .
 ```
 
-To launch the build of the Docker image for a tagged version of the code, use the following comamnd :
+To launch the build of the Docker image for a tagged version of the code (below example with tag "v1.0"), use the following comamnd :
 
 ```cli
 docker build --build-arg BRANCH_TYPE=tags --build-arg BRANCH_NAME=v1.0 -t aruba_wss:v1.0 .
