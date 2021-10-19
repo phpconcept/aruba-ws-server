@@ -86,9 +86,6 @@ To build a Docker image, you need to have a "Dockerfile" which describes how to 
 The proposed Dockerfile is :
 
 ```cli
-# ----- Based on Debian linux OS
-FROM debian:buster-slim
-
 # ----- Meta infos
 LABEL version="1.0" maintainer="Vincent Blavet <vincent@phpconcept.net>"
 
@@ -111,13 +108,15 @@ RUN apt-get install ${APT_FLAGS} --no-install-recommends \
     rm -rf /var/lib/apt/lists/* 
 
 # ----- Build variables
+# Branch type could be : heads or tags
+ARG BRANCH_TYPE="heads"
 ARG BRANCH_NAME="main"
 
 # ----- Download and install Aruba Websocket Server (from github branch)
-RUN wget https://github.com/phpconcept/aruba-ws-server/archive/refs/heads/${BRANCH_NAME}.zip && \
-    unzip ${BRANCH_NAME}.zip && \
-    rm -f ${BRANCH_NAME}.zip && \
-    mv aruba-ws-server-${BRANCH_NAME} websocket
+RUN wget https://github.com/phpconcept/aruba-ws-server/archive/refs/${BRANCH_TYPE}/${BRANCH_NAME}.zip && \
+    unzip *.zip && \
+    rm -f *.zip && \
+    mv aruba-ws-server-* websocket
 
 # ----- Install Ratchet and Protobuf PHP libraries
 RUN composer install -d ${DOCUMENTROOT}/websocket
@@ -146,6 +145,12 @@ To launch the build of the Docker image for the "beta" github branch, use the fo
 
 ```cli
 docker build --build-arg BRANCH_NAME=beta -t aruba_wss:beta .
+```
+
+To launch the build of the Docker image for a tagged version of the code, use the following comamnd :
+
+```cli
+docker build --build-arg BRANCH_TYPE=tags --build-arg BRANCH_NAME=v1.0 -t aruba_wss:v1.0 .
 ```
 
 As a quick summary, the Docker build will download a Docker image containing a light version of Debian Buster, will install 

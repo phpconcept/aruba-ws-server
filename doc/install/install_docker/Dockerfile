@@ -23,13 +23,15 @@ RUN apt-get install ${APT_FLAGS} --no-install-recommends \
     rm -rf /var/lib/apt/lists/* 
 
 # ----- Build variables
+# Branch type could be : heads or tags
+ARG BRANCH_TYPE="heads"
 ARG BRANCH_NAME="main"
 
 # ----- Download and install Aruba Websocket Server (from github branch)
-RUN wget https://github.com/phpconcept/aruba-ws-server/archive/refs/heads/${BRANCH_NAME}.zip && \
-    unzip ${BRANCH_NAME}.zip && \
-    rm -f ${BRANCH_NAME}.zip && \
-    mv aruba-ws-server-${BRANCH_NAME} websocket
+RUN wget https://github.com/phpconcept/aruba-ws-server/archive/refs/${BRANCH_TYPE}/${BRANCH_NAME}.zip && \
+    unzip *.zip && \
+    rm -f *.zip && \
+    mv aruba-ws-server-* websocket
 
 # ----- Install Ratchet and Protobuf PHP libraries
 RUN composer install -d ${DOCUMENTROOT}/websocket
