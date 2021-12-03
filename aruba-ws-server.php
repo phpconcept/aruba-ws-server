@@ -14,7 +14,7 @@
  */
 
   ini_set('display_errors', '1');
-  define('ARUBA_WSS_VERSION', '1.1');
+  define('ARUBA_WSS_VERSION', '1.2-beta');
 
   /**
    * Look for specific arguments to manage extensions and console log
@@ -779,7 +779,7 @@
         $this->console_log = true;
       } 
       
-      ArubaWssTool::log('info', "----- Starting ArubaIot Websocket Server Daemon (".date("Y-m-d H:i:s", $this->up_time).")'");
+      ArubaWssTool::log('info', "----- Starting ArubaIot Websocket Server Daemon v.".ARUBA_WSS_VERSION." (".date("Y-m-d H:i:s", $this->up_time).")'");
 
       // ----- Look for no list, create empty one
       if ($p_args === null) {
