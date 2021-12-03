@@ -5,6 +5,23 @@ Today it supports only the BLE capabilities of Aruba AP.
 
 ## Quick Start Guide
 
+You can install Aruba Websocket Server (AWSS) on linux, create a local Docker Container to run AWSS, or, easier, run a pre-built container hosted in Docker Hub.
+
+### Run a AWSS container from Docker Hub
+
+Docker containers are available on Docker Hub for published version of AWSS. You need to have a working Docker environment to run AWSS.
+
+To start the websocket server in the Docker container, use the following command :
+
+```cli
+docker run -p 8081:8081 -e AWSS_ARGS="-console_log -api_key <your_api_key>" --name awss phpconcept/aruba_wss:v1.1
+```
+
+You can customize the arguments send to the server with the environment variable AWSS_ARGS, and select the image to use : aruba_wss:main or aruba_wss:beta.
+To change the listening TCP port change the mapping with argument -p 8081:8081.
+
+
+
 ### Install on Linux Debian
 
 The Aruba Websocket Server (AWSS) was developed and tested on a Linux Debian 10 (Buster) with PHP 7.3. So you need to install it on a compatible linux system with installed PHP libraries.
@@ -271,7 +288,7 @@ The Websocket Server can be accessed by JSON API, description of the API can be 
 
 ## Change Logs
 
-Release v1.1-beta :
+Release v1.1 :
 - Add support for modified Xiaomi Sensor firmware (https://github.com/atc1441/ATC_MiThermometer), which allow for temperature, humidity and battery to be in the BLE advertissement.
 - Start support for BLE advertissements.
 - Add filtering capabilities for the include mode in the client.
