@@ -268,7 +268,8 @@ The Websocket Server can be accessed by JSON API, description of the API can be 
 ## Change Logs
 
 Release v1.1-beta :
-
+- Start support for BLE advertissements
+- Add support for firmware modified Xiaomi Sensor (https://github.com/atc1441/ATC_MiThermometer)
 
 Release v1.0 :
 - Full update of the code from the initial websocket server
