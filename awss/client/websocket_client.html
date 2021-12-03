@@ -46,7 +46,6 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
   // ----- Actions to do at page load
   $(document).ready(function(){
   
-    awss_server_change_to_disconnected();
     awss_device_change_to_disconnected('');
     awss_banner_message('');
 
@@ -56,6 +55,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     document.getElementById("server_ip").value = g_server['ip_address'];
     document.getElementById("server_tcp").value = g_server['tcp_port'];
     document.getElementById("server_apikey").value = g_server['api_key']; 
+
+    awss_server_change_to_disconnected();
 
   });
 
@@ -260,6 +261,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     $('#grid_device').hide();
     $('#grid_reporter').hide();
     $('#grid_server').show();
+    $('#grid_server_disconnected').hide();
   
     $('#div_include_mode').show();
     $('#div_actions').show();
@@ -285,7 +287,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
   
     $('#grid_device').hide();
     $('#grid_reporter').hide();
-    $('#grid_server').show();
+    $('#grid_server').hide();
+    $('#grid_server_disconnected').show();
   
     $('#div_include_mode').hide();
     $('#div_actions').hide();
@@ -334,6 +337,9 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       $('#include_mode_on').show();
       $('#start_include_bt').hide();
       $('#stop_include_bt').show();
+      $('#awss_include_params').hide();
+      
+      
       
       
     }
@@ -341,6 +347,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       $('#include_mode_on').hide();
       $('#start_include_bt').show();
       $('#stop_include_bt').hide();
+
+      $('#awss_include_params').show();
     }
 
     return;
@@ -349,7 +357,54 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       
   
   function awss_api_include_mode(p_include_mode) {
+  
+    var generic_selected = 0;
+    var array_type = []
+    var checkboxes = document.querySelectorAll('input[name=device_type]:checked')
+    for (var i = 0; i < checkboxes.length; i++) {
+      array_type.push(checkboxes[i].value);
+      if (checkboxes[i].value == 'generic') {
+        generic_selected = 1;
+      }
+    }
+    v_type = array_type.toString();
+    
+    v_with_local = 0;
+    v_mac_prefix = '';
+    v_max = 0;
+    if (generic_selected) {
+      if ($('#include_with_local').is(":checked")) {
+        v_with_local = 1;
+      }
+    }
 
+
+    v_mac_prefix = document.getElementById("include_mac_prefix").value;
+    v_with_mac = 0;
+    if (v_mac_prefix != '') {
+      v_with_mac = 1;
+    }
+    v_max = document.getElementById("include_max").value;
+
+
+
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+          "name":"include_mode",
+          "data": {
+            "state":p_include_mode,
+            "type":v_type,
+            "generic_with_local":v_with_local,
+            "generic_with_mac":v_with_mac,
+            "generic_mac_prefix":v_mac_prefix,
+            "generic_max_devices":v_max
+          }
+      }
+    };
+
+/*
     var v_data = {
       "api_version":"1.0",
       "api_key":g_server['api_key'],
@@ -365,6 +420,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
           }
       }
     };
+    */
 
     // ----- Send request in websocket connection
     g_socket.send(JSON.stringify(v_data));
@@ -1000,13 +1056,13 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
 <form id="main_form" action="#" method="post" autocomplete="off" class="w3-container" onsubmit="return(awss_onsubmit());">
 
-  <!-- The Grid -->
+  <!-- The Grid Banner -->
   <div class="w3-row" id="grid_banner">
 
     <!-- Left Column -->
     <div class="w3-col m12">
 
-      <!-- Block -->
+      <!-- Block --><!-- AWSS Banner -->
       <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
               <h4>
               <button type="button" class="btn btn-success btn-xs" id="server_cnx_ok">Connected</button> 
@@ -1033,15 +1089,33 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     <!-- End Left Column -->
 
   </div>
-  <!-- End Row The Grid -->
+  <!-- End Row The Grid Banner -->
 
-  <!-- The Grid -->
-  <div class="w3-row" id="grid_server">
+
+
+
+
+
+
+
+
+
+  <!-- The Grid Server -->
+  <div class="w3-row" id="grid_server_disconnected">
 
     <!-- Left Column -->
-    <div class="w3-col m5">
+    <div class="w3-col m3">
 
-      <!-- Block -->
+&nbsp;
+
+    </div>
+    <!-- End Left Column -->
+
+    <!-- begin central Column -->
+    <div id="div_xxx" class="w3-col m6">
+
+
+      <!-- Block --><!-- AWSS Server -->
       <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
       
       
@@ -1079,12 +1153,40 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       <!-- Block -->
 
     </div>
+    <!-- End central Column -->
+
+    <!-- begin Right Column -->
+    <div id="div_xxss" class="w3-col m3">
+
+&nbsp;
+
+
+    </div>
+    <!-- End Right Column -->
+
+  </div>
+  <!-- End Row The Grid Server -->
+
+
+
+
+
+  <!-- The Grid Server -->
+  <div class="w3-row" id="grid_server">
+
+    <!-- Left Column -->
+    <div class="w3-col m2">
+
+&nbsp;
+
+
+    </div>
     <!-- End Left Column -->
 
     <!-- begin central Column -->
-    <div id="div_include_mode" class="w3-col m4">
+    <div id="div_include_mode" class="w3-col m8">
 
-      <!-- Block -->
+      <!-- Block --><!-- AWSS Include Mode -->
       <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
 
               <h2>Include Mode</h2>
@@ -1094,6 +1196,90 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
                     <tr>
                       <td>
               
+        <div id="awss_include_params">
+
+        <h4>Device Types to include :&nbsp;&nbsp;</h4>
+          
+        <table class="table">
+            <tbody>
+              <tr>
+                <td>
+          <input type="checkbox"  name="device_type" value="arubaBeacon"><label >&nbsp;arubaBeacon</label><br>          
+                </td><td>
+          <input type="checkbox" name="device_type" value="arubaTag"><label >&nbsp; arubaTag</label><br>          
+                </td><td>
+          <input type="checkbox"  name="device_type" value="enoceanSwitch" checked ><label >&nbsp; enoceanSwitch</label><br>          
+                </td><td>
+          <input type="checkbox" name="device_type" value="enoceanSensor" checked ><label>&nbsp; enoceanSensor</label><br>                
+                </td>
+              </tr>
+              <tr>
+                <td>
+          <input type="checkbox" name="device_type" value="zfTag"><label>&nbsp; zfTag</label><br>                 
+                </td><td>
+          <input type="checkbox" name="device_type" value="stanleyTag"><label>&nbsp; stanleyTag</label><br>                 
+                </td><td>
+          <input type="checkbox" name="device_type" value="virginBeacon"><label>&nbsp; virginBeacon</label><br>       
+                </td><td>
+          <input type="checkbox" name="device_type" value="abbSensor"><label>&nbsp; abbSensor</label><br>       
+                </td>
+              </tr>
+              <tr>
+                <td>
+          <input type="checkbox" name="device_type" value="mysphera"><label>&nbsp; mysphera</label><br>       
+                </td><td>
+          <input type="checkbox" name="device_type" value="wiliot"><label>&nbsp; wiliot</label><br>       
+                </td><td>
+          <input type="checkbox" name="device_type" value="ZSD"><label>&nbsp; ZSD</label><br>       
+                </td><td>
+          <input type="checkbox" name="device_type" value="onity"><label>&nbsp; onity</label><br>       
+                </td>
+              </tr>
+              <tr>
+                <td>
+          <input type="checkbox" name="device_type" value="minew"><label>&nbsp; minew</label><br>       
+                </td><td>
+          <input type="checkbox" name="device_type" value="google"><label>&nbsp; google</label><br>       
+                </td><td>
+          <input type="checkbox" name="device_type" value="polestar"><label>&nbsp; polestar</label><br>       
+                </td><td>
+          <input type="checkbox" name="device_type" value="blyott"><label>&nbsp; blyott</label><br>       
+                </td>
+              </tr>
+              <tr>
+                <td>
+          <input type="checkbox" name="device_type" value="diract"><label>&nbsp; diract</label><br>       
+                </td><td>
+          <input type="checkbox" name="device_type" value="gwahygiene"><label>&nbsp; gwahygiene</label><br>                        
+                </td><td>
+                </td><td>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="5">
+        
+          <input type="checkbox" name="device_type" value="generic" checked ><label >&nbsp; generic</label><br>          
+         
+          <blockquote>
+            <input type="checkbox" id="include_with_local" value="1">
+            <span > only generic devices with local info</span>   
+            <br>
+            <input type="checkbox" id="include_with_mac" value="1">
+            <span> only generic devices with this MAC prefix :&nbsp;&nbsp;</span>
+            <input class="w3-border w3-round-large" type="text" id="include_mac_prefix" value="">       
+            <br>
+            <span> Stop after &nbsp;</span>
+            <input class="w3-border w3-round-large" type="text" id="include_max" value="10" style="width:50px;"> 
+            <span> generic devices included.</span>      
+          </blockquote>                
+
+                </td>
+              </tr>
+            </tbody>
+        </table>
+                  
+        </div>
+        
         <h4 class="w3-center">
           <button class="w3-btn w3-blue  w3-round-large" id="start_include_bt" onclick="awss_api_include_mode(1);">Start Include Mode</button>
         </h4>
@@ -1107,9 +1293,6 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
                   </tbody>
               </table>
 
-      
-
-
       </div>
       <!-- Block -->
 
@@ -1117,7 +1300,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     <!-- End central Column -->
 
     <!-- begin Right Column -->
-    <div id="div_actions" class="w3-col m3">
+    <div id="div_actions" class="w3-col m2">
 
       <!-- Block -->
       <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
@@ -1147,8 +1330,27 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
                   </tbody>
               </table>
 
-      
+      </div>
+      <!-- Block -->
 
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
+
+              <h2>Server</h2>
+
+              <table class="table">
+                  <tbody>
+                    <tr>
+                      <td>
+              
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_server_disconnect();">Disconnect</button>
+        </h4>              
+              
+                      </td>
+                    </tr>
+                  </tbody>
+              </table>
 
       </div>
       <!-- Block -->
@@ -1157,10 +1359,21 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     <!-- End Right Column -->
 
   </div>
-  <!-- End Row The Grid -->
+  <!-- End Row The Grid Server -->
 
 
-  <!-- The Grid -->
+
+
+
+
+
+
+
+
+
+
+
+  <!-- The Grid Device -->
   <div class="w3-row" id="grid_device">
 
     <!-- Left Column -->
@@ -1302,7 +1515,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
   <!-- End Grid -->
   </div>
-  <!-- End Row The Grid -->
+  <!-- End Row The Grid Device -->
 
 
   <!-- The Grid -->

@@ -14,7 +14,7 @@
  */
 
   ini_set('display_errors', '1');
-  define('ARUBA_WSS_VERSION', '1.0');
+  define('ARUBA_WSS_VERSION', '1.1');
 
   /**
    * Look for specific arguments to manage extensions and console log
@@ -3692,12 +3692,25 @@ status {
         }
       }
       
+      // ----- Get frametype
+      $v_frame_type = '';
+      if ($v_bleData_msg->hasFrameType()) {
+        $v_frame_type = $v_bleData_msg->getFrameType();
+        ArubaWssTool::log('debug', "Frame Type is '".$v_frame_type."'.");
+      }
+      
+      // ----- Get device
       if ($v_bleData_msg->hasData()) {
         $v_data = $v_bleData_msg->getData();
         $v_bytes = ArubaWssTool::bytesToString($v_data);
         $v_str = ArubaWssTool::stringbytesToText($v_bytes);
         ArubaWssTool::log('debug', "Data is '".$v_bytes."'.");        
         ArubaWssTool::log('debug', "Data string is '".$v_str."'.");        
+      }
+      
+      // ----- Look for 'adv_ind' frame
+      if (($v_device !== null) && ($v_frame_type == 'adv_ind')) {
+        $v_device->setTelemetryFromAdvert($v_bytes);      
       }
       
       return(true);
@@ -5976,6 +5989,12 @@ fwrite($fd, "\n");
       if ($p_mode == 'extended') {
         $v_item['services'] = $this->service_list;
         $v_item['telemetry_values'] = $this->telemetry_value_list;
+
+        if ($this->battery_value != 101) {
+          $v_item['battery'] = array();
+          $v_item['battery']['value'] = $this->battery_value;
+          $v_item['battery']['timestamp'] = $this->battery_timestamp;
+        }        
       }
       
       return($v_item);
@@ -6073,9 +6092,115 @@ fwrite($fd, "\n");
           
           $this->setTelemetryValue('temperatureC', $v_temp);
           $this->setTelemetryValue('humidity', $v_humi);        
-          $this->setChangedFlag('telemetry_value');                
+          //$this->setChangedFlag('telemetry_value');                
         }
       }
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : setTelemetryFromAdvert()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function setTelemetryFromAdvert($p_value) {
+      // TBC : Need to be more generic !!!
+      
+      if (($this->vendor_id == 'Jinou') && ($this->model_id == 'Sensor_HumiTemp')) {
+
+        /*
+          Service 0XAA20. Temp & humid data. There are 6 bytes.
+          1. Temperature positive/negative: 0 means positive (+) and 1 means negative (-)
+          2. Integer part of temperature. Show in Hexadecimal.
+          3. Decimal part of temperature. Show in Hexadecimal.
+          4. Reserved byte. Ignore it.
+          5. Integer part of humidity. Show in Hexadecimal.
+          6. Decimal part of humidity. Show in Hexadecimal.
+          For example: 00 14 05 22 32 08 means +20.5C 50.8%
+          01 08 09 00 14 05 means -8.9C 20.5%        
+          
+[2021-09-16 10:59:26] [debug]:Device MAC is 'E6:FE:37:0D:A4:D7'.
+[2021-09-16 10:59:26] [debug]:Data is '02-01-06-03-02-20-AA-0E-FF-00-19-00-00-3E-00-64-E6-FE-37-0D-A4-D7'.
+
+
+La valeur se retrouve là : 00-19-00-00-3E-00
+
+          
+        */
+        
+          $v_item = explode('-', $p_value);
+          if (sizeof($v_item) < 15) {
+            ArubaWssTool::log('debug', "Adv_Ind value from Jinou should be 15 bytes or more. Ignore.");
+            return;
+          }
+          
+          $v_val_sign = hexdec($v_item[9]);
+          $v_val_temp_int = hexdec($v_item[10]);
+          $v_val_temp_dec = hexdec($v_item[11]);
+          $v_val_humi_int = hexdec($v_item[13]);
+          $v_val_humi_dec = hexdec($v_item[14]);
+          
+          $v_temp = ($v_val_sign==1?-1:1) * ( $v_val_temp_int + $v_val_temp_dec/100 );
+          $v_humi = $v_val_humi_int + $v_val_humi_dec/100;
+      
+          ArubaWssTool::log('debug', "Jinou Temperature from advert is : ".$v_temp);
+          ArubaWssTool::log('debug', "Jinou Humidity from advert is : ".$v_humi);
+          
+          $this->setTelemetryValue('temperatureC2', $v_temp);
+          $this->setTelemetryValue('humidity2', $v_humi);        
+          //$this->setChangedFlag('telemetry_value');                
+        }
+        
+      else if (($this->vendor_id == 'ATC') && ($this->model_id == 'LYWSD03MMC')) {
+
+        /*
+[2021-11-30 17:37:45] [debug]:Data is '10-16-1A-18-A4-C1-38-07-FC-EE-00-ED-24-29-0A-3F-08'.
+
+The custom firmware sends every minute an update of advertising data on the UUID 0x181A with the Tempereature, Humidity and Battery data.
+
+The format of the advertising data is as follow:
+
+Byte 5-10 MAC in correct order
+Byte 11-12 Temperature in int16
+Byte 13 Humidity in percent
+Byte 14 Battery in percent
+Byte 15-16 Battery in mV uint16_t
+Byte 17 frame packet counter
+
+Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa, 0xbb, 0xcc, 0xdd, 0xdd, 0x00
+          
+        */
+        
+          $v_item = explode('-', $p_value);
+          if (sizeof($v_item) != 17) {
+            ArubaWssTool::log('debug', "Adv_Ind value from ATC should be 17 bytes. Ignore.");
+            return;
+          }
+          
+          $v_val_temp = hexdec($v_item[10].$v_item[11]);
+          $v_val_humi = hexdec($v_item[12]);
+          $v_val_battery = hexdec($v_item[13]);
+          
+          ArubaWssTool::log('debug', "v_val_temp : ".$v_val_temp);
+          ArubaWssTool::log('debug', "v_val_humi : ".$v_val_humi);
+          ArubaWssTool::log('debug', "v_val_battery : ".$v_val_battery);
+
+          //$v_temp = ($v_val_sign==1?-1:1) * ( $v_val_temp_int + $v_val_temp_dec/100 );
+          $v_temp = $v_val_temp/10;
+          $v_humi = $v_val_humi;
+      
+          ArubaWssTool::log('debug', "ATC Temperature from advert is : ".$v_temp." C");
+          ArubaWssTool::log('debug', "ATC Humidity from advert is : ".$v_humi." %");
+          ArubaWssTool::log('debug', "ATC Battery from advert is : ".$v_val_battery." %");
+          
+          $this->setTelemetryValue('temperatureC', $v_temp);
+          $this->setTelemetryValue('humidity', $v_humi);        
+          //$this->setChangedFlag('telemetry_value');        
+          
+          $this->setTelemetryBatteryValue($v_val_battery);        
+        }
+
+
     }
     /* -------------------------------------------------------------------------*/
 
@@ -6183,6 +6308,7 @@ fwrite($fd, "\n");
       // ----- Store last update timer      
       $this->telemetry_value_list[$p_name]['timestamp'] = time();        
       
+      $this->setChangedFlag('telemetry_value');
     }
     /* -------------------------------------------------------------------------*/
 
@@ -6509,11 +6635,11 @@ fwrite($fd, "\n");
             $v_cmd_name = str_replace('switch bank', 'Button', trim($v_val[0]));
 
             $this->setTelemetryValue($v_cmd_id, trim($v_val[1]), 'string');
-            $this->setChangedFlag('telemetry_value');
+            //$this->setChangedFlag('telemetry_value');
           }
           else {
             $this->setTelemetryValue($v_id, $v_state, 'string');
-            $this->setChangedFlag('telemetry_value');
+            //$this->setChangedFlag('telemetry_value');
           }
           $i++;
         }
@@ -6530,7 +6656,7 @@ fwrite($fd, "\n");
           ArubaWssTool::log('debug', "Switch value: ".$v_state);
 
           $this->setTelemetryValue('switch', $v_state, 'string');
-          $this->setChangedFlag('telemetry_value');
+          //$this->setChangedFlag('telemetry_value');
         }
       }
 
@@ -6558,7 +6684,7 @@ fwrite($fd, "\n");
           ArubaWssTool::log('debug', "Illumination value is : ".$v_val);
 
           $this->setTelemetryValue('illumination', $v_val);
-          $this->setChangedFlag('telemetry_value');
+          //$this->setChangedFlag('telemetry_value');
         }
 
         // ----- Look for occupancy values
@@ -6567,7 +6693,7 @@ fwrite($fd, "\n");
           ArubaWssTool::log('debug', "Occupancy value is : ".$v_level);
 
           $this->setTelemetryValue('occupancy', $v_level);
-          $this->setChangedFlag('telemetry_value');
+          //$this->setChangedFlag('telemetry_value');
         }
 
         if ($v_item->hasTemperatureC()) {
@@ -6575,7 +6701,7 @@ fwrite($fd, "\n");
           ArubaWssTool::log('debug', "TemperatureC value is : ".$v_val);
 
           $this->setTelemetryValue('temperatureC', $v_val);
-          $this->setChangedFlag('telemetry_value');
+          //$this->setChangedFlag('telemetry_value');
         }
 
         if ($v_item->hasHumidity()) {
@@ -6583,7 +6709,7 @@ fwrite($fd, "\n");
           ArubaWssTool::log('debug', "Humidity value is : ".$v_val);
 
           $this->setTelemetryValue('humidity', $v_val);
-          $this->setChangedFlag('telemetry_value');
+          //$this->setChangedFlag('telemetry_value');
         }
 
         if ($v_item->hasVoltage()) {
@@ -6591,7 +6717,7 @@ fwrite($fd, "\n");
           ArubaWssTool::log('debug', "Voltage value is : ".$v_val);
 
           $this->setTelemetryValue('voltage', $v_val);
-          $this->setChangedFlag('telemetry_value');
+          //$this->setChangedFlag('telemetry_value');
         }
 
         if ($v_item->hasCO()) {
@@ -6599,7 +6725,7 @@ fwrite($fd, "\n");
           ArubaWssTool::log('debug', "CO value is : ".$v_val);
 
           $this->setTelemetryValue('CO', $v_val);
-          $this->setChangedFlag('telemetry_value');
+          //$this->setChangedFlag('telemetry_value');
         }
 
         if ($v_item->hasCO2()) {
@@ -6607,7 +6733,7 @@ fwrite($fd, "\n");
           ArubaWssTool::log('debug', "CO2 value is : ".$v_val);
 
           $this->setTelemetryValue('CO2', $v_val);
-          $this->setChangedFlag('telemetry_value');
+          //$this->setChangedFlag('telemetry_value');
         }
 
         if ($v_item->hasVOC()) {
@@ -6615,7 +6741,7 @@ fwrite($fd, "\n");
           ArubaWssTool::log('debug', "VOC value is : ".$v_val);
 
           $this->setTelemetryValue('VOC', $v_val);
-          $this->setChangedFlag('telemetry_value');
+          //$this->setChangedFlag('telemetry_value');
         }
 
         if ($v_item->hasMotion()) {
@@ -6623,7 +6749,7 @@ fwrite($fd, "\n");
           ArubaWssTool::log('debug', "Motion value is : ".$v_val);
 
           $this->setTelemetryValue('motion', $v_val);
-          $this->setChangedFlag('telemetry_value');
+          //$this->setChangedFlag('telemetry_value');
         }
 
         if ($v_item->hasResistance()) {
@@ -6631,7 +6757,7 @@ fwrite($fd, "\n");
           ArubaWssTool::log('debug', "Resistance value is : ".$v_val);
 
           $this->setTelemetryValue('resistance', $v_val);
-          $this->setChangedFlag('telemetry_value');
+          //$this->setChangedFlag('telemetry_value');
         }
 
         if ($v_item->hasPressure()) {
@@ -6639,7 +6765,7 @@ fwrite($fd, "\n");
           ArubaWssTool::log('debug', "Pressure value is : ".$v_val);
 
           $this->setTelemetryValue('pressure', $v_val);
-          $this->setChangedFlag('telemetry_value');
+          //$this->setChangedFlag('telemetry_value');
         }
 
         // ----- Update battery level
@@ -6709,6 +6835,10 @@ fwrite($fd, "\n");
             $this->vendor_id = 'Jinou';
             $this->model_id = 'Sensor_HumiTemp';
           }
+          else if (preg_match('/ATC_[0-9,A-F]{6}$/', $this->local_name) === 1) {
+            $this->vendor_id = 'ATC';
+            $this->model_id = 'LYWSD03MMC';
+          }
         }
         else {
           // ----- Look to find exact vendor and device model
@@ -6749,7 +6879,7 @@ fwrite($fd, "\n");
         ArubaWssTool::log('debug', "Txpower value is : ".$v_val);
 
         $this->setTelemetryValue('txpower', $v_val);
-        $this->setChangedFlag('telemetry_value');
+        //$this->setChangedFlag('telemetry_value');
       }
 
       // ----- Look for hasCell() : Nothing to do now, but for future use
@@ -7285,8 +7415,6 @@ fwrite($fd, "\n");
 
   }
   /* -------------------------------------------------------------------------*/
-
-
 
   // ----- Instanciate object which will manage the "Aruba logic" for the websocket server
   $aruba_iot_websocket = new ArubaWebsocket();
