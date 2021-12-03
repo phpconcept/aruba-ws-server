@@ -219,6 +219,10 @@ You can also use the API, which allow for additional parameters.
 After a while (the time for the first telemetry packet from the AP), the devices should be on-boarded.
 The include mode can be stopped if needed.
 
+![Devices List](doc/images/include_mode.png)
+
+The client offer a "multi-selection" dashboard in order to filter the type of iot devices you want to on-board.
+
 ### Display IoT Devices
 
 From the client, select the "Device List" menu or button to display the list of discovered devices.
@@ -268,8 +272,9 @@ The Websocket Server can be accessed by JSON API, description of the API can be 
 ## Change Logs
 
 Release v1.1-beta :
-- Start support for BLE advertissements
-- Add support for firmware modified Xiaomi Sensor (https://github.com/atc1441/ATC_MiThermometer)
+- Add support for modified Xiaomi Sensor firmware (https://github.com/atc1441/ATC_MiThermometer), which allow for temperature, humidity and battery to be in the BLE advertissement.
+- Start support for BLE advertissements.
+- Add filtering capabilities for the include mode in the client.
 
 Release v1.0 :
 - Full update of the code from the initial websocket server
