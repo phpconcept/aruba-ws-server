@@ -14,7 +14,7 @@ Docker containers are available on Docker Hub for published version of AWSS. You
 To start the websocket server in the Docker container, use the following command :
 
 ```cli
-docker run -p 8081:8081 -e AWSS_ARGS="-console_log -api_key <your_api_key>" --name awss phpconcept/aruba_wss:v1.1
+docker run -p 8081:8081 -e AWSS_ARGS="-console_log -api_key <your_api_key>" --name awss phpconcept/aruba_wss:main
 ```
 
 You can customize the arguments send to the server with the environment variable AWSS_ARGS, and select the image to use : aruba_wss:main or aruba_wss:beta.
