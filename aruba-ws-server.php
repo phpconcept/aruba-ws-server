@@ -2458,8 +2458,8 @@
           return(false);
         }
 
-      ArubaWssTool::log('debug',  "Check prefix mode '".$this->include_generic_with_mac."'");
-      ArubaWssTool::log('debug',  "Check prefix '".$this->include_generic_mac_prefix."'");
+      ArubaWssTool::log('debug',  "Check include with mac@ mode : '".$this->include_generic_with_mac."'");
+      ArubaWssTool::log('debug',  "Check include mac@ with prefix : '".$this->include_generic_mac_prefix."'");
 
         // ----- Look for mac prefix
         if (($this->include_generic_with_mac) && ($this->include_generic_mac_prefix != '')) {
@@ -2469,6 +2469,8 @@
             return(false);
           }
         }
+
+      ArubaWssTool::log('debug',  "Check include with local name : '".$this->include_generic_with_local."'");
 
         // ----- Look for local name
         if ($this->include_generic_with_local) {
@@ -2514,6 +2516,82 @@
     /**---------------------------------------------------------------------------
      * Method : onMsgTelemetry()
      * Description :
+     * 
+     * Message Sample :
+
+      meta {
+        version: 1
+        access_token: "12346"
+        nbTopic: telemetry
+      }
+      reporter {
+        name: "AP-515-Lab"
+        mac:
+        ipv4: "192.168.102.100"
+        hwType: "AP-515"
+        swVersion: "8.9.0.1-8.9.0.1"
+        swBuild: "82154"
+        time: 1638630017
+      }
+      reported {
+        unknownFieldSet:
+        mac:
+        deviceClass: enoceanSwitch
+        lastSeen: 1638629973
+        bevent {
+          event: update
+        }
+        stats {
+          frame_cnt: 0
+        }
+        inputs {
+          rocker {
+            id: "switch bank 1: idle"
+            state: idle
+          }
+        }
+      }
+      reported {
+        unknownFieldSet:
+        mac:
+        deviceClass: unclassified
+        lastSeen: 1638630017
+        bevent {
+          event: update
+        }
+        rssi {
+          avg: -61
+        }
+        stats {
+          frame_cnt: 24
+        }
+        localName: "Jinou_Sensor_HumiTemp"
+      }
+      reported {
+        unknownFieldSet:
+        mac:
+        deviceClass: enoceanSensor
+        lastSeen: 1638629976
+        bevent {
+          event: update
+        }
+        sensors {
+          battery: 98
+          illumination: 6
+          occupancy {
+            level: 50
+          }
+        }
+        stats {
+          seq_nr: 498739
+          frame_cnt: 0
+        }
+      }
+
+     * 
+     * 
+     * 
+     * 
      * ---------------------------------------------------------------------------
      */
     public function onMsgTelemetry(&$p_reporter, $v_at_telemetry_msg) {
@@ -3648,6 +3726,50 @@ status {
      * 
      *   Exemple of message :
 
+      meta {
+        version: 1
+        access_token: "12346"
+        nbTopic: bleData
+      }
+      reporter {
+        name: "AP-515-Lab"
+        mac:
+        ipv4: "192.168.102.100"
+        hwType: "AP-515"
+        swVersion: "8.9.0.1-8.9.0.1"
+        swBuild: "82154"
+        time: 1638629576
+      }
+      bleData {
+        mac:
+        frameType: scan_rsp
+        data: "\u000b\tATC_07FCEE"
+        rssi: -48
+        addrType: addr_type_public
+      }
+      
+      
+      meta {
+        version: 1
+        access_token: "12346"
+        nbTopic: bleData
+      }
+      reporter {
+        name: "AP-515-Lab"
+        mac:
+        ipv4: "192.168.102.100"
+        hwType: "AP-515"
+        swVersion: "8.9.0.1-8.9.0.1"
+        swBuild: "82154"
+        time: 1638629578
+      }
+      bleData {
+        mac:
+        frameType: adv_ind
+        data:
+        rssi: -48
+        addrType: addr_type_public
+      }
 
      * 
      * 
@@ -3678,6 +3800,23 @@ status {
       // ----- Get the protobuf result data
       $v_bleData_msg = $v_list[0];
 
+      // ----- Get frametype
+      $v_frame_type = '';
+      if ($v_bleData_msg->hasFrameType()) {
+        $v_frame_type = $v_bleData_msg->getFrameType();
+        ArubaWssTool::log('debug', "Frame Type is '".$v_frame_type."'.");
+      }
+      else {
+        ArubaWssTool::log('debug', "Missing frame type. Skip BLE data."); 
+        return(true);
+      }
+
+      // ----- Skip 'scan_rsp' frame
+      if ($v_frame_type == 'scan_rsp') {
+        ArubaWssTool::log('debug', "'".$v_frame_type."' frame type ignored for now. Skip BLE data."); 
+        return(true);
+      }
+      
       // ----- Get device
       $v_device = null;
       if ($v_bleData_msg->hasMac()) {
@@ -3692,13 +3831,6 @@ status {
         }
       }
       
-      // ----- Get frametype
-      $v_frame_type = '';
-      if ($v_bleData_msg->hasFrameType()) {
-        $v_frame_type = $v_bleData_msg->getFrameType();
-        ArubaWssTool::log('debug', "Frame Type is '".$v_frame_type."'.");
-      }
-      
       // ----- Get device
       if ($v_bleData_msg->hasData()) {
         $v_data = $v_bleData_msg->getData();
@@ -3710,7 +3842,8 @@ status {
       
       // ----- Look for 'adv_ind' frame
       if (($v_device !== null) && ($v_frame_type == 'adv_ind')) {
-        $v_device->setTelemetryFromAdvert($v_bytes);      
+        $v_device->setTelemetryFromAdvert($v_bytes);     
+        $v_device->doActionIfModified(); 
       }
       
       return(true);
@@ -6146,8 +6279,8 @@ La valeur se retrouve là : 00-19-00-00-3E-00
           ArubaWssTool::log('debug', "Jinou Temperature from advert is : ".$v_temp);
           ArubaWssTool::log('debug', "Jinou Humidity from advert is : ".$v_humi);
           
-          $this->setTelemetryValue('temperatureC2', $v_temp);
-          $this->setTelemetryValue('humidity2', $v_humi);        
+          $this->setTelemetryValue('temperatureC', $v_temp);
+          $this->setTelemetryValue('humidity', $v_humi);        
           //$this->setChangedFlag('telemetry_value');                
         }
         
