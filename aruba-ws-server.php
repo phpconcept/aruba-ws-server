@@ -1910,6 +1910,14 @@
       $v_device = $this->getDeviceByMac($p_data['mac_address']);
       if ($v_device !== null) { 
         ArubaWssTool::log('info', "Device '".$p_data['mac_address']."' is already in the cache. Update data.");
+        
+        // ----- reload the device properties from third party (if needed)
+        if (!$v_device->loadMe()) {
+          // TBC : should not occur ... or device disappear from jeedom
+          $v_response['status'] = 'fail';
+          $v_response['status_msg'] = "Device with this mac : ".$p_data['mac_address']." fail to load().";
+          ArubaWssTool::log('debug', $v_response['status_msg']);
+        }
       }
       else {
         // ----- Load device from thirdparty plugin function
