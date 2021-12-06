@@ -423,6 +423,11 @@
     protected $reporters_allow_list = array();
     protected $access_token = '';
     
+    // ----- telemetry_max_timestamp (default 10 minutes = 600 secondes)
+    // When a telemetry value received is same as previous one, the change flag is not updated, the value is not notified to websocket clients or thirdparty plugins.
+    // But when the aging time is greater than "telemetry_max_timestamp" second then the value is updated, even is the value is the same.
+    protected $telemetry_max_timestamp = 600;
+    
     protected $console_log = false;
     protected $log_fct_name = 'ArubaWebsocket::log_fct_empty';
 
@@ -642,8 +647,12 @@
         case 'log_fct_name':
           $v_value = $this->log_fct_name;
         break;
+        case 'telemetry_max_timestamp':
+          $v_value = $this->telemetry_max_timestamp;
+        break;
+        
         default :
-          //ArubaWssTool::log('warning', "Unknown configuration type '".$p_name."'");
+          ArubaWssTool::log('error', "Unknown configuration type '".$p_name."'");
           $v_value = '';
       }
 
@@ -3839,7 +3848,8 @@ status {
         }
       }
       
-      // ----- Get device
+      // ----- Get data in bytes in string format '00-00-00'
+      $v_bytes = '';
       if ($v_bleData_msg->hasData()) {
         $v_data = $v_bleData_msg->getData();
         $v_bytes = ArubaWssTool::bytesToString($v_data);
@@ -3849,9 +3859,23 @@ status {
       }
       
       // ----- Look for 'adv_ind' frame
-      if (($v_device !== null) && ($v_frame_type == 'adv_ind')) {
-        $v_device->setTelemetryFromAdvert($v_bytes);     
-        $v_device->doActionIfModified(); 
+      if (($v_device !== null) && ($v_bytes != '') && ($v_frame_type == 'adv_ind')) {
+        // ----- Get reporter timestamp
+        $v_timestamp = $p_reporter->getLastSeen();
+        ArubaWssTool::log('debug', "Reporter lastseen is : ".$v_timestamp." (".date("Y-m-d H:i:s", $v_timestamp).")");
+        
+        // ----- Get RSSI
+        $v_rssi = -999;
+        if ($v_bleData_msg->hasRssi()) {
+          $v_rssi = $v_bleData_msg->getRssi();
+          ArubaWssTool::log('debug', "RSSI is : ".$v_rssi." ");
+        }
+        
+        // ----- Update nearestAP, and if nearest, update telemetry value
+        if ($v_device->updateNearestAPNew($p_reporter, $v_timestamp, $v_rssi)) {
+          $v_device->setTelemetryFromAdvert($v_bytes);     
+          $v_device->doActionIfModified(); 
+        }
       }
       
       return(true);
@@ -6413,7 +6437,25 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function setChangedFlag($p_flag_string='', $p_value=TRUE) {
+    public function setChangedFlag($p_flag_type, $p_flag_name='') {
+      // ----- Store the changed flag
+      if ($p_flag_type != '') {
+        if (!is_array($this->change_flag[$p_flag_type])) {
+          $this->change_flag[$p_flag_type] = array();
+        }
+        if ($p_flag_name != '') {
+          $this->change_flag[$p_flag_type][$p_flag_name] = true;
+        }
+      }
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : setChangedFlag()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function setChangedFlag_SAVE($p_flag_string='', $p_value=TRUE) {
       // ----- Store the changed flag
       if ($p_flag_string != '') {
         $this->change_flag[$p_flag_string] = $p_value;
@@ -6429,27 +6471,59 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
      */
     public function setTelemetryValue($p_name, $p_value, $p_type='') {
     
-      // TBC : should check with regexp that name is valid ascii value for array index ?
+      // TBC : should check with regexp that name is valid ascii value for array index ?     
       
-      // ----- Look if no existing value for this name
+      // ----- Look if no existing value for this name. Create one.
       if (!isset($this->telemetry_value_list[$p_name])) {
         $this->telemetry_value_list[$p_name] = array();
         $this->telemetry_value_list[$p_name]['name'] = $p_name;    
         $this->telemetry_value_list[$p_name]['type'] = $p_type;        
-      }
-      
-      // ----- Update value
-      $this->telemetry_value_list[$p_name]['value'] = $p_value;
 
-      // ----- Look for type to update
-      if (($p_type != '') && ($this->telemetry_value_list[$p_name]['type'] == '')) {
-        $this->telemetry_value_list[$p_name]['type'] = $p_type;          
+        // ----- Update value
+        $this->telemetry_value_list[$p_name]['value'] = $p_value;
+
+        // ----- Store last update timer      
+        $this->telemetry_value_list[$p_name]['timestamp'] = time();        
+      
+        $this->setChangedFlag('telemetry_value', $p_name);
       }
       
-      // ----- Store last update timer      
-      $this->telemetry_value_list[$p_name]['timestamp'] = time();        
-      
-      $this->setChangedFlag('telemetry_value');
+      // ----- Already an existing telemetry entry with this name
+      else {
+        // ----- Look for type to update
+        // TBC : I don't remember exactly why this is needed ...
+        if (($p_type != '') && ($this->telemetry_value_list[$p_name]['type'] == '')) {
+          $this->telemetry_value_list[$p_name]['type'] = $p_type;          
+        }
+
+        // ----- Look for no new value
+        if ($this->telemetry_value_list[$p_name]['value'] == $p_value) {
+          $v_telemetry_max_timestamp = ArubaWssTool::getConfig('telemetry_max_timestamp');
+          
+          // ----- Look if max timestamp reached 
+          if (($this->telemetry_value_list[$p_name]['timestamp'] + $v_telemetry_max_timestamp) < time()) {
+            // ----- Store last update timer      
+            $this->telemetry_value_list[$p_name]['timestamp'] = time();
+                    
+            // ----- Flag as update to do
+            $this->setChangedFlag('telemetry_value', $p_name);
+          }
+          else {
+            ArubaWssTool::log('debug', "Same value for '".$p_name."',no need to store. ");
+          }
+        }
+        // ----- Look for new value
+        else {
+          // ----- Update value
+          $this->telemetry_value_list[$p_name]['value'] = $p_value;
+  
+          // ----- Store last update timer      
+          $this->telemetry_value_list[$p_name]['timestamp'] = time();        
+        
+          $this->setChangedFlag('telemetry_value', $p_name);
+        }
+
+      }
     }
     /* -------------------------------------------------------------------------*/
 
@@ -6484,7 +6558,190 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
      *   False : if telemetry values are to be ignored
      * ---------------------------------------------------------------------------
      */
+    public function updateNearestAPNew(&$p_reporter, $p_timestamp, $p_rssi) {
+
+      $v_debug_msg = '';
+      
+      ArubaWssTool::log('debug', "Look to update nearestAP with ".$p_reporter->getMac());
+      
+      $v_debug_msg .= $p_reporter->getName().":";
+
+      // ----- Get presence configuration thresholds
+      $v_timeout = ArubaWssTool::getConfig('presence_timeout');
+      $v_presence_min_rssi = ArubaWssTool::getConfig('presence_min_rssi');
+      $v_presence_rssi_hysteresis = ArubaWssTool::getConfig('presence_rssi_hysteresis');
+
+      // ----- Get last seen (if any)
+      $v_lastseen = $p_timestamp;
+      ArubaWssTool::log('debug', "LastSeen is : ".$v_lastseen." (".date("Y-m-d H:i:s", $v_lastseen).")");
+
+      $v_debug_msg .= "LastSeen:".date("Y-m-d H:i:s", $v_lastseen)."(".$v_lastseen.")".":";
+
+      // ----- Get RSSI (if any)
+      $v_rssi = $p_rssi;
+
+      $v_debug_msg .= "RSSI:".$v_rssi."";
+
+      // ----- Look for too old data for updating presence
+      // Even if this is a better RSSI the timestamp is too old for the presence flag.
+      if ( (($v_lastseen + $v_timeout) < time())) {
+        ArubaWssTool::log('debug', "LastSeen value from this AP is already older than presence timeout. Skip presence update.");
+      }
+      else {
+        // ----- Look if last seen timestamp is better than current one
+        // if not then this is an old telemetry data compare to others previously 
+        // received (by same AP or other AP)
+        if ($this->presence_last_seen < $v_lastseen) {
+          // ----- Look if RSSI is not too far to be "present"
+          if (($v_rssi < $v_presence_min_rssi) && ($this->presence == 0)) {
+            ArubaWssTool::log('debug', "RSSI (".$v_rssi.") is not enought to change from absence to presence.");
+          }
+          else if (($v_rssi < ($v_presence_min_rssi-$v_presence_rssi_hysteresis)) && ($this->presence == 1)) {
+            ArubaWssTool::log('debug', "RSSI (".$v_rssi.") is not enought to update presence.");
+          }
+          else {
+            $this->setPresence(1, $v_lastseen);
+          }
+        }
+        else {
+          ArubaWssTool::log('debug', "Presence : received lastseen value in telemetry is older than a previous one.");
+        }
+      }
+
+      $v_debug_msg .= ' ->'.($this->presence?'present':'absent')."";
+
+      // ----- Look if this is the current best reporter (nearest ap)
+      if ($this->getNearestApMac() == $p_reporter->getMac()) {
+        ArubaWssTool::log('debug', "Reporter '".$p_reporter->getMac()."' is the current nearest reporter. Update last seen value");
+
+        // ----- No change in last seen value => repeated old value ...
+        // No : in fact we can receive 2 payloads with the same timestamp (in sec) with different values
+        // exemple is the switch up-idle-bottom values
+        /*
+        if ($this->nearest_ap_last_seen == $v_lastseen) {
+          ArubaWssTool::log('debug', "New last seen value is the same : repeated old telemetry data. Skip telemetry data.");
+          return(false);
+        }
+        */
+
+        // ----- Should never occur ...
+        if ($this->nearest_ap_last_seen > $v_lastseen) {
+          ArubaWssTool::log('error', "New last seen value is older than previous one ! Should never occur. Skip telemetry data.");
+          return(false);
+        }
+
+        // ----- Update latest RSSI.
+        //  if no RSSI, keep the old one ... ?
+        //  an object should always send an RSSI or never send an RSSI.
+        $this->setNearestAp($this->getNearestApMac(), $v_rssi, $v_lastseen);
+
+        return(true);
+      }
+      
+      // ----- Now look the case when the AP is not the current nearest AP
+
+      $swap_ap_flag = false;
+
+      // ----- Look for no current nearest AP
+      if ($this->getNearestApMac() == '') {
+        ArubaWssTool::log('debug', "No existing nearest reporter.");
+        $swap_ap_flag = true;
+      }
+
+      // ----- Look if new reporter has a better RSSI than current nearest
+      $v_nearest_ap_hysteresis = ArubaWssTool::getConfig('nearest_ap_hysteresis');
+      if (!$swap_ap_flag && ($v_rssi != -110) && ($v_rssi > ($this->nearest_ap_rssi + $v_nearest_ap_hysteresis))) {
+        ArubaWssTool::log('debug', "Swap for a new nearest AP with better RSSI, from '".$this->getNearestApMac()."' (RSSI '".$this->nearest_ap_rssi."') to '".$p_reporter->getMac()."' (RSSI '".$v_rssi."')");
+        $swap_ap_flag = true;
+      }
+
+      /*
+      // ----- Look if current reporter has a very long last_seen value
+      $v_nearest_ap_timeout = ArubaIotConfig::byKey('nearest_ap_timeout', 'ArubaIot');
+      if (!$swap_ap_flag && (($this->nearest_ap_last_seen + $v_nearest_ap_timeout) < time())) {
+        ArubaWssTool::log('debug', "Swap for a new nearest AP with better last-seen value, from '".$this->getNearestApMac()."' (".date("Y-m-d H:i:s", $this->nearest_ap_last_seen).") to '".$p_reporter->getMac()."' (".date("Y-m-d H:i:s", $v_lastseen).").");
+        $swap_ap_flag = true;
+      }
+      */
+
+      // ----- Look if rssi lower than the minimum to swap
+      if ($swap_ap_flag) {
+        $v_nearest_ap_min_rssi = ArubaWssTool::getConfig('nearest_ap_min_rssi');
+
+        if ($v_rssi < $v_nearest_ap_min_rssi) {
+          ArubaWssTool::log('debug', "RSSI (".$v_rssi.") is not enought to become a nearestAP.");
+          $swap_ap_flag = false;
+        }
+      }
+
+      // ----- Look if swap to new AP is to be done
+      if ($swap_ap_flag) {
+        ArubaWssTool::log('debug', "Swap for new nearest reporter '".$p_reporter->getMac()."'");
+
+        // ----- Swap for new nearest AP
+        $this->setNearestAp($p_reporter->getMac(), $v_rssi, $v_lastseen);
+
+        return(true);
+      }
+
+      // ----- Compare new AP lastseen to nearestAP timestamp
+      // Update timer only if already in present state ?
+
+      ArubaWssTool::log('debug', "Reporter '".$p_reporter->getMac()."' not a new nearest reporter compared to current '".$this->getNearestApMac()."'. Skip telemetry data.");
+
+      return(false);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : updateNearestAP()
+     * Description :
+     * Return Value :
+     *   True : if telemetry values are to be updated
+     *   False : if telemetry values are to be ignored
+     * ---------------------------------------------------------------------------
+     */
     public function updateNearestAP(&$p_reporter, $p_telemetry) {
+
+      //ArubaWssTool::log('debug', "Look to update nearestAP with ".$p_reporter->getMac());
+      
+      // ----- Get last seen (if any)
+      $v_lastseen = 0;
+      if ($p_telemetry->hasLastSeen()) {
+        $v_lastseen = $p_telemetry->getLastSeen();
+      }
+      else {
+        // Should not occur ... I not yet seen an object without this value ...
+        ArubaWssTool::log('debug', "LastSeen is missing in telemetry data. Skip presence & nearestAP update.");
+        return(false);
+      }
+
+      // ----- Get RSSI (if any)
+      $v_rssi = -110;
+      if ($p_telemetry->hasRSSI()) {
+        $v_val = explode(':', $p_telemetry->getRSSI());
+        $v_rssi = (isset($v_val[1]) ? intval($v_val[1]) : $v_rssi);
+      }
+      else {
+        // Il semble que lorsque l'IAP ne reçoit plus de beacons, il continu
+        // à envoyer un message de télémetry avec comme date la dernière fois
+        // qu'il a vu le beacon, mais plus de valeur de RSSI.
+        $v_rssi = -110;
+      }
+      return($this->updateNearestAPNew($p_reporter, $v_lastseen, $v_rssi));
+    }
+    /* -------------------------------------------------------------------------*/
+
+
+    /**---------------------------------------------------------------------------
+     * Method : updateNearestAP()
+     * Description :
+     * Return Value :
+     *   True : if telemetry values are to be updated
+     *   False : if telemetry values are to be ignored
+     * ---------------------------------------------------------------------------
+     */
+    public function updateNearestAP_SAVE(&$p_reporter, $p_telemetry) {
 
       $v_debug_msg = '';
       

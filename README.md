@@ -289,7 +289,11 @@ The Websocket Server can be accessed by JSON API, description of the API can be 
 ## Change Logs
 
 Release v1.2-beta :
-
+- Avoid sending notification when updated telemetry value is the same as already stored one. 
+Add a configuration value "telemetry_max_timestamp" (default 600 sec) to force a notification after this time delay, even when value is the same (kind of keepalive for the value).
+- Ignore duplicate BLE advertissement when using multiple access point (AP). BLE advertissement can be received by multiple AP,
+in order to ignore duplicates, AWSS updates the "nearest AP" for the device (if needed) and only take into account the advertissement coming from the nearest AP.
+- Improve interface with Jeedom plugin. 
 
 Release v1.1 :
 - Add support for modified Xiaomi Sensor firmware (https://github.com/atc1441/ATC_MiThermometer), which allow for temperature, humidity and battery to be in the BLE advertissement.
