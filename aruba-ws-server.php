@@ -423,10 +423,10 @@
     protected $reporters_allow_list = array();
     protected $access_token = '';
     
-    // ----- telemetry_max_timestamp (default 10 minutes = 600 secondes)
+    // ----- telemetry_max_timestamp (default 60 secondes)
     // When a telemetry value received is same as previous one, the change flag is not updated, the value is not notified to websocket clients or thirdparty plugins.
     // But when the aging time is greater than "telemetry_max_timestamp" second then the value is updated, even is the value is the same.
-    protected $telemetry_max_timestamp = 600;
+    protected $telemetry_max_timestamp = 60;
     
     protected $console_log = false;
     protected $log_fct_name = 'ArubaWebsocket::log_fct_empty';
@@ -6005,11 +6005,18 @@ fwrite($fd, "\n");
      * ---------------------------------------------------------------------------
      */
     public function setNearestAp($p_ap, $p_rssi, $p_lastseen='') {
-      // ----- Change and flag only if new value
-      if (($this->nearest_ap_rssi != $p_rssi) || (($this->nearest_ap_mac != $p_ap))) {
+      // ----- Change flag only if new value
+      if ($this->nearest_ap_mac != $p_ap) {
         $this->nearest_ap_mac = $p_ap;
-        $this->nearest_ap_rssi = $p_rssi;
         $this->setChangedFlag('nearest_ap');
+        ArubaWssTool::log('debug', "Change nearest_ap of ".$this->name." to ".$p_ap." (rssi:".$p_rssi.")");
+      }
+
+      // ----- Change flag only if new value
+      if ($this->nearest_ap_rssi != $p_rssi) {
+        $this->nearest_ap_rssi = $p_rssi;
+        $this->setChangedFlag('rssi');
+        ArubaWssTool::log('debug', "Change rssi of ".$this->name." to ".$p_ap." (rssi:".$p_rssi.")");
       }
 
       if ($p_lastseen != '') {
@@ -7321,6 +7328,9 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
     
       // ----- Trigger external plugin actions (if any)
       $this->doPostActionTelemetry($p_type);
+      
+      // ----- Reset all changed flags
+      $this->resetChangedFlag();
     }
     /* -------------------------------------------------------------------------*/
 
