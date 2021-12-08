@@ -32,13 +32,16 @@
     if ($arg == '-console_log') {
       $g_awss_console_log = true;
     }
+    if ($arg == '-debug_level') {
+      $g_awss_debug_level = (isset($argv[$v_count+1]) ? $argv[$v_count+1] : '');
+    }
     $v_count++;
   }      
       
   // ----- Temporary Trick
-  if (($g_awss_extension == '') && (file_exists(__DIR__.'/ArubaWssJeedom.class.php'))) {
-    $g_awss_extension = 'Jeedom';
-  } 
+  //if (($g_awss_extension == '') && (file_exists(__DIR__.'/ArubaWssJeedom.class.php'))) {
+  //  $g_awss_extension = 'Jeedom';
+  //} 
   
   // ----- Extension include
   if (($g_awss_extension != '') && ($g_awss_extension != 'no')) {
@@ -98,9 +101,9 @@
      *   troubleshooting locally.
      * ---------------------------------------------------------------------------
      */
-    static function log($p_level, $p_message) {
+    static function log($p_type, $p_message) {
       global $aruba_iot_websocket;
-      $aruba_iot_websocket->log($p_level, $p_message);
+      $aruba_iot_websocket->log($p_type, $p_message);
     }
     /* -------------------------------------------------------------------------*/
 
@@ -430,6 +433,7 @@
     
     protected $console_log = false;
     protected $log_fct_name = 'ArubaWebsocket::log_fct_empty';
+    protected $debug_level = 5;
 
     // ----- Attributes to manage dynamic datas
     protected $up_time = 0;
@@ -484,7 +488,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function log_fct_empty($p_level, $p_message) {
+    public function log_fct_empty($p_type, $p_message) {
     }
     /* -------------------------------------------------------------------------*/
 
@@ -493,17 +497,30 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function log($p_level, $p_message) {
+    public function log($p_type, $p_message) {
+    
+      // ----- Extract level from type
+      $v_list = explode(':', $p_type);
+      $v_type = $v_list[0];
+      $v_level = 1;
+      if (sizeof($v_list) >= 2) {
+        $v_level = $v_list[1];
+      }
+      
+      if ($v_level > $this->debug_level) {
+        // ----- Ignore this level of debug
+        return;
+      }
       
       if ($this->console_log) {
-        echo '['.date("Y-m-d H:i:s").'] ['.$p_level.']:'.$p_message."\n";
+        echo '['.date("Y-m-d H:i:s").'] ['.$p_type.']:'.$p_message."\n";
       }
 
       // ----- The function MUST EXISTS !!
       // Avoidinig testing is to speed up the process.
       // if not can add : function_exists()      
       $v_fct = $this->log_fct_name;
-      $v_fct($p_level, $p_message);
+      $v_fct($p_type, $p_message);
   
       return;
     }
@@ -743,6 +760,10 @@
           $v_args['console_log'] = true;
         }
     
+        if ($arg == '-debug_level') {
+          $v_args['debug_level'] = (isset($p_argv[$v_count+1]) ? $p_argv[$v_count+1] : '');
+        }
+
         if ($arg == '-display_ping') {
           $v_args['display_ping'] = true;
         }
@@ -757,7 +778,7 @@
     
         if (($arg == '-help') || ($arg == '--help')) {
           echo "----- \n";
-          echo $p_argv[0]." [-help] [-console_log] [-server_ip X.X.X.X] [-server_port XXX] [-api_key XXX] [-reporters_key XXX] [-reporters_list X1,X2,X3...] [-devices_list X1,X2,X3...] [-display_ping] [-display_raw_data] [-no_extension] [-extension <extension_name>] [-file <debug_message_filename>]\n";
+          echo $p_argv[0]." [-help] [-console_log] [-debug_level X] [-server_ip X.X.X.X] [-server_port XXX] [-api_key XXX] [-reporters_key XXX] [-reporters_list X1,X2,X3...] [-devices_list X1,X2,X3...] [-display_ping] [-display_raw_data] [-no_extension] [-extension <extension_name>] [-file <debug_message_filename>]\n";
           echo "----- \n";
           exit();
         }
@@ -786,6 +807,9 @@
       // Must be just after arg parse
       if (isset($p_args['console_log'])) {
         $this->console_log = true;
+      } 
+      if (isset($p_args['debug_level'])) {
+        $this->debug_level = $p_args['debug_level'];
       } 
       
       ArubaWssTool::log('info', "----- Starting ArubaIot Websocket Server Daemon v.".ARUBA_WSS_VERSION." (".date("Y-m-d H:i:s", $this->up_time).")'");
@@ -2615,7 +2639,7 @@
 
       ArubaWssTool::log('debug',  "Received telemetry message from ".$p_reporter->getName()."");
 
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
 
       // ----- Look if there is a list of reported device
       if ($v_at_telemetry_msg->hasReportedList()) {
@@ -2749,6 +2773,8 @@
 
       ArubaWssTool::log('debug',  "Received RTLS message from ".$p_connection->my_id."");
 
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
+
       // ----- Look if there is a list of reported device
       if ($v_at_telemetry_msg->hasWifiDataList()) {
         $v_list = $v_at_telemetry_msg->getWifiDataList();
@@ -2819,7 +2845,7 @@
 
       ArubaWssTool::log('debug',  "Received apHealthUpdate message from ".$p_reporter->getName()."");
       
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
 
       
       // TBC
@@ -2837,7 +2863,7 @@
 
       ArubaWssTool::log('debug',  "Received actionResults message from ".$p_reporter->getName()."");
 
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
       
       if (!$v_at_telemetry_msg->hasResultsList()) {
         ArubaWssTool::log('debug', "Message with no actionResults information (strange !).");
@@ -3232,7 +3258,7 @@ characteristics {
 
       ArubaWssTool::log('debug',  "Received characteristics discovery result message from ".$p_reporter->getName()."");
 
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
       
       // ----- Look for characteristics list
       if (!$v_at_telemetry_msg->hasCharacteristicsList()) {
@@ -3395,7 +3421,7 @@ characteristics {
 
       ArubaWssTool::log('debug',  "Received characteristics message from ".$p_reporter->getName()."");
 
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
       
       // ----- Look if telemetry has results before characteristics
       if (!$v_at_telemetry_msg->hasResultsList()) {
@@ -3679,7 +3705,7 @@ status {
 
       ArubaWssTool::log('debug',  "Received status message from ".$p_reporter->getName()."");
       
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
 
       if (!$v_at_telemetry_msg->hasStatus()) {
         ArubaWssTool::log('debug', "Message with no status information (strange !).");
@@ -3796,7 +3822,7 @@ status {
 
       ArubaWssTool::log('debug',  "Received bleData message from ".$p_reporter->getName()."");
       
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
 
       // ----- Look if telemetry has results before characteristics
       if (!$v_at_telemetry_msg->hasBleDataList()) {
@@ -3898,7 +3924,7 @@ status {
 
       ArubaWssTool::log('debug',  "Received serialDataNb message from ".$p_reporter->getName()."");
       
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
 /*
       // ----- Look if telemetry has results before characteristics
       if (!$v_at_telemetry_msg->hasBleDataList()) {
@@ -4296,9 +4322,7 @@ fwrite($fd, "\n");
      * ---------------------------------------------------------------------------
      */
     public function onPingMessage(ConnectionInterface &$p_connection) {
-      if (0) {
-        ArubaWssTool::log('debug', "Received ping from ".$connection->my_name." (".date("Y-m-d H:i:s").")");
-      }
+        //ArubaWssTool::log('debug', "Received ping from ".$connection->my_name." (".date("Y-m-d H:i:s").")");
     }
     /* -------------------------------------------------------------------------*/
 
