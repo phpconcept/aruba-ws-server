@@ -503,8 +503,9 @@
       $v_list = explode(':', $p_type);
       $v_type = $v_list[0];
       $v_level = 1;
-      if (sizeof($v_list) >= 2) {
-        $v_level = $v_list[1];
+      $v_n = sizeof($v_list);
+      if ($v_n >= 2) {
+        $v_level = $v_list[$v_n-1];
       }
       
       if ($v_level > $this->debug_level) {
@@ -1306,7 +1307,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_exeeemple($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_exeeemple($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
 
       // ----- Check mandatory fields are present
@@ -1336,7 +1337,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_ble_connect($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_ble_connect($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1404,7 +1405,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_ble_disconnect($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_ble_disconnect($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1475,7 +1476,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_ble_discover($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_ble_discover($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1543,7 +1544,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_ble_read($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_ble_read($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1647,7 +1648,7 @@
      * 
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_ble_read_repeat($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_ble_read_repeat($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1706,7 +1707,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_ble_notify($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_ble_notify($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1847,7 +1848,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_get_stats($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_get_stats($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1868,7 +1869,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_device_remove($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_device_remove($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1909,7 +1910,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_device_update($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_device_update($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1975,7 +1976,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_websocket_info($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_websocket_info($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2000,7 +2001,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_reporter_list($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_reporter_list($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2044,7 +2045,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_reporter_info($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_reporter_info($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2083,7 +2084,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_device_list($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_device_list($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2118,7 +2119,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_device_info($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_device_info($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2173,7 +2174,7 @@
 }
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_include_mode($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_include_mode($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2238,7 +2239,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_include_device_count($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_include_device_count($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2263,7 +2264,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_notification_add($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_notification_add($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2327,7 +2328,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_notification_remove($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_notification_remove($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2413,7 +2414,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_debug($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_debug($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';

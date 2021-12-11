@@ -289,6 +289,7 @@ The Websocket Server can be accessed by JSON API, description of the API can be 
 ## Change Logs
 
 Release v1.2-beta :
+- Add concept of level for debbugging
 - Avoid sending notification when updated telemetry value is the same as already stored one. 
 Add a configuration value "telemetry_max_timestamp" (default 60 sec) to force a notification after this time delay, even when value is the same (kind of keepalive for the value).
 - Ignore duplicate BLE advertissement when using multiple access point (AP). BLE advertissement can be received by multiple AP,
