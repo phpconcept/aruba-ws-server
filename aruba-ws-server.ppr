@@ -1,0 +1,84 @@
+[Config]
+Compilator.SaveAll=0
+Compilator.Capture=0
+Compilator.CompileOnBackground=0
+Compilator.ProgSaveAll=0
+Compilator.ProgRunSelection=0
+Compilator.LogType=0
+Compilator.LogEncoding=0
+DefaultCP=0
+LogtoEnd=1
+DontOpen=0
+AbsolutePath=0
+FileFormat=0
+ProjectFilesOnly=0
+HTServer=localhost
+[Project tree]
+aruba-ws-server
+	+Websocket
+		+Doc
+			README.md
+			doc\API.md
+			doc\install\install_docker\Dockerfile
+		+Client-Test
+			awss\client\websocket_client.html
+		+Proto-class
+			src\aruba_telemetry\IotSbMessage.php
+			src\aruba_telemetry\Meta.php
+			src\aruba_telemetry\NbTopic.php
+			src\aruba_telemetry\SbTopic.php
+			src\aruba_telemetry\Receiver.php
+			src\aruba_telemetry\Telemetry.php
+			src\aruba_telemetry\Characteristic.php
+			src\aruba_telemetry\ActionResult.php
+			src\aruba_telemetry\Action.php
+			src\aruba_telemetry\Status.php
+			src\aruba_telemetry\BleData.php
+		aruba-ws-server.php
+[Open project files]
+0=aruba-ws-server.php
+1=awss\client\websocket_client.html
+2=doc\API.md
+3=src\aruba_telemetry\BleData.php
+4=src\aruba_telemetry\BleFrameType.php
+5=README.md
+6=doc\install\install_docker\Dockerfile
+[Selected Project Files]
+Main=
+Selected=aruba-ws-server.php
+[aruba-ws-server.php]
+TopLine=2953
+Caret=7,2965
+Mark1=11,7563
+Mark2=1,2711
+Mark3=70,2955
+Mark4=11,6845
+Mark5=1,6034
+Mark6=61,6084
+Mark7=14,4595
+Mark8=65,3532
+Mark9=51,2085
+Mark10=46,6456
+Mark11=6,5930
+Mark12=35,7040
+Mark13=62,4826
+Mark14=39,6235
+Mark15=72,6971
+[awss\client\websocket_client.html]
+TopLine=181
+Caret=104,192
+[doc\API.md]
+TopLine=1
+Caret=1,1
+[src\aruba_telemetry\BleData.php]
+TopLine=86
+Caret=1,111
+[src\aruba_telemetry\BleFrameType.php]
+TopLine=117
+Caret=41,134
+[README.md]
+TopLine=1
+Caret=114,17
+[doc\install\install_docker\Dockerfile]
+TopLine=9
+Caret=1,24
