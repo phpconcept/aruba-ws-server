@@ -4155,40 +4155,12 @@ enum NbTopic {
      */
     public function getReporterFromProtoMessage(ConnectionInterface &$p_connection, $p_msg, $p_at_telemetry_msg) {
 
-      //ArubaWssTool::log('debug',  "Received message from ".$p_connection->my_id."");
-
-      // ----- Stats
-      $v_stat_data_payload = strlen($p_msg);
-      $this->stats('data_payload', $v_stat_data_payload);
-
-      // ----- Parse Aruba protobuf message
-      // TBC : I should check that the telemetry object is ok
-      //$v_at_telemetry_msg = new aruba_telemetry\Telemetry($p_msg);
+      // ----- Get telemetry msg
       $v_at_telemetry_msg = $p_at_telemetry_msg;
-
-/*
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
-
-      // ----- Get Meta part of the message
-      $v_at_meta = $v_at_telemetry_msg->getMeta();
-
-      // ----- Get Topic
-      $v_topic = '';
-      if ($v_at_meta->hasNbTopic()) {
-        $v_topic = $v_at_meta->getNbTopic()->name();
-      }
-
-      ArubaWssTool::log('debug', "--------- Meta :");
-      ArubaWssTool::log('debug', "  Version: ".$v_at_meta->getVersion()."");
-      ArubaWssTool::log('debug', "  Access Token: ".$v_at_meta->getAccessToken()."");
-      ArubaWssTool::log('debug', "  NbTopic: ".$v_topic."");
-      ArubaWssTool::log('debug', "---------");
-      ArubaWssTool::log('debug', "");
-      */
       
       // ----- Check if reporter info is valid
       if (!$v_at_telemetry_msg->hasReporter()) {
-        ArubaWssTool::log('info', "Missing reporter information in telemetry payload. Message ignored.");
+        ArubaWssTool::log('debug', "Missing reporter information in telemetry payload. Message ignored.");
         return(null);
       }
       
@@ -4197,7 +4169,7 @@ enum NbTopic {
 
       // ----- Check if reporter has a valid MAC@
       if (!$v_at_reporter->hasMac()) {
-        ArubaWssTool::log('info', "Missing MAC@ for reporter in telemetry payload. Message ignored.");
+        ArubaWssTool::log('debug', "Missing MAC@ for reporter in telemetry payload. Message ignored.");
         return(null);
       }
       
@@ -4225,17 +4197,6 @@ enum NbTopic {
         }
       }
 
-
-/*
-$v_filemane = __DIR__."/telemetry-".date("Y-m-d-H-i-s", $v_at_reporter->getTime())."-".$v_mac.".json";
-$v_filemane = str_replace(':', '-', $v_filemane);
-echo "filename : $v_filemane\n";
-$fd = fopen($v_filemane, 'w');
-fwrite($fd, "Reporter (".$v_mac.") :\n");
-fwrite($fd, $v_at_reporter);
-fwrite($fd, "\n");
-fwrite($fd, "\n");
-*/
       // ----- Look for existing reporter in the list
       $v_reporter = $this->getReporterByMac($v_mac);
 
@@ -4263,7 +4224,7 @@ fwrite($fd, "\n");
         // ----- Connect the reporter with the connection
         $v_reporter->connect($p_connection);
 
-        ArubaWssTool::log('info', "Attaching Reporter '".$v_mac."' (".$v_reporter->getName().") to connection '".$p_connection->my_id."'.");
+        ArubaWssTool::log('debug', "Attaching Reporter '".$v_mac."' (".$v_reporter->getName().") to connection '".$p_connection->my_id."'.");
 
         // ----- Update connection custom attributes
         $p_connection->my_status = 'active';
@@ -4276,7 +4237,7 @@ fwrite($fd, "\n");
         // ----- Connect the reporter with the connection
         $v_reporter->connect($p_connection);
 
-        ArubaWssTool::log('info', "Attaching Reporter '".$v_mac."' (".$v_reporter->getName().") to connection '".$p_connection->my_id."'.");
+        ArubaWssTool::log('debug', "Attaching Reporter '".$v_mac."' (".$v_reporter->getName().") to connection '".$p_connection->my_id."'.");
 
         // ----- Update connection custom attributes
         $p_connection->my_status = 'active';
@@ -4326,18 +4287,6 @@ fwrite($fd, "\n");
 
       // ----- Update last seen value
       $v_reporter->setLastSeen($v_at_reporter->getTime());
-
-      // ----- Parse data depending on nature
-      /*
-      if ($p_connection->my_type == 'telemetry') {
-        return $this->onMsgTelemetry($v_reporter, $v_at_telemetry_msg);
-      }
-      else if ($p_connection->my_type == 'rtls') {
-        return $this->onMsgWifiData($p_connection, $v_at_telemetry_msg);
-      }
-      else {
-      }
-      */
 
       return($v_reporter);
     }
@@ -7709,7 +7658,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
       }
 
       if ( isset($this->connection_id_list[$v_id]) ) {
-        ArubaWssTool::log('info', "Removing connection '".$v_id."' for reporter '".$this->mac_address."'");
+        ArubaWssTool::log('debug', "Removing connection '".$v_id."' for reporter '".$this->mac_address."'");
+        ArubaWssTool::log('warning', "Reporter '".$this->name."' (".$this->mac_address."), lost connection");
         unset($this->connection_id_list[$v_id]);
         $this->setRemoteIp('');
         $p_connection->my_reporter_id = '';
@@ -7748,7 +7698,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
       }
 
       if (!isset($this->connection_id_list[$v_id])) {
-        ArubaWssTool::log('info', "Adding new connection '".$v_id."' for reporter '".$this->mac_address."'");
+        ArubaWssTool::log('debug', "Adding new connection '".$v_id."' for reporter '".$this->mac_address."'");
+        ArubaWssTool::log('info', "Reporter '".$this->name."' (".$this->mac_address."), is connected from IP ".$v_id."");
         $this->connection_id_list[$v_id] = array();
         $this->connection_id_list[$v_id]['type'] = $v_type;
         $this->setRemoteIp($p_connection->my_remote_ip);
