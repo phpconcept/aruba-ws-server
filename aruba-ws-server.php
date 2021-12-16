@@ -813,6 +813,14 @@
         $this->debug_level = $p_args['debug_level'];
       } 
       
+      // ----- Change for extension log function
+      $v_obj_class = ARUBA_WSS_DEVICE_CLASS;
+      if (($v_obj_class != 'ArubaWssDevice') && (class_exists($v_obj_class))) {
+        if (method_exists($v_obj_class,'extension_log')) {
+          $this->log_fct_name = $v_obj_class.'::extension_log';
+        }
+      }
+
       ArubaWssTool::log('info', "----- Starting ArubaIot Websocket Server Daemon v.".ARUBA_WSS_VERSION." (".date("Y-m-d H:i:s", $this->up_time).")'");
 
       // ----- Look for no list, create empty one
