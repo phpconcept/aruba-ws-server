@@ -488,13 +488,18 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function log_fct_empty($p_type, $p_message) {
+    public function log_fct_empty($p_type, $p_sub_type, $p_level, $p_message) {
     }
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
      * Function : log()
      * Description :
+     *   $p_type : '<main>' or '<main>:<level>' or '<main>-<subtype>:<level>'
+     *     <main> : must be 'debug', 'info', 'error'
+     *     <subtype> : future use (filtering by block)
+     *     <level> : debug level
+     *   $p_message : log message.
      * ---------------------------------------------------------------------------
      */
     public function log($p_type, $p_message) {
@@ -508,20 +513,33 @@
         $v_level = $v_list[$v_n-1];
       }
       
+      // ----- Extract subtype from type
+      $v_list = explode('-', $v_type);
+      $v_type = $v_list[0];
+      $v_subtype = '';
+      $v_n = sizeof($v_list);
+      if ($v_n >= 2) {
+        $v_subtype = $v_list[$v_n-1];
+      }
+      
+      // ----- Filter by debug level
       if ($v_level > $this->debug_level) {
         // ----- Ignore this level of debug
         return;
       }
       
+      // ----- Display on console if needed
       if ($this->console_log) {
         echo '['.date("Y-m-d H:i:s").'] ['.$p_type.']:'.$p_message."\n";
       }
 
       // ----- The function MUST EXISTS !!
+      // Normally defined in init, so no worry. And for plugins, 
+      // it is checked before being set, so no worry again.
       // Avoidinig testing is to speed up the process.
       // if not can add : function_exists()      
       $v_fct = $this->log_fct_name;
-      $v_fct($p_type, $p_message);
+      $v_fct($v_type, $v_subtype, $v_level, $p_message);
   
       return;
     }
