@@ -7891,7 +7891,7 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
           // ----- Look for websocket connection
           $v_flag_websocket = false;
           $v_upgrade_header = $psrRequest->getHeader('Upgrade');
-          if (isset($v_upgrade_header[0]) && ($v_upgrade_header[0] == "websocket")) {
+          if (isset($v_upgrade_header[0]) && (strtolower($v_upgrade_header[0]) == "websocket")) {
             $v_flag_websocket = true;
           }
 

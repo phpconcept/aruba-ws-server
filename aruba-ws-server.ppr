@@ -47,8 +47,8 @@ aruba-ws-server
 Main=
 Selected=aruba-ws-server.php
 [aruba-ws-server.php]
-TopLine=2953
-Caret=7,2965
+TopLine=7874
+Caret=12,7896
 Mark1=11,7563
 Mark2=1,2711
 Mark3=70,2955
