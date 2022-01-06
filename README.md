@@ -1,7 +1,7 @@
 # Aruba IoT Demonstration Websocket Server
 
 aruba-ws-server is a websocket server, written in PHP, to test and demonstrate the IoT capabilities of Aruba Access Points.
-Today it supports only the BLE capabilities of Aruba AP.
+Today it supports only the BLE capabilities of Aruba Instant AP.
 
 ## Quick Start Guide
 
@@ -288,7 +288,7 @@ The Websocket Server can be accessed by JSON API, description of the API can be 
 
 ## Change Logs
 
-Release v1.2-beta :
+Release v1.2 :
 - Implement transfert of log display to plugin when one is available.
 - Add concept of level for debbugging
 - Avoid sending notification when updated telemetry value is the same as already stored one. 
@@ -296,6 +296,7 @@ Add a configuration value "telemetry_max_timestamp" (default 60 sec) to force a 
 - Ignore duplicate BLE advertissement when using multiple access point (AP). BLE advertissement can be received by multiple AP,
 in order to ignore duplicates, AWSS updates the "nearest AP" for the device (if needed) and only take into account the advertissement coming from the nearest AP.
 - Improve interface with Jeedom plugin. 
+- Force use of guzzlehttp/psr7 version 1.8.3 (lower than 2.0) in composer.json. Because 2.0 remove some static fucntions used for AWSS. (see : https://github.com/guzzle/psr7#upgrading-from-function-api)
 
 Release v1.1 :
 - Add support for modified Xiaomi Sensor firmware (https://github.com/atc1441/ATC_MiThermometer), which allow for temperature, humidity and battery to be in the BLE advertissement.
