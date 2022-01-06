@@ -20,6 +20,7 @@ aruba-ws-server
 			README.md
 			doc\API.md
 			doc\install\install_docker\Dockerfile
+			doc\Proto.md
 		+Client-Test
 			awss\client\websocket_client.html
 		+Proto-class
@@ -43,9 +44,10 @@ aruba-ws-server
 4=src\aruba_telemetry\BleFrameType.php
 5=README.md
 6=doc\install\install_docker\Dockerfile
+7=doc\Proto.md
 [Selected Project Files]
 Main=
-Selected=aruba-ws-server.php
+Selected=README.md
 [aruba-ws-server.php]
 TopLine=7874
 Caret=12,7896
@@ -78,7 +80,10 @@ TopLine=117
 Caret=41,134
 [README.md]
 TopLine=1
-Caret=114,17
+Caret=1,24
 [doc\install\install_docker\Dockerfile]
 TopLine=9
 Caret=1,24
+[doc\Proto.md]
+TopLine=1
+Caret=67,1

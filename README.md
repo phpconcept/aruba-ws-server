@@ -311,8 +311,9 @@ Release v1.0 :
 
 ## Known Caveats
 
-As of Release v1.0, some known caveats are :
+As of today, some known caveats are :
 - /!\ Only ws:// is supported today by the websocket daemon, which means communication is in clear. No support yet of wss:// with certificate.
+- AWSS is only supporting Aruba Instant Access Point deployment model, because only tested in this environment. Use of controlled model, or through Aruba Cental IOT Connector is not yet tested.
 
 ## WARNING :
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -357,6 +358,12 @@ In Aruba implementation, the payload transported in the websocket frames is in p
 ### Server Software Architecture
 
 ![Websocket Server Achitecture](doc/images/architecture.png)
+
+
+## Annexes :
+
+- [Generating PHP Classes from .proto files for Aruba Telemetry API](doc/Proto.md)
+- [JSON API](doc/API.md)
 
 
 ## References
