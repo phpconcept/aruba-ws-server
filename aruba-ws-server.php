@@ -14,7 +14,7 @@
  */
 
   ini_set('display_errors', '1');
-  define('ARUBA_WSS_VERSION', '1.1');
+  define('ARUBA_WSS_VERSION', '1.2');
 
   /**
    * Look for specific arguments to manage extensions and console log
@@ -32,13 +32,16 @@
     if ($arg == '-console_log') {
       $g_awss_console_log = true;
     }
+    if ($arg == '-debug_level') {
+      $g_awss_debug_level = (isset($argv[$v_count+1]) ? $argv[$v_count+1] : '');
+    }
     $v_count++;
   }      
       
   // ----- Temporary Trick
-  if (($g_awss_extension == '') && (file_exists(__DIR__.'/ArubaWssJeedom.class.php'))) {
-    $g_awss_extension = 'Jeedom';
-  } 
+  //if (($g_awss_extension == '') && (file_exists(__DIR__.'/ArubaWssJeedom.class.php'))) {
+  //  $g_awss_extension = 'Jeedom';
+  //} 
   
   // ----- Extension include
   if (($g_awss_extension != '') && ($g_awss_extension != 'no')) {
@@ -98,9 +101,9 @@
      *   troubleshooting locally.
      * ---------------------------------------------------------------------------
      */
-    static function log($p_level, $p_message) {
+    static function log($p_type, $p_message) {
       global $aruba_iot_websocket;
-      $aruba_iot_websocket->log($p_level, $p_message);
+      $aruba_iot_websocket->log($p_type, $p_message);
     }
     /* -------------------------------------------------------------------------*/
 
@@ -423,8 +426,14 @@
     protected $reporters_allow_list = array();
     protected $access_token = '';
     
+    // ----- telemetry_max_timestamp (default 60 secondes)
+    // When a telemetry value received is same as previous one, the change flag is not updated, the value is not notified to websocket clients or thirdparty plugins.
+    // But when the aging time is greater than "telemetry_max_timestamp" second then the value is updated, even is the value is the same.
+    protected $telemetry_max_timestamp = 60;
+    
     protected $console_log = false;
     protected $log_fct_name = 'ArubaWebsocket::log_fct_empty';
+    protected $debug_level = 5;
 
     // ----- Attributes to manage dynamic datas
     protected $up_time = 0;
@@ -479,26 +488,58 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function log_fct_empty($p_level, $p_message) {
+    public function log_fct_empty($p_type, $p_sub_type, $p_level, $p_message) {
     }
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
      * Function : log()
      * Description :
+     *   $p_type : '<main>' or '<main>:<level>' or '<main>-<subtype>:<level>'
+     *     <main> : must be 'debug', 'info', 'error'
+     *     <subtype> : future use (filtering by block)
+     *     <level> : debug level
+     *   $p_message : log message.
      * ---------------------------------------------------------------------------
      */
-    public function log($p_level, $p_message) {
+    public function log($p_type, $p_message) {
+    
+      // ----- Extract level from type
+      $v_list = explode(':', $p_type);
+      $v_type = $v_list[0];
+      $v_level = 1;
+      $v_n = sizeof($v_list);
+      if ($v_n >= 2) {
+        $v_level = $v_list[$v_n-1];
+      }
       
+      // ----- Extract subtype from type
+      $v_list = explode('-', $v_type);
+      $v_type = $v_list[0];
+      $v_subtype = '';
+      $v_n = sizeof($v_list);
+      if ($v_n >= 2) {
+        $v_subtype = $v_list[$v_n-1];
+      }
+      
+      // ----- Filter by debug level
+      if ($v_level > $this->debug_level) {
+        // ----- Ignore this level of debug
+        return;
+      }
+      
+      // ----- Display on console if needed
       if ($this->console_log) {
-        echo '['.date("Y-m-d H:i:s").'] ['.$p_level.']:'.$p_message."\n";
+        echo '['.date("Y-m-d H:i:s").'] ['.$p_type.']:'.$p_message."\n";
       }
 
       // ----- The function MUST EXISTS !!
+      // Normally defined in init, so no worry. And for plugins, 
+      // it is checked before being set, so no worry again.
       // Avoidinig testing is to speed up the process.
       // if not can add : function_exists()      
       $v_fct = $this->log_fct_name;
-      $v_fct($p_level, $p_message);
+      $v_fct($v_type, $v_subtype, $v_level, $p_message);
   
       return;
     }
@@ -642,8 +683,12 @@
         case 'log_fct_name':
           $v_value = $this->log_fct_name;
         break;
+        case 'telemetry_max_timestamp':
+          $v_value = $this->telemetry_max_timestamp;
+        break;
+        
         default :
-          //ArubaWssTool::log('warning', "Unknown configuration type '".$p_name."'");
+          ArubaWssTool::log('error', "Unknown configuration type '".$p_name."'");
           $v_value = '';
       }
 
@@ -734,6 +779,10 @@
           $v_args['console_log'] = true;
         }
     
+        if ($arg == '-debug_level') {
+          $v_args['debug_level'] = (isset($p_argv[$v_count+1]) ? $p_argv[$v_count+1] : '');
+        }
+
         if ($arg == '-display_ping') {
           $v_args['display_ping'] = true;
         }
@@ -748,7 +797,7 @@
     
         if (($arg == '-help') || ($arg == '--help')) {
           echo "----- \n";
-          echo $p_argv[0]." [-help] [-console_log] [-server_ip X.X.X.X] [-server_port XXX] [-api_key XXX] [-reporters_key XXX] [-reporters_list X1,X2,X3...] [-devices_list X1,X2,X3...] [-display_ping] [-display_raw_data] [-no_extension] [-extension <extension_name>] [-file <debug_message_filename>]\n";
+          echo $p_argv[0]." [-help] [-console_log] [-debug_level X] [-server_ip X.X.X.X] [-server_port XXX] [-api_key XXX] [-reporters_key XXX] [-reporters_list X1,X2,X3...] [-devices_list X1,X2,X3...] [-display_ping] [-display_raw_data] [-no_extension] [-extension <extension_name>] [-file <debug_message_filename>]\n";
           echo "----- \n";
           exit();
         }
@@ -778,8 +827,19 @@
       if (isset($p_args['console_log'])) {
         $this->console_log = true;
       } 
+      if (isset($p_args['debug_level'])) {
+        $this->debug_level = $p_args['debug_level'];
+      } 
       
-      ArubaWssTool::log('info', "----- Starting ArubaIot Websocket Server Daemon (".date("Y-m-d H:i:s", $this->up_time).")'");
+      // ----- Change for extension log function
+      $v_obj_class = ARUBA_WSS_DEVICE_CLASS;
+      if (($v_obj_class != 'ArubaWssDevice') && (class_exists($v_obj_class))) {
+        if (method_exists($v_obj_class,'extension_log')) {
+          $this->log_fct_name = $v_obj_class.'::extension_log';
+        }
+      }
+
+      ArubaWssTool::log('info', "----- Starting ArubaIot Websocket Server Daemon v.".ARUBA_WSS_VERSION." (".date("Y-m-d H:i:s", $this->up_time).")'");
 
       // ----- Look for no list, create empty one
       if ($p_args === null) {
@@ -1273,7 +1333,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_exeeemple($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_exeeemple($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
 
       // ----- Check mandatory fields are present
@@ -1303,7 +1363,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_ble_connect($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_ble_connect($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1371,7 +1431,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_ble_disconnect($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_ble_disconnect($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1442,7 +1502,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_ble_discover($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_ble_discover($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1510,7 +1570,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_ble_read($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_ble_read($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1614,7 +1674,7 @@
      * 
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_ble_read_repeat($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_ble_read_repeat($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1673,7 +1733,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_ble_notify($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_ble_notify($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1814,7 +1874,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_get_stats($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_get_stats($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1835,7 +1895,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_device_remove($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_device_remove($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1876,7 +1936,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_device_update($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_device_update($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1910,6 +1970,14 @@
       $v_device = $this->getDeviceByMac($p_data['mac_address']);
       if ($v_device !== null) { 
         ArubaWssTool::log('info', "Device '".$p_data['mac_address']."' is already in the cache. Update data.");
+        
+        // ----- reload the device properties from third party (if needed)
+        if (!$v_device->loadMe()) {
+          // TBC : should not occur ... or device disappear from jeedom
+          $v_response['status'] = 'fail';
+          $v_response['status_msg'] = "Device with this mac : ".$p_data['mac_address']." fail to load().";
+          ArubaWssTool::log('debug', $v_response['status_msg']);
+        }
       }
       else {
         // ----- Load device from thirdparty plugin function
@@ -1934,7 +2002,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_websocket_info($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_websocket_info($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -1959,7 +2027,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_reporter_list($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_reporter_list($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2003,7 +2071,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_reporter_info($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_reporter_info($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2042,7 +2110,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_device_list($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_device_list($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2077,7 +2145,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_device_info($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_device_info($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2132,7 +2200,7 @@
 }
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_include_mode($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_include_mode($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2197,7 +2265,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_include_device_count($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_include_device_count($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2222,7 +2290,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_notification_add($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_notification_add($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2286,7 +2354,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_notification_remove($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_notification_remove($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2372,7 +2440,7 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function apiEvent_debug($p_data, $p_cnx_id='', $p_external_id='') {
+    protected function apiEvent_debug($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
@@ -2458,8 +2526,8 @@
           return(false);
         }
 
-      ArubaWssTool::log('debug',  "Check prefix mode '".$this->include_generic_with_mac."'");
-      ArubaWssTool::log('debug',  "Check prefix '".$this->include_generic_mac_prefix."'");
+      ArubaWssTool::log('debug',  "Check include with mac@ mode : '".$this->include_generic_with_mac."'");
+      ArubaWssTool::log('debug',  "Check include mac@ with prefix : '".$this->include_generic_mac_prefix."'");
 
         // ----- Look for mac prefix
         if (($this->include_generic_with_mac) && ($this->include_generic_mac_prefix != '')) {
@@ -2469,6 +2537,8 @@
             return(false);
           }
         }
+
+      ArubaWssTool::log('debug',  "Check include with local name : '".$this->include_generic_with_local."'");
 
         // ----- Look for local name
         if ($this->include_generic_with_local) {
@@ -2514,13 +2584,89 @@
     /**---------------------------------------------------------------------------
      * Method : onMsgTelemetry()
      * Description :
+     * 
+     * Message Sample :
+
+      meta {
+        version: 1
+        access_token: "12346"
+        nbTopic: telemetry
+      }
+      reporter {
+        name: "AP-515-Lab"
+        mac:
+        ipv4: "192.168.102.100"
+        hwType: "AP-515"
+        swVersion: "8.9.0.1-8.9.0.1"
+        swBuild: "82154"
+        time: 1638630017
+      }
+      reported {
+        unknownFieldSet:
+        mac:
+        deviceClass: enoceanSwitch
+        lastSeen: 1638629973
+        bevent {
+          event: update
+        }
+        stats {
+          frame_cnt: 0
+        }
+        inputs {
+          rocker {
+            id: "switch bank 1: idle"
+            state: idle
+          }
+        }
+      }
+      reported {
+        unknownFieldSet:
+        mac:
+        deviceClass: unclassified
+        lastSeen: 1638630017
+        bevent {
+          event: update
+        }
+        rssi {
+          avg: -61
+        }
+        stats {
+          frame_cnt: 24
+        }
+        localName: "Jinou_Sensor_HumiTemp"
+      }
+      reported {
+        unknownFieldSet:
+        mac:
+        deviceClass: enoceanSensor
+        lastSeen: 1638629976
+        bevent {
+          event: update
+        }
+        sensors {
+          battery: 98
+          illumination: 6
+          occupancy {
+            level: 50
+          }
+        }
+        stats {
+          seq_nr: 498739
+          frame_cnt: 0
+        }
+      }
+
+     * 
+     * 
+     * 
+     * 
      * ---------------------------------------------------------------------------
      */
     public function onMsgTelemetry(&$p_reporter, $v_at_telemetry_msg) {
 
       ArubaWssTool::log('debug',  "Received telemetry message from ".$p_reporter->getName()."");
 
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
 
       // ----- Look if there is a list of reported device
       if ($v_at_telemetry_msg->hasReportedList()) {
@@ -2654,6 +2800,8 @@
 
       ArubaWssTool::log('debug',  "Received RTLS message from ".$p_connection->my_id."");
 
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
+
       // ----- Look if there is a list of reported device
       if ($v_at_telemetry_msg->hasWifiDataList()) {
         $v_list = $v_at_telemetry_msg->getWifiDataList();
@@ -2724,7 +2872,7 @@
 
       ArubaWssTool::log('debug',  "Received apHealthUpdate message from ".$p_reporter->getName()."");
       
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
 
       
       // TBC
@@ -2742,7 +2890,7 @@
 
       ArubaWssTool::log('debug',  "Received actionResults message from ".$p_reporter->getName()."");
 
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
       
       if (!$v_at_telemetry_msg->hasResultsList()) {
         ArubaWssTool::log('debug', "Message with no actionResults information (strange !).");
@@ -3137,7 +3285,7 @@ characteristics {
 
       ArubaWssTool::log('debug',  "Received characteristics discovery result message from ".$p_reporter->getName()."");
 
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
       
       // ----- Look for characteristics list
       if (!$v_at_telemetry_msg->hasCharacteristicsList()) {
@@ -3300,7 +3448,7 @@ characteristics {
 
       ArubaWssTool::log('debug',  "Received characteristics message from ".$p_reporter->getName()."");
 
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
       
       // ----- Look if telemetry has results before characteristics
       if (!$v_at_telemetry_msg->hasResultsList()) {
@@ -3584,7 +3732,7 @@ status {
 
       ArubaWssTool::log('debug',  "Received status message from ".$p_reporter->getName()."");
       
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
 
       if (!$v_at_telemetry_msg->hasStatus()) {
         ArubaWssTool::log('debug', "Message with no status information (strange !).");
@@ -3648,6 +3796,50 @@ status {
      * 
      *   Exemple of message :
 
+      meta {
+        version: 1
+        access_token: "12346"
+        nbTopic: bleData
+      }
+      reporter {
+        name: "AP-515-Lab"
+        mac:
+        ipv4: "192.168.102.100"
+        hwType: "AP-515"
+        swVersion: "8.9.0.1-8.9.0.1"
+        swBuild: "82154"
+        time: 1638629576
+      }
+      bleData {
+        mac:
+        frameType: scan_rsp
+        data: "\u000b\tATC_07FCEE"
+        rssi: -48
+        addrType: addr_type_public
+      }
+      
+      
+      meta {
+        version: 1
+        access_token: "12346"
+        nbTopic: bleData
+      }
+      reporter {
+        name: "AP-515-Lab"
+        mac:
+        ipv4: "192.168.102.100"
+        hwType: "AP-515"
+        swVersion: "8.9.0.1-8.9.0.1"
+        swBuild: "82154"
+        time: 1638629578
+      }
+      bleData {
+        mac:
+        frameType: adv_ind
+        data:
+        rssi: -48
+        addrType: addr_type_public
+      }
 
      * 
      * 
@@ -3657,7 +3849,7 @@ status {
 
       ArubaWssTool::log('debug',  "Received bleData message from ".$p_reporter->getName()."");
       
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
 
       // ----- Look if telemetry has results before characteristics
       if (!$v_at_telemetry_msg->hasBleDataList()) {
@@ -3678,6 +3870,23 @@ status {
       // ----- Get the protobuf result data
       $v_bleData_msg = $v_list[0];
 
+      // ----- Get frametype
+      $v_frame_type = '';
+      if ($v_bleData_msg->hasFrameType()) {
+        $v_frame_type = $v_bleData_msg->getFrameType();
+        ArubaWssTool::log('debug', "Frame Type is '".$v_frame_type."'.");
+      }
+      else {
+        ArubaWssTool::log('debug', "Missing frame type. Skip BLE data."); 
+        return(true);
+      }
+
+      // ----- Skip 'scan_rsp' frame
+      if ($v_frame_type == 'scan_rsp') {
+        ArubaWssTool::log('debug', "'".$v_frame_type."' frame type ignored for now. Skip BLE data."); 
+        return(true);
+      }
+      
       // ----- Get device
       $v_device = null;
       if ($v_bleData_msg->hasMac()) {
@@ -3692,14 +3901,8 @@ status {
         }
       }
       
-      // ----- Get frametype
-      $v_frame_type = '';
-      if ($v_bleData_msg->hasFrameType()) {
-        $v_frame_type = $v_bleData_msg->getFrameType();
-        ArubaWssTool::log('debug', "Frame Type is '".$v_frame_type."'.");
-      }
-      
-      // ----- Get device
+      // ----- Get data in bytes in string format '00-00-00'
+      $v_bytes = '';
       if ($v_bleData_msg->hasData()) {
         $v_data = $v_bleData_msg->getData();
         $v_bytes = ArubaWssTool::bytesToString($v_data);
@@ -3709,8 +3912,23 @@ status {
       }
       
       // ----- Look for 'adv_ind' frame
-      if (($v_device !== null) && ($v_frame_type == 'adv_ind')) {
-        $v_device->setTelemetryFromAdvert($v_bytes);      
+      if (($v_device !== null) && ($v_bytes != '') && ($v_frame_type == 'adv_ind')) {
+        // ----- Get reporter timestamp
+        $v_timestamp = $p_reporter->getLastSeen();
+        ArubaWssTool::log('debug', "Reporter lastseen is : ".$v_timestamp." (".date("Y-m-d H:i:s", $v_timestamp).")");
+        
+        // ----- Get RSSI
+        $v_rssi = -999;
+        if ($v_bleData_msg->hasRssi()) {
+          $v_rssi = $v_bleData_msg->getRssi();
+          ArubaWssTool::log('debug', "RSSI is : ".$v_rssi." ");
+        }
+        
+        // ----- Update nearestAP, and if nearest, update telemetry value
+        if ($v_device->updateNearestAPNew($p_reporter, $v_timestamp, $v_rssi)) {
+          $v_device->setTelemetryFromAdvert($v_bytes);     
+          $v_device->doActionIfModified(); 
+        }
       }
       
       return(true);
@@ -3733,7 +3951,7 @@ status {
 
       ArubaWssTool::log('debug',  "Received serialDataNb message from ".$p_reporter->getName()."");
       
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
 /*
       // ----- Look if telemetry has results before characteristics
       if (!$v_at_telemetry_msg->hasBleDataList()) {
@@ -3937,40 +4155,12 @@ enum NbTopic {
      */
     public function getReporterFromProtoMessage(ConnectionInterface &$p_connection, $p_msg, $p_at_telemetry_msg) {
 
-      //ArubaWssTool::log('debug',  "Received message from ".$p_connection->my_id."");
-
-      // ----- Stats
-      $v_stat_data_payload = strlen($p_msg);
-      $this->stats('data_payload', $v_stat_data_payload);
-
-      // ----- Parse Aruba protobuf message
-      // TBC : I should check that the telemetry object is ok
-      //$v_at_telemetry_msg = new aruba_telemetry\Telemetry($p_msg);
+      // ----- Get telemetry msg
       $v_at_telemetry_msg = $p_at_telemetry_msg;
-
-/*
-      ArubaWssTool::log('trace', $v_at_telemetry_msg);
-
-      // ----- Get Meta part of the message
-      $v_at_meta = $v_at_telemetry_msg->getMeta();
-
-      // ----- Get Topic
-      $v_topic = '';
-      if ($v_at_meta->hasNbTopic()) {
-        $v_topic = $v_at_meta->getNbTopic()->name();
-      }
-
-      ArubaWssTool::log('debug', "--------- Meta :");
-      ArubaWssTool::log('debug', "  Version: ".$v_at_meta->getVersion()."");
-      ArubaWssTool::log('debug', "  Access Token: ".$v_at_meta->getAccessToken()."");
-      ArubaWssTool::log('debug', "  NbTopic: ".$v_topic."");
-      ArubaWssTool::log('debug', "---------");
-      ArubaWssTool::log('debug', "");
-      */
       
       // ----- Check if reporter info is valid
       if (!$v_at_telemetry_msg->hasReporter()) {
-        ArubaWssTool::log('info', "Missing reporter information in telemetry payload. Message ignored.");
+        ArubaWssTool::log('debug', "Missing reporter information in telemetry payload. Message ignored.");
         return(null);
       }
       
@@ -3979,7 +4169,7 @@ enum NbTopic {
 
       // ----- Check if reporter has a valid MAC@
       if (!$v_at_reporter->hasMac()) {
-        ArubaWssTool::log('info', "Missing MAC@ for reporter in telemetry payload. Message ignored.");
+        ArubaWssTool::log('debug', "Missing MAC@ for reporter in telemetry payload. Message ignored.");
         return(null);
       }
       
@@ -4007,17 +4197,6 @@ enum NbTopic {
         }
       }
 
-
-/*
-$v_filemane = __DIR__."/telemetry-".date("Y-m-d-H-i-s", $v_at_reporter->getTime())."-".$v_mac.".json";
-$v_filemane = str_replace(':', '-', $v_filemane);
-echo "filename : $v_filemane\n";
-$fd = fopen($v_filemane, 'w');
-fwrite($fd, "Reporter (".$v_mac.") :\n");
-fwrite($fd, $v_at_reporter);
-fwrite($fd, "\n");
-fwrite($fd, "\n");
-*/
       // ----- Look for existing reporter in the list
       $v_reporter = $this->getReporterByMac($v_mac);
 
@@ -4045,7 +4224,7 @@ fwrite($fd, "\n");
         // ----- Connect the reporter with the connection
         $v_reporter->connect($p_connection);
 
-        ArubaWssTool::log('info', "Attaching Reporter '".$v_mac."' (".$v_reporter->getName().") to connection '".$p_connection->my_id."'.");
+        ArubaWssTool::log('debug', "Attaching Reporter '".$v_mac."' (".$v_reporter->getName().") to connection '".$p_connection->my_id."'.");
 
         // ----- Update connection custom attributes
         $p_connection->my_status = 'active';
@@ -4058,7 +4237,7 @@ fwrite($fd, "\n");
         // ----- Connect the reporter with the connection
         $v_reporter->connect($p_connection);
 
-        ArubaWssTool::log('info', "Attaching Reporter '".$v_mac."' (".$v_reporter->getName().") to connection '".$p_connection->my_id."'.");
+        ArubaWssTool::log('debug', "Attaching Reporter '".$v_mac."' (".$v_reporter->getName().") to connection '".$p_connection->my_id."'.");
 
         // ----- Update connection custom attributes
         $p_connection->my_status = 'active';
@@ -4104,22 +4283,11 @@ fwrite($fd, "\n");
       }
 
       // ----- Stats
+      $v_stat_data_payload = strlen($p_msg);
       $v_reporter->stats('data_payload', $v_stat_data_payload);
 
       // ----- Update last seen value
       $v_reporter->setLastSeen($v_at_reporter->getTime());
-
-      // ----- Parse data depending on nature
-      /*
-      if ($p_connection->my_type == 'telemetry') {
-        return $this->onMsgTelemetry($v_reporter, $v_at_telemetry_msg);
-      }
-      else if ($p_connection->my_type == 'rtls') {
-        return $this->onMsgWifiData($p_connection, $v_at_telemetry_msg);
-      }
-      else {
-      }
-      */
 
       return($v_reporter);
     }
@@ -4131,9 +4299,7 @@ fwrite($fd, "\n");
      * ---------------------------------------------------------------------------
      */
     public function onPingMessage(ConnectionInterface &$p_connection) {
-      if (0) {
-        ArubaWssTool::log('debug', "Received ping from ".$connection->my_name." (".date("Y-m-d H:i:s").")");
-      }
+        //ArubaWssTool::log('debug', "Received ping from ".$connection->my_name." (".date("Y-m-d H:i:s").")");
     }
     /* -------------------------------------------------------------------------*/
 
@@ -5840,11 +6006,18 @@ fwrite($fd, "\n");
      * ---------------------------------------------------------------------------
      */
     public function setNearestAp($p_ap, $p_rssi, $p_lastseen='') {
-      // ----- Change and flag only if new value
-      if (($this->nearest_ap_rssi != $p_rssi) || (($this->nearest_ap_mac != $p_ap))) {
+      // ----- Change flag only if new value
+      if ($this->nearest_ap_mac != $p_ap) {
         $this->nearest_ap_mac = $p_ap;
-        $this->nearest_ap_rssi = $p_rssi;
         $this->setChangedFlag('nearest_ap');
+        ArubaWssTool::log('debug', "Change nearest_ap of ".$this->name." to ".$p_ap." (rssi:".$p_rssi.")");
+      }
+
+      // ----- Change flag only if new value
+      if ($this->nearest_ap_rssi != $p_rssi) {
+        $this->nearest_ap_rssi = $p_rssi;
+        $this->setChangedFlag('rssi');
+        ArubaWssTool::log('debug', "Change rssi of ".$this->name." to ".$p_ap." (rssi:".$p_rssi.")");
       }
 
       if ($p_lastseen != '') {
@@ -6146,8 +6319,8 @@ La valeur se retrouve là : 00-19-00-00-3E-00
           ArubaWssTool::log('debug', "Jinou Temperature from advert is : ".$v_temp);
           ArubaWssTool::log('debug', "Jinou Humidity from advert is : ".$v_humi);
           
-          $this->setTelemetryValue('temperatureC2', $v_temp);
-          $this->setTelemetryValue('humidity2', $v_humi);        
+          $this->setTelemetryValue('temperatureC', $v_temp);
+          $this->setTelemetryValue('humidity', $v_humi);        
           //$this->setChangedFlag('telemetry_value');                
         }
         
@@ -6272,7 +6445,25 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function setChangedFlag($p_flag_string='', $p_value=TRUE) {
+    public function setChangedFlag($p_flag_type, $p_flag_name='') {
+      // ----- Store the changed flag
+      if ($p_flag_type != '') {
+        if (!is_array($this->change_flag[$p_flag_type])) {
+          $this->change_flag[$p_flag_type] = array();
+        }
+        if ($p_flag_name != '') {
+          $this->change_flag[$p_flag_type][$p_flag_name] = true;
+        }
+      }
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : setChangedFlag()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function setChangedFlag_SAVE($p_flag_string='', $p_value=TRUE) {
       // ----- Store the changed flag
       if ($p_flag_string != '') {
         $this->change_flag[$p_flag_string] = $p_value;
@@ -6288,27 +6479,59 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
      */
     public function setTelemetryValue($p_name, $p_value, $p_type='') {
     
-      // TBC : should check with regexp that name is valid ascii value for array index ?
+      // TBC : should check with regexp that name is valid ascii value for array index ?     
       
-      // ----- Look if no existing value for this name
+      // ----- Look if no existing value for this name. Create one.
       if (!isset($this->telemetry_value_list[$p_name])) {
         $this->telemetry_value_list[$p_name] = array();
         $this->telemetry_value_list[$p_name]['name'] = $p_name;    
         $this->telemetry_value_list[$p_name]['type'] = $p_type;        
-      }
-      
-      // ----- Update value
-      $this->telemetry_value_list[$p_name]['value'] = $p_value;
 
-      // ----- Look for type to update
-      if (($p_type != '') && ($this->telemetry_value_list[$p_name]['type'] == '')) {
-        $this->telemetry_value_list[$p_name]['type'] = $p_type;          
+        // ----- Update value
+        $this->telemetry_value_list[$p_name]['value'] = $p_value;
+
+        // ----- Store last update timer      
+        $this->telemetry_value_list[$p_name]['timestamp'] = time();        
+      
+        $this->setChangedFlag('telemetry_value', $p_name);
       }
       
-      // ----- Store last update timer      
-      $this->telemetry_value_list[$p_name]['timestamp'] = time();        
-      
-      $this->setChangedFlag('telemetry_value');
+      // ----- Already an existing telemetry entry with this name
+      else {
+        // ----- Look for type to update
+        // TBC : I don't remember exactly why this is needed ...
+        if (($p_type != '') && ($this->telemetry_value_list[$p_name]['type'] == '')) {
+          $this->telemetry_value_list[$p_name]['type'] = $p_type;          
+        }
+
+        // ----- Look for no new value
+        if ($this->telemetry_value_list[$p_name]['value'] == $p_value) {
+          $v_telemetry_max_timestamp = ArubaWssTool::getConfig('telemetry_max_timestamp');
+          
+          // ----- Look if max timestamp reached 
+          if (($this->telemetry_value_list[$p_name]['timestamp'] + $v_telemetry_max_timestamp) < time()) {
+            // ----- Store last update timer      
+            $this->telemetry_value_list[$p_name]['timestamp'] = time();
+                    
+            // ----- Flag as update to do
+            $this->setChangedFlag('telemetry_value', $p_name);
+          }
+          else {
+            ArubaWssTool::log('debug', "Same value for '".$p_name."',no need to store. ");
+          }
+        }
+        // ----- Look for new value
+        else {
+          // ----- Update value
+          $this->telemetry_value_list[$p_name]['value'] = $p_value;
+  
+          // ----- Store last update timer      
+          $this->telemetry_value_list[$p_name]['timestamp'] = time();        
+        
+          $this->setChangedFlag('telemetry_value', $p_name);
+        }
+
+      }
     }
     /* -------------------------------------------------------------------------*/
 
@@ -6343,7 +6566,190 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
      *   False : if telemetry values are to be ignored
      * ---------------------------------------------------------------------------
      */
+    public function updateNearestAPNew(&$p_reporter, $p_timestamp, $p_rssi) {
+
+      $v_debug_msg = '';
+      
+      ArubaWssTool::log('debug', "Look to update nearestAP with ".$p_reporter->getMac());
+      
+      $v_debug_msg .= $p_reporter->getName().":";
+
+      // ----- Get presence configuration thresholds
+      $v_timeout = ArubaWssTool::getConfig('presence_timeout');
+      $v_presence_min_rssi = ArubaWssTool::getConfig('presence_min_rssi');
+      $v_presence_rssi_hysteresis = ArubaWssTool::getConfig('presence_rssi_hysteresis');
+
+      // ----- Get last seen (if any)
+      $v_lastseen = $p_timestamp;
+      ArubaWssTool::log('debug', "LastSeen is : ".$v_lastseen." (".date("Y-m-d H:i:s", $v_lastseen).")");
+
+      $v_debug_msg .= "LastSeen:".date("Y-m-d H:i:s", $v_lastseen)."(".$v_lastseen.")".":";
+
+      // ----- Get RSSI (if any)
+      $v_rssi = $p_rssi;
+
+      $v_debug_msg .= "RSSI:".$v_rssi."";
+
+      // ----- Look for too old data for updating presence
+      // Even if this is a better RSSI the timestamp is too old for the presence flag.
+      if ( (($v_lastseen + $v_timeout) < time())) {
+        ArubaWssTool::log('debug', "LastSeen value from this AP is already older than presence timeout. Skip presence update.");
+      }
+      else {
+        // ----- Look if last seen timestamp is better than current one
+        // if not then this is an old telemetry data compare to others previously 
+        // received (by same AP or other AP)
+        if ($this->presence_last_seen < $v_lastseen) {
+          // ----- Look if RSSI is not too far to be "present"
+          if (($v_rssi < $v_presence_min_rssi) && ($this->presence == 0)) {
+            ArubaWssTool::log('debug', "RSSI (".$v_rssi.") is not enought to change from absence to presence.");
+          }
+          else if (($v_rssi < ($v_presence_min_rssi-$v_presence_rssi_hysteresis)) && ($this->presence == 1)) {
+            ArubaWssTool::log('debug', "RSSI (".$v_rssi.") is not enought to update presence.");
+          }
+          else {
+            $this->setPresence(1, $v_lastseen);
+          }
+        }
+        else {
+          ArubaWssTool::log('debug', "Presence : received lastseen value in telemetry is older than a previous one.");
+        }
+      }
+
+      $v_debug_msg .= ' ->'.($this->presence?'present':'absent')."";
+
+      // ----- Look if this is the current best reporter (nearest ap)
+      if ($this->getNearestApMac() == $p_reporter->getMac()) {
+        ArubaWssTool::log('debug', "Reporter '".$p_reporter->getMac()."' is the current nearest reporter. Update last seen value");
+
+        // ----- No change in last seen value => repeated old value ...
+        // No : in fact we can receive 2 payloads with the same timestamp (in sec) with different values
+        // exemple is the switch up-idle-bottom values
+        /*
+        if ($this->nearest_ap_last_seen == $v_lastseen) {
+          ArubaWssTool::log('debug', "New last seen value is the same : repeated old telemetry data. Skip telemetry data.");
+          return(false);
+        }
+        */
+
+        // ----- Should never occur ...
+        if ($this->nearest_ap_last_seen > $v_lastseen) {
+          ArubaWssTool::log('error', "New last seen value is older than previous one ! Should never occur. Skip telemetry data.");
+          return(false);
+        }
+
+        // ----- Update latest RSSI.
+        //  if no RSSI, keep the old one ... ?
+        //  an object should always send an RSSI or never send an RSSI.
+        $this->setNearestAp($this->getNearestApMac(), $v_rssi, $v_lastseen);
+
+        return(true);
+      }
+      
+      // ----- Now look the case when the AP is not the current nearest AP
+
+      $swap_ap_flag = false;
+
+      // ----- Look for no current nearest AP
+      if ($this->getNearestApMac() == '') {
+        ArubaWssTool::log('debug', "No existing nearest reporter.");
+        $swap_ap_flag = true;
+      }
+
+      // ----- Look if new reporter has a better RSSI than current nearest
+      $v_nearest_ap_hysteresis = ArubaWssTool::getConfig('nearest_ap_hysteresis');
+      if (!$swap_ap_flag && ($v_rssi != -110) && ($v_rssi > ($this->nearest_ap_rssi + $v_nearest_ap_hysteresis))) {
+        ArubaWssTool::log('debug', "Swap for a new nearest AP with better RSSI, from '".$this->getNearestApMac()."' (RSSI '".$this->nearest_ap_rssi."') to '".$p_reporter->getMac()."' (RSSI '".$v_rssi."')");
+        $swap_ap_flag = true;
+      }
+
+      /*
+      // ----- Look if current reporter has a very long last_seen value
+      $v_nearest_ap_timeout = ArubaIotConfig::byKey('nearest_ap_timeout', 'ArubaIot');
+      if (!$swap_ap_flag && (($this->nearest_ap_last_seen + $v_nearest_ap_timeout) < time())) {
+        ArubaWssTool::log('debug', "Swap for a new nearest AP with better last-seen value, from '".$this->getNearestApMac()."' (".date("Y-m-d H:i:s", $this->nearest_ap_last_seen).") to '".$p_reporter->getMac()."' (".date("Y-m-d H:i:s", $v_lastseen).").");
+        $swap_ap_flag = true;
+      }
+      */
+
+      // ----- Look if rssi lower than the minimum to swap
+      if ($swap_ap_flag) {
+        $v_nearest_ap_min_rssi = ArubaWssTool::getConfig('nearest_ap_min_rssi');
+
+        if ($v_rssi < $v_nearest_ap_min_rssi) {
+          ArubaWssTool::log('debug', "RSSI (".$v_rssi.") is not enought to become a nearestAP.");
+          $swap_ap_flag = false;
+        }
+      }
+
+      // ----- Look if swap to new AP is to be done
+      if ($swap_ap_flag) {
+        ArubaWssTool::log('debug', "Swap for new nearest reporter '".$p_reporter->getMac()."'");
+
+        // ----- Swap for new nearest AP
+        $this->setNearestAp($p_reporter->getMac(), $v_rssi, $v_lastseen);
+
+        return(true);
+      }
+
+      // ----- Compare new AP lastseen to nearestAP timestamp
+      // Update timer only if already in present state ?
+
+      ArubaWssTool::log('debug', "Reporter '".$p_reporter->getMac()."' not a new nearest reporter compared to current '".$this->getNearestApMac()."'. Skip telemetry data.");
+
+      return(false);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : updateNearestAP()
+     * Description :
+     * Return Value :
+     *   True : if telemetry values are to be updated
+     *   False : if telemetry values are to be ignored
+     * ---------------------------------------------------------------------------
+     */
     public function updateNearestAP(&$p_reporter, $p_telemetry) {
+
+      //ArubaWssTool::log('debug', "Look to update nearestAP with ".$p_reporter->getMac());
+      
+      // ----- Get last seen (if any)
+      $v_lastseen = 0;
+      if ($p_telemetry->hasLastSeen()) {
+        $v_lastseen = $p_telemetry->getLastSeen();
+      }
+      else {
+        // Should not occur ... I not yet seen an object without this value ...
+        ArubaWssTool::log('debug', "LastSeen is missing in telemetry data. Skip presence & nearestAP update.");
+        return(false);
+      }
+
+      // ----- Get RSSI (if any)
+      $v_rssi = -110;
+      if ($p_telemetry->hasRSSI()) {
+        $v_val = explode(':', $p_telemetry->getRSSI());
+        $v_rssi = (isset($v_val[1]) ? intval($v_val[1]) : $v_rssi);
+      }
+      else {
+        // Il semble que lorsque l'IAP ne reçoit plus de beacons, il continu
+        // à envoyer un message de télémetry avec comme date la dernière fois
+        // qu'il a vu le beacon, mais plus de valeur de RSSI.
+        $v_rssi = -110;
+      }
+      return($this->updateNearestAPNew($p_reporter, $v_lastseen, $v_rssi));
+    }
+    /* -------------------------------------------------------------------------*/
+
+
+    /**---------------------------------------------------------------------------
+     * Method : updateNearestAP()
+     * Description :
+     * Return Value :
+     *   True : if telemetry values are to be updated
+     *   False : if telemetry values are to be ignored
+     * ---------------------------------------------------------------------------
+     */
+    public function updateNearestAP_SAVE(&$p_reporter, $p_telemetry) {
 
       $v_debug_msg = '';
       
@@ -6923,6 +7329,9 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
     
       // ----- Trigger external plugin actions (if any)
       $this->doPostActionTelemetry($p_type);
+      
+      // ----- Reset all changed flags
+      $this->resetChangedFlag();
     }
     /* -------------------------------------------------------------------------*/
 
@@ -7250,7 +7659,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
       }
 
       if ( isset($this->connection_id_list[$v_id]) ) {
-        ArubaWssTool::log('info', "Removing connection '".$v_id."' for reporter '".$this->mac_address."'");
+        ArubaWssTool::log('debug', "Removing connection '".$v_id."' for reporter '".$this->mac_address."'");
+        ArubaWssTool::log('warning', "Reporter '".$this->name."' (".$this->mac_address."), lost connection");
         unset($this->connection_id_list[$v_id]);
         $this->setRemoteIp('');
         $p_connection->my_reporter_id = '';
@@ -7289,7 +7699,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
       }
 
       if (!isset($this->connection_id_list[$v_id])) {
-        ArubaWssTool::log('info', "Adding new connection '".$v_id."' for reporter '".$this->mac_address."'");
+        ArubaWssTool::log('debug', "Adding new connection '".$v_id."' for reporter '".$this->mac_address."'");
+        ArubaWssTool::log('info', "Reporter '".$this->name."' (".$this->mac_address."), is connected from IP ".$v_id."");
         $this->connection_id_list[$v_id] = array();
         $this->connection_id_list[$v_id]['type'] = $v_type;
         $this->setRemoteIp($p_connection->my_remote_ip);
@@ -7481,7 +7892,7 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
           // ----- Look for websocket connection
           $v_flag_websocket = false;
           $v_upgrade_header = $psrRequest->getHeader('Upgrade');
-          if (isset($v_upgrade_header[0]) && ($v_upgrade_header[0] == "websocket")) {
+          if (isset($v_upgrade_header[0]) && (strtolower($v_upgrade_header[0]) == "websocket")) {
             $v_flag_websocket = true;
           }
 

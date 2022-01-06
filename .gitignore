@@ -2,7 +2,7 @@
 /*
 
 # ----- Files to ignore
-*.ppr
+#*.ppr
 *.lock
 
 # ----- Folders to ignore
@@ -14,6 +14,7 @@
 !README.md
 !LICENSE
 !.gitignore
+!*.ppr
 
 # ----- Folders to add
 !/src

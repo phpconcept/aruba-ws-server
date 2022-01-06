@@ -1,7 +1,7 @@
 # Aruba IoT Demonstration Websocket Server
 
 aruba-ws-server is a websocket server, written in PHP, to test and demonstrate the IoT capabilities of Aruba Access Points.
-Today it supports only the BLE capabilities of Aruba AP.
+Today it supports only the BLE capabilities of Aruba Instant AP.
 
 ## Quick Start Guide
 
@@ -14,7 +14,7 @@ Docker containers are available on Docker Hub for published version of AWSS. You
 To start the websocket server in the Docker container, use the following command :
 
 ```cli
-docker run -p 8081:8081 -e AWSS_ARGS="-console_log -api_key <your_api_key>" --name awss phpconcept/aruba_wss:v1.1
+docker run -p 8081:8081 -e AWSS_ARGS="-console_log -api_key <your_api_key>" --name awss phpconcept/aruba_wss:main
 ```
 
 You can customize the arguments send to the server with the environment variable AWSS_ARGS, and select the image to use : aruba_wss:main or aruba_wss:beta.
@@ -288,6 +288,16 @@ The Websocket Server can be accessed by JSON API, description of the API can be 
 
 ## Change Logs
 
+Release v1.2 :
+- Implement transfert of log display to plugin when one is available.
+- Add concept of level for debbugging
+- Avoid sending notification when updated telemetry value is the same as already stored one. 
+Add a configuration value "telemetry_max_timestamp" (default 60 sec) to force a notification after this time delay, even when value is the same (kind of keepalive for the value).
+- Ignore duplicate BLE advertissement when using multiple access point (AP). BLE advertissement can be received by multiple AP,
+in order to ignore duplicates, AWSS updates the "nearest AP" for the device (if needed) and only take into account the advertissement coming from the nearest AP.
+- Improve interface with Jeedom plugin. 
+- Force use of guzzlehttp/psr7 version 1.8.3 (lower than 2.0) in composer.json. Because 2.0 remove some static fucntions used for AWSS. (see : https://github.com/guzzle/psr7#upgrading-from-function-api)
+
 Release v1.1 :
 - Add support for modified Xiaomi Sensor firmware (https://github.com/atc1441/ATC_MiThermometer), which allow for temperature, humidity and battery to be in the BLE advertissement.
 - Start support for BLE advertissements.
@@ -302,8 +312,9 @@ Release v1.0 :
 
 ## Known Caveats
 
-As of Release v1.0, some known caveats are :
+As of today, some known caveats are :
 - /!\ Only ws:// is supported today by the websocket daemon, which means communication is in clear. No support yet of wss:// with certificate.
+- AWSS is only supporting Aruba Instant Access Point deployment model, because only tested in this environment. Use of controlled model, or through Aruba Cental IOT Connector is not yet tested.
 
 ## WARNING :
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -348,6 +359,12 @@ In Aruba implementation, the payload transported in the websocket frames is in p
 ### Server Software Architecture
 
 ![Websocket Server Achitecture](doc/images/architecture.png)
+
+
+## Annexes :
+
+- [Generating PHP Classes from .proto files for Aruba Telemetry API](doc/Proto.md)
+- [JSON API](doc/API.md)
 
 
 ## References
