@@ -4283,6 +4283,7 @@ enum NbTopic {
       }
 
       // ----- Stats
+      $v_stat_data_payload = strlen($p_msg);
       $v_reporter->stats('data_payload', $v_stat_data_payload);
 
       // ----- Update last seen value
