@@ -279,7 +279,7 @@ The list of connected reporters is also available on the client. With some key i
 
 ### JSON API
 
-The Websocket Server can be accessed by JSON API, description of the API can be found here : [JSON API](doc/API.md)
+The Websocket Server can be accessed by JSON API, description of the API is here : [JSON API](doc/API.md)
 
 
 

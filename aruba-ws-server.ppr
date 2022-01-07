@@ -16,11 +16,14 @@ HTServer=localhost
 [Project tree]
 aruba-ws-server
 	+Websocket
+		+Install
+			composer.json
 		+Doc
 			README.md
 			doc\API.md
 			doc\install\install_docker\Dockerfile
 			doc\Proto.md
+			doc\Dependencies.md
 		+Client-Test
 			awss\client\websocket_client.html
 		+Proto-class
@@ -46,12 +49,13 @@ aruba-ws-server
 6=doc\install\install_docker\Dockerfile
 7=doc\Proto.md
 8=composer.json
+9=doc\Dependencies.md
 [Selected Project Files]
 Main=
-Selected=composer.json
+Selected=doc\Dependencies.md
 [aruba-ws-server.php]
-TopLine=788
-Caret=17,805
+TopLine=7883
+Caret=43,7902
 Mark1=11,7576
 Mark2=1,2723
 Mark3=70,2967
@@ -80,14 +84,17 @@ Caret=1,111
 TopLine=117
 Caret=41,134
 [README.md]
-TopLine=274
-Caret=3,292
+TopLine=362
+Caret=76,282
 [doc\install\install_docker\Dockerfile]
 TopLine=15
 Caret=1,38
 [doc\Proto.md]
 TopLine=1
-Caret=67,1
+Caret=1,24
 [composer.json]
 TopLine=1
-Caret=35,20
+Caret=33,20
+[doc\Dependencies.md]
+TopLine=1
+Caret=70,18
