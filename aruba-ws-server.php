@@ -14,7 +14,7 @@
  */
 
   ini_set('display_errors', '1');
-  define('ARUBA_WSS_VERSION', '1.2');
+  define('ARUBA_WSS_VERSION', '1.3-beta');
 
   /**
    * Look for specific arguments to manage extensions and console log
@@ -797,7 +797,19 @@
     
         if (($arg == '-help') || ($arg == '--help')) {
           echo "----- \n";
-          echo $p_argv[0]." [-help] [-console_log] [-debug_level X] [-server_ip X.X.X.X] [-server_port XXX] [-api_key XXX] [-reporters_key XXX] [-reporters_list X1,X2,X3...] [-devices_list X1,X2,X3...] [-display_ping] [-display_raw_data] [-no_extension] [-extension <extension_name>] [-file <debug_message_filename>]\n";
+          echo $p_argv[0]." [-help] [-version] [-console_log] [-debug_level X] ";
+          echo "[-server_ip X.X.X.X] [-server_port XXX] [-api_key XXX] ";
+          echo "[-reporters_key XXX] [-reporters_list X1,X2,X3...] ";
+          echo "[-devices_list X1,X2,X3...] [-display_ping] [-display_raw_data] ";
+          echo "[-no_extension] [-extension <extension_name>] ";
+          echo "[-file <debug_message_filename>]\n";
+          echo "----- \n";
+          exit();
+        }
+    
+        if (($arg == '-version') || ($arg == '--version')) {
+          echo "----- \n";
+          echo $p_argv[0]." ".ARUBA_WSS_VERSION."\n";
           echo "----- \n";
           exit();
         }

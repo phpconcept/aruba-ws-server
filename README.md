@@ -288,6 +288,9 @@ The Websocket Server can be accessed by JSON API, description of the API can be 
 
 ## Change Logs
 
+Release v1.3-beta :
+- 
+
 Release v1.2 :
 - Implement transfert of log display to plugin when one is available.
 - Add concept of level for debbugging
