@@ -7899,7 +7899,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
           
           // ----- Parse HTTTP Header
           $headerComplete = true;
-          $psrRequest = \GuzzleHttp\Psr7\parse_request($parts[0] . "\r\n\r\n");
+          //$psrRequest = \GuzzleHttp\Psr7\parse_request($parts[0] . "\r\n\r\n");
+          $psrRequest = \GuzzleHttp\Psr7\Message::parseRequest($parts[0] . "\r\n\r\n");
           
           // ----- Look for websocket connection
           $v_flag_websocket = false;
@@ -7923,8 +7924,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
               $v_json_response = $aruba_iot_websocket->onApiCall($connection, (isset($parts[1])?$parts[1]:''));
   
               // ----- Send response
-              //$connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], $v_json_response . PHP_EOL)));
-              $connection->end(\GuzzleHttp\Psr7\str(new Response(200, ['User-Agent'=>'ArubaWebsocketServer/1.0','Access-Control-Allow-Origin'=>'*','Accept'=>'application/json'], $v_json_response . PHP_EOL)));
+              //$connection->end(\GuzzleHttp\Psr7\str(new Response(200, ['User-Agent'=>'ArubaWebsocketServer/1.0','Access-Control-Allow-Origin'=>'*','Accept'=>'application/json'], $v_json_response . PHP_EOL)));
+              $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(200, ['User-Agent'=>'ArubaWebsocketServer/1.0','Access-Control-Allow-Origin'=>'*','Accept'=>'application/json'], $v_json_response . PHP_EOL)));
               return;
             }
           }
@@ -7938,7 +7939,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
           }
           /* Need to add authentication for shutdown !!
           else if ($psrRequest->getUri()->getPath() === '/shutdown') {
-              $connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], 'Shutting down echo server.' . PHP_EOL)));
+              //$connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], 'Shutting down echo server.' . PHP_EOL)));
+              $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(200, [], 'Shutting down echo server.' . PHP_EOL)));
               $socket->close();
               return;
           }
@@ -7947,7 +7949,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
             $aruba_iot_websocket->onOpen($connection, 'http');
             
             if ($psrRequest->getUri()->getPath() === '/favicon.ico') {
-              $connection->end(\GuzzleHttp\Psr7\str(new Response(404, [], '' . PHP_EOL)));
+              //$connection->end(\GuzzleHttp\Psr7\str(new Response(404, [], '' . PHP_EOL)));
+              $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(404, [], '' . PHP_EOL)));
               return;
             }
             
@@ -7962,16 +7965,19 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
                 fclose($handle);
               
                 // ----- Send response
-                $connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], $contents . PHP_EOL)));
+                //$connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], $contents . PHP_EOL)));
+                $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(200, [], $contents . PHP_EOL)));
               }
               else {
-                $connection->end(\GuzzleHttp\Psr7\str(new Response(403, [], 'Missing client file.' . PHP_EOL)));
+                //$connection->end(\GuzzleHttp\Psr7\str(new Response(403, [], 'Missing client file.' . PHP_EOL)));
+                $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(403, [], 'Missing client file.' . PHP_EOL)));
               }
             }
             else {
               ArubaWssTool::log('debug', "HTTP request on bad URI");
               // ----- Send response
-              $connection->end(\GuzzleHttp\Psr7\str(new Response(403, [], '' . PHP_EOL)));
+              //$connection->end(\GuzzleHttp\Psr7\str(new Response(403, [], '' . PHP_EOL)));
+              $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(403, [], '' . PHP_EOL)));
             }
             return;
           }
@@ -7982,16 +7988,14 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
           $negotiatorResponse = $negotiatorResponse->withAddedHeader("Content-Length", "0");
 
           if ($negotiatorResponse->getStatusCode() !== 101 && $psrRequest->getUri()->getPath() === '/shutdown') {
-              $connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], 'Shutting down echo server.' . PHP_EOL)));
+              //$connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], 'Shutting down echo server.' . PHP_EOL)));
+              $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(200, [], 'Shutting down echo server.' . PHP_EOL)));
               $socket->close();
               return;
           };
 
-          //echo "Negociator response -----\n";
-          //var_dump(\GuzzleHttp\Psr7\str($negotiatorResponse));
-          //echo "-----\n";
-
-          $connection->write(\GuzzleHttp\Psr7\str($negotiatorResponse));
+          //$connection->write(\GuzzleHttp\Psr7\str($negotiatorResponse));
+          $connection->write(\GuzzleHttp\Psr7\Message::toString($negotiatorResponse));
 
           if ($negotiatorResponse->getStatusCode() !== 101) {
               $connection->end();
@@ -8015,7 +8019,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
                 if (!$aruba_iot_websocket->onMessage($connection, $message->getPayload())) {
                   ArubaWssTool::log('debug', "Close cnx on onmessage() return");
                   // ----- Close connection
-                  $connection->end(\GuzzleHttp\Psr7\str(new Response(403, [], '' . PHP_EOL)));
+                  //$connection->end(\GuzzleHttp\Psr7\str(new Response(403, [], '' . PHP_EOL)));
+                  $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(403, [], '' . PHP_EOL)));
                   return;
                 }
 

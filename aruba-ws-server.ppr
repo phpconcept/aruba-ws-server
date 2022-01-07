@@ -48,7 +48,7 @@ aruba-ws-server
 8=composer.json
 [Selected Project Files]
 Main=
-Selected=aruba-ws-server.php
+Selected=composer.json
 [aruba-ws-server.php]
 TopLine=788
 Caret=17,805

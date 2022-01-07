@@ -289,7 +289,7 @@ The Websocket Server can be accessed by JSON API, description of the API can be 
 ## Change Logs
 
 Release v1.3-beta :
-- 
+- Use new Function API for supporting guzzlehttp/psr7 version 2.0+ (see https://github.com/guzzle/psr7#upgrading-from-function-api). Update composer.json.
 
 Release v1.2 :
 - Implement transfert of log display to plugin when one is available.
