@@ -368,6 +368,7 @@ In Aruba implementation, the payload transported in the websocket frames is in p
 
 - [Generating PHP Classes from .proto files for Aruba Telemetry API](doc/Proto.md)
 - [JSON API](doc/API.md)
+- [Composer PHP Packages Dependencies](doc/Dependencies.md)
 
 
 ## References
