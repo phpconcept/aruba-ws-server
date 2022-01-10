@@ -349,6 +349,17 @@
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : getDeviceClassList()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    static function getDeviceClassList() {
+      global $aruba_iot_websocket;
+      return($aruba_iot_websocket->getDeviceClassList($p_mac));
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : arubaClassToVendor()
      * Description :
      * ---------------------------------------------------------------------------
@@ -697,6 +708,85 @@
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : getDeviceClassList()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function getDeviceClassList() {
+      return($this->device_class_list);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : loadDeviceClassList()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    private function loadDeviceClassList() {
+
+      $v_class_json = <<<JSON_EOT
+{
+  "Aruba": {
+    "name": "EnOcean",
+    "description": "",
+    "devices": {
+      "Sensor": {
+        "name": "Sensor",
+        "description": "",
+        "sensors": {
+  "illumination": {
+    "name": "Illumination",
+    "description": "light intensity (Lux)",
+    "type" : "info",
+    "sub_type" : "numeric",
+    "visible" : true,
+    "history" : true,
+    "min_value" : 0
+  },
+  "occupancy": {
+    "name": "Occupancy",
+    "description": "occupancy level in percentage of max capacity",
+    "type" : "info",
+    "sub_type" : "numeric",
+    "visible" : true,
+    "history" : true,
+    "min_value" : 0,
+    "max_value" : 100
+  }
+        },
+        "commands": {
+        }
+      },
+      "Switch": {
+        "name": "Switch",
+        "description": ""
+      }
+    }
+  },
+  "Enocean": {
+    "name": "EnOcean",
+    "description": "",
+    "devices": {
+      "Sensor": {
+        "name": "Sensor",
+        "description": ""
+      },
+      "Switch": {
+        "name": "Switch",
+        "description": ""
+      }
+    }
+  }
+}
+JSON_EOT;
+
+      $this->device_class_list = json_decode($v_class_json, true);
+
+      return($this->device_class_list);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : toArray()
      * Description :
      * ---------------------------------------------------------------------------
@@ -894,6 +984,9 @@
           }
         }
       }
+      
+      // ----- Load unknown device class list
+      $this->loadDeviceClassList();
       
       // ----- Pre-load devices
       if (isset($p_args['devices_list'])) {

@@ -52,7 +52,7 @@ aruba-ws-server
 9=doc\Dependencies.md
 [Selected Project Files]
 Main=
-Selected=doc\Dependencies.md
+Selected=README.md
 [aruba-ws-server.php]
 TopLine=7883
 Caret=43,7902
@@ -85,7 +85,7 @@ TopLine=117
 Caret=41,134
 [README.md]
 TopLine=362
-Caret=76,282
+Caret=1,373
 [doc\install\install_docker\Dockerfile]
 TopLine=15
 Caret=1,38
