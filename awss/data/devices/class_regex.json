@@ -1,0 +1,12 @@
+[
+  {
+    "regex" : "/ATC_[0-9,A-F]{6}$/",
+    "vendor_id" : "ATC",
+    "model_id" : "LYWSD03MMC"      
+  },
+  {
+    "regex" : "/Jinou_Sensor_HumiTemp$/",
+    "vendor_id" : "Jinou",
+    "model_id" : "Sensor_HumiTemp"      
+  } 
+]

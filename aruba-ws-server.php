@@ -726,7 +726,7 @@
 
       $v_class_json = <<<JSON_EOT
 {
-  "Aruba": {
+  "Enocean": {
     "name": "EnOcean",
     "description": "",
     "devices": {
@@ -734,42 +734,25 @@
         "name": "Sensor",
         "description": "",
         "sensors": {
-  "illumination": {
-    "name": "Illumination",
-    "description": "light intensity (Lux)",
-    "type" : "info",
-    "sub_type" : "numeric",
-    "visible" : true,
-    "history" : true,
-    "min_value" : 0
-  },
-  "occupancy": {
-    "name": "Occupancy",
-    "description": "occupancy level in percentage of max capacity",
-    "type" : "info",
-    "sub_type" : "numeric",
-    "visible" : true,
-    "history" : true,
-    "min_value" : 0,
-    "max_value" : 100
-  }
+          "illumination": {
+            "name": "Illumination",
+            "description": "light intensity (Lux)",
+            "type" : "numeric",
+            "unit" : "Lux",
+            "min_value" : 0,
+            "max_value" : 100
+          },
+          "occupancy": {
+            "name": "Occupancy",
+            "description": "occupancy level in percentage of max capacity",
+            "type" : "numeric",
+            "unit" : "%",
+            "min_value" : 0,
+            "max_value" : 100
+          }
         },
         "commands": {
         }
-      },
-      "Switch": {
-        "name": "Switch",
-        "description": ""
-      }
-    }
-  },
-  "Enocean": {
-    "name": "EnOcean",
-    "description": "",
-    "devices": {
-      "Sensor": {
-        "name": "Sensor",
-        "description": ""
       },
       "Switch": {
         "name": "Switch",
@@ -6280,6 +6263,90 @@ enum NbTopic {
     /* -------------------------------------------------------------------------*/
     
     /**---------------------------------------------------------------------------
+     * Method : setDeviceClassFromRegex()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function setDeviceClassFromRegex() {
+      if ($this->vendor_id != '') {
+        return;
+      }
+
+      // ----- Set default value          
+      $this->vendor_id = 'generic';
+      $this->model_id = 'generic';
+      
+      // ----- Look for external regex file
+      $v_filename = __DIR__."/awss/data/devices/class_regex.json";
+      if (!file_exists($v_filename)) {
+        ArubaWssTool::log('debug', "No customized regex file '".$v_filename."'");
+        return;
+      }
+      
+      // ----- Read file
+      if (($v_handle = @fopen($v_filename, "r")) === null) {
+        ArubaWssTool::log('error', "Fail to open regex file '".$v_filename."'");
+        return;
+      }
+      $v_list_json = @fread($v_handle, filesize($v_filename));
+      @fclose($v_handle);
+
+/*      
+      
+      $v_list_json = <<<JSON_EOT
+[
+    {
+      "regex" : "/ATC_[0-9,A-F]{6}$/",
+      "vendor_id" : "ATC",
+      "model_id" : "LYWSD03MMC"      
+    },
+    {
+      "regex" : "/Jinou_Sensor_HumiTemp$/",
+      "vendor_id" : "Jinou",
+      "model_id" : "Sensor_HumiTemp"      
+    } 
+]
+JSON_EOT;
+      
+      */
+      
+      if (($v_list = json_decode($v_list_json, true)) === null) {
+        ArubaWssTool::log('error', "Badly formatted JSON content in file '".$v_filename."'");
+        return;
+      }
+
+      var_dump($v_list);
+      //ArubaWssTool::log('debug', $v_list);
+      
+      // ----- Search by regex the right device
+      foreach ($v_list as $v_item) {
+        if (preg_match($v_item['regex'], $this->local_name) === 1) {
+          $this->vendor_id = $v_item['vendor_id'];
+          $this->model_id = $v_item['model_id'];
+          ArubaWssTool::log('debug', "vendor_id:'".$this->vendor_id."' and model_id:'".$this->model_id."' found by regex '".$v_item['regex']."'");
+          return;
+        }
+      }
+      
+      // ----- Look from local name
+      if ($this->local_name == 'Jinou_Sensor_HumiTemp') {
+        $this->vendor_id = 'Jinou';
+        $this->model_id = 'Sensor_HumiTemp';
+      }
+      else if (preg_match('/ATC_[0-9,A-F]{6}$/', $this->local_name) === 1) {
+        $this->vendor_id = 'ATC';
+        $this->model_id = 'LYWSD03MMC';
+      }
+      else {
+        $this->vendor_id = 'generic';
+        $this->model_id = 'generic';
+      }
+    
+      return;
+    }
+    /* -------------------------------------------------------------------------*/
+    
+    /**---------------------------------------------------------------------------
      * Method : setCharacteristic()
      * Description :
      * ---------------------------------------------------------------------------
@@ -7312,7 +7379,12 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
      */
     public function updateObjectClass($p_telemetry, $p_class_name) {
         
-      if (($this->classname != 'auto') && ($this->classname != $p_class_name)) {
+      if ($this->classname == 'auto') {
+        $this->classname = $p_class_name;
+        $this->setChangedFlag('classname');
+        ArubaWssTool::log('debug', "Change classname to '".$this->classname."' for device '".$this->getMac()."' ");
+      }
+      else if ($this->classname != $p_class_name) {
         ArubaWssTool::log('debug', "Device '".$this->getMac()."' is announcing type '".$p_class_name."', when type '".$this->classname."' is expected. Skip telemetry data.");
         return(0);
       }
@@ -7333,15 +7405,11 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
         ArubaWssTool::log('debug', "Change model to '".$this->model."' for device '".$this->getMac()."' ");
       }
       
-      if ($this->classname == 'auto') {
-        $this->classname = $p_class_name;
-        $this->setChangedFlag('classname');
-        ArubaWssTool::log('debug', "Change classname to '".$this->classname."' for device '".$this->getMac()."' ");
-      }
-
       if ($this->vendor_id == '') {
         if ($this->classname == 'generic') {
           // TBC
+          $this->setDeviceClassFromRegex();
+          /*
           if ($this->local_name == 'Jinou_Sensor_HumiTemp') {
             $this->vendor_id = 'Jinou';
             $this->model_id = 'Sensor_HumiTemp';
@@ -7350,6 +7418,7 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
             $this->vendor_id = 'ATC';
             $this->model_id = 'LYWSD03MMC';
           }
+          */
         }
         else {
           // ----- Look to find exact vendor and device model

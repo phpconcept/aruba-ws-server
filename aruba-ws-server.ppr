@@ -16,6 +16,8 @@ HTServer=localhost
 [Project tree]
 aruba-ws-server
 	+Websocket
+		+Data
+			awss\data\devices\class_regex.json
 		+Install
 			composer.json
 		+Doc
@@ -50,27 +52,29 @@ aruba-ws-server
 7=doc\Proto.md
 8=composer.json
 9=doc\Dependencies.md
+10=awss\data\devices\class_regex.json
 [Selected Project Files]
 Main=
-Selected=README.md
+Selected=aruba-ws-server.php
 [aruba-ws-server.php]
-TopLine=7883
-Caret=43,7902
-Mark1=11,7576
-Mark2=1,2723
-Mark3=70,2967
-Mark4=11,6858
-Mark5=1,6047
-Mark6=61,6097
-Mark7=14,4608
-Mark8=65,3544
-Mark9=51,2097
-Mark10=46,6469
-Mark11=6,5943
-Mark12=35,7053
-Mark13=62,4839
-Mark14=39,6248
-Mark15=72,6984
+TopLine=6267
+Caret=9,6297
+Mark1=11,7627
+Mark2=1,2706
+Mark3=70,2950
+Mark4=11,6907
+Mark5=1,6030
+Mark6=61,6080
+Mark7=14,4591
+Mark8=65,3527
+Mark9=51,2080
+Mark10=46,6518
+Mark11=6,5926
+Mark12=35,7102
+Mark13=62,4822
+Mark14=39,6231
+Mark15=72,7033
+Mark16=7,6313
 [awss\client\websocket_client.html]
 TopLine=181
 Caret=104,192
@@ -98,3 +102,6 @@ Caret=33,20
 [doc\Dependencies.md]
 TopLine=1
 Caret=70,18
+[awss\data\devices\class_regex.json]
+TopLine=1
+Caret=1,15
