@@ -1,0 +1,10 @@
+[
+  "illumination": {
+    "name": "Illumination",
+    "description": "light intensity (Lux)",
+    "type" : "numeric",
+    "unit" : "Lux",
+    "min_value" : 0,
+    "max_value" : 100
+  }
+]

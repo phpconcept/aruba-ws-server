@@ -18,6 +18,7 @@ aruba-ws-server
 	+Websocket
 		+Data
 			awss\data\devices\class_regex.json
+			awss\data\devices\telemetry_global.json
 		+Install
 			composer.json
 		+Doc
@@ -53,28 +54,29 @@ aruba-ws-server
 8=composer.json
 9=doc\Dependencies.md
 10=awss\data\devices\class_regex.json
+11=awss\data\devices\telemetry_global.json
 [Selected Project Files]
 Main=
-Selected=aruba-ws-server.php
+Selected=awss\data\devices\telemetry_global.json
 [aruba-ws-server.php]
-TopLine=6267
-Caret=9,6297
-Mark1=11,7627
+TopLine=722
+Caret=1,745
+Mark1=11,7645
 Mark2=1,2706
 Mark3=70,2950
-Mark4=11,6907
+Mark4=11,6925
 Mark5=1,6030
 Mark6=61,6080
 Mark7=14,4591
 Mark8=65,3527
 Mark9=51,2080
-Mark10=46,6518
+Mark10=46,6536
 Mark11=6,5926
-Mark12=35,7102
+Mark12=35,7120
 Mark13=62,4822
 Mark14=39,6231
-Mark15=72,7033
-Mark16=7,6313
+Mark15=72,7051
+Mark16=7,6331
 [awss\client\websocket_client.html]
 TopLine=181
 Caret=104,192
@@ -104,4 +106,7 @@ TopLine=1
 Caret=70,18
 [awss\data\devices\class_regex.json]
 TopLine=1
-Caret=1,15
+Caret=1,13
+[awss\data\devices\telemetry_global.json]
+TopLine=1
+Caret=1,11
