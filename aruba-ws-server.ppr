@@ -17,6 +17,10 @@ HTServer=localhost
 aruba-ws-server
 	+Websocket
 		+Data
+			+Jinou_Sensor_HumiTemp
+				awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.json
+				awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.adv.php
+				awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php
 			awss\data\devices\class_regex.json
 			awss\data\devices\telemetry_global.json
 		+Install
@@ -55,28 +59,16 @@ aruba-ws-server
 9=doc\Dependencies.md
 10=awss\data\devices\class_regex.json
 11=awss\data\devices\telemetry_global.json
+12=awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.json
+13=awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.adv.php
+14=awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php
 [Selected Project Files]
 Main=
-Selected=awss\data\devices\telemetry_global.json
+Selected=aruba-ws-server.php
 [aruba-ws-server.php]
-TopLine=722
-Caret=1,745
-Mark1=11,7645
-Mark2=1,2706
-Mark3=70,2950
-Mark4=11,6925
-Mark5=1,6030
-Mark6=61,6080
-Mark7=14,4591
-Mark8=65,3527
-Mark9=51,2080
-Mark10=46,6536
-Mark11=6,5926
-Mark12=35,7120
-Mark13=62,4822
-Mark14=39,6231
-Mark15=72,7051
-Mark16=7,6331
+TopLine=6477
+Caret=7,6491
+Mark1=55,6481
 [awss\client\websocket_client.html]
 TopLine=181
 Caret=104,192
@@ -90,8 +82,8 @@ Caret=1,111
 TopLine=117
 Caret=41,134
 [README.md]
-TopLine=362
-Caret=1,373
+TopLine=278
+Caret=14,291
 [doc\install\install_docker\Dockerfile]
 TopLine=15
 Caret=1,38
@@ -110,3 +102,12 @@ Caret=1,13
 [awss\data\devices\telemetry_global.json]
 TopLine=1
 Caret=1,11
+[awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.json]
+TopLine=1
+Caret=1,1
+[awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.adv.php]
+TopLine=1
+Caret=64,9
+[awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php]
+TopLine=44
+Caret=5,27

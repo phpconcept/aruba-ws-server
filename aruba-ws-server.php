@@ -38,11 +38,6 @@
     $v_count++;
   }      
       
-  // ----- Temporary Trick
-  //if (($g_awss_extension == '') && (file_exists(__DIR__.'/ArubaWssJeedom.class.php'))) {
-  //  $g_awss_extension = 'Jeedom';
-  //} 
-  
   // ----- Extension include
   if (($g_awss_extension != '') && ($g_awss_extension != 'no')) {
     $v_filemane = __DIR__.'/ArubaWss'.$g_awss_extension.'.class.php';
@@ -55,6 +50,41 @@
     }
     require_once $v_filemane;
   }
+
+/*
+  // ----- Include IOT Device extraction functions
+  $v_filelist = array();
+  $v_dirname = __DIR__.'/awss/data/devices';
+  if (@is_dir($v_dirname) && ($dh = opendir($v_dirname))) {
+    while (($v_file_vendor = readdir($dh)) !== false) {
+      if (($v_file_vendor == '.') || ($v_file_vendor == '..')) {
+        continue;
+      }
+      
+      $v_subdir = $v_dirname.'/'.$v_file_vendor;
+      //echo "look for : ".$v_subdir."\n";
+      if (@is_dir($v_subdir) && ($dh2 = opendir($v_subdir))) {
+        while (($v_file_model = readdir($dh2)) !== false) {
+          if (($v_file_model == '.') || ($v_file_model == '..')) {
+            continue;
+          }
+          if (filetype($v_subdir.'/'.$v_file_model) == 'dir') {
+            $v_filename = $v_subdir.'/'.$v_file_model.'/'.$v_file_vendor.'_'.$v_file_model.'.php';
+            if (is_file($v_filename))
+              echo "file : '".$v_filename."' is here.\n";
+              include $v_filemane;
+            }
+        }
+        closedir($dh2);      
+      }
+
+    }
+    closedir($dh);      
+  }
+  
+  include "/var/www/html/plugins/ArubaIot/3rparty/awss/awss/data/devices/Jinou/Sensor_HumiTemp/Jinou_Sensor_HumiTemp.php";
+exit(0);
+*/
 
   // ----- Look for use af an external extension (like Jeedom)
   // This value can be overrided in the above $v_filemane included file
@@ -6449,9 +6479,32 @@ JSON_EOT;
      * ---------------------------------------------------------------------------
      */
     public function setTelemetryFromAdvert($p_value) {
-      // TBC : Need to be more generic !!!
+    
+      // ----- Result for telemety values extracted by custom php
+      $v_telemetry_values = array();
+
+      // ----- Include custom PHP code for this device model      
+      $v_filename = __DIR__.'/awss/data/devices/'.$this->vendor_id.'/'.$this->model_id.'/'.$this->vendor_id.'_'.$this->model_id.'.adv.php';
+      if (($this->vendor_id != '') && ($this->vendor_id != '') && @is_file($v_filename)) {
+        include($v_filename);
+      }
       
-      if (($this->vendor_id == 'Jinou') && ($this->model_id == 'Sensor_HumiTemp')) {
+      // ----- Set the telemetry values
+      foreach ($v_telemetry_values as $v_telemetry) {
+        $this->setTelemetryValue($v_telemetry['name'], $v_telemetry['value'], $v_telemetry['type']);
+      }
+
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : setTelemetryFromAdvert()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function setTelemetryFromAdvert_BAK($p_value) {
+    
+      if (($this->vendor_id == 'Jinou_BAK') && ($this->model_id == 'Sensor_HumiTemp')) {
 
         /*
           Service 0XAA20. Temp & humid data. There are 6 bytes.
@@ -6542,7 +6595,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
           $this->setTelemetryValue('humidity', $v_humi);        
           //$this->setChangedFlag('telemetry_value');        
           
-          $this->setTelemetryBatteryValue($v_val_battery);        
+          //$this->setTelemetryBatteryValue($v_val_battery);        
+          $this->setTelemetryValue('battery', $v_val_battery);        
         }
 
 
@@ -6651,7 +6705,24 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
      */
     public function setTelemetryValue($p_name, $p_value, $p_type='') {
     
-      // TBC : should check with regexp that name is valid ascii value for array index ?     
+      // TBC : should check with regexp that name is valid ascii value for array index ?    
+      
+      // ----- Look for specific case of battery value
+      if ($p_name == 'battery') {
+        if (($p_value < 0) || ($p_value > 101)) {
+          $p_value = 101; // means unknown
+        }
+        
+        // ----- Flag only if new value
+        if ($this->battery_value != $p_value) {
+          $this->battery_value = $p_value;
+          $this->setChangedFlag('battery');
+        }
+  
+        $this->battery_timestamp = time();
+        
+        return;
+      } 
       
       // ----- Look if no existing value for this name. Create one.
       if (!isset($this->telemetry_value_list[$p_name])) {
@@ -6713,7 +6784,7 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
      * Return Value :
      * ---------------------------------------------------------------------------
      */
-    public function setTelemetryBatteryValue($p_value) {
+    public function setTelemetryBatteryValue_DEPRECATED($p_value) {
     
       if (($p_value < 0) || ($p_value > 101)) {
         $p_value = 101; // means unknown
@@ -7349,7 +7420,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
         // ----- Update battery level
         if ($v_item->hasBattery()) {
           ArubaWssTool::log('debug', "Battery value is : ".$v_item->getBattery());
-          $this->setTelemetryBatteryValue($v_item->getBattery());
+          //$this->setTelemetryBatteryValue($v_item->getBattery());
+          $this->setTelemetryValue('battery', $v_item->getBattery());
         }
 
         // ----- For future use :
