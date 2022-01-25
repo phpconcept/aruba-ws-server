@@ -6260,44 +6260,28 @@ enum NbTopic {
       }
       $v_list_json = @fread($v_handle, filesize($v_filename));
       @fclose($v_handle);
-
-/*      
-      
-      $v_list_json = <<<JSON_EOT
-[
-    {
-      "regex" : "/ATC_[0-9,A-F]{6}$/",
-      "vendor_id" : "ATC",
-      "model_id" : "LYWSD03MMC"      
-    },
-    {
-      "regex" : "/Jinou_Sensor_HumiTemp$/",
-      "vendor_id" : "Jinou",
-      "model_id" : "Sensor_HumiTemp"      
-    } 
-]
-JSON_EOT;
-      
-      */
       
       if (($v_list = json_decode($v_list_json, true)) === null) {
         ArubaWssTool::log('error', "Badly formatted JSON content in file '".$v_filename."'");
         return;
       }
-
-      var_dump($v_list);
-      //ArubaWssTool::log('debug', $v_list);
       
-      // ----- Search by regex the right device
-      foreach ($v_list as $v_item) {
-        if (preg_match($v_item['regex'], $this->local_name) === 1) {
-          $this->vendor_id = $v_item['vendor_id'];
-          $this->model_id = $v_item['model_id'];
-          ArubaWssTool::log('debug', "vendor_id:'".$this->vendor_id."' and model_id:'".$this->model_id."' found by regex '".$v_item['regex']."'");
-          return;
+      // ----- Look first for local name
+      if (isset($v_list['local_name_regex'])) {
+        ArubaWssTool::log('debug:6', 'local_name_regex='.print_r($v_list['local_name_regex'], true));
+        
+        // ----- Search by regex the right device
+        foreach ($v_list['local_name_regex'] as $v_item) {
+          if (preg_match($v_item['regex'], $this->local_name) === 1) {
+            $this->vendor_id = $v_item['vendor_id'];
+            $this->model_id = $v_item['model_id'];
+            ArubaWssTool::log('debug', "vendor_id:'".$this->vendor_id."' and model_id:'".$this->model_id."' found by regex '".$v_item['regex']."'");
+            return;
+          }
         }
       }
       
+      /*
       // ----- Look from local name
       if ($this->local_name == 'Jinou_Sensor_HumiTemp') {
         $this->vendor_id = 'Jinou';
@@ -6311,7 +6295,8 @@ JSON_EOT;
         $this->vendor_id = 'generic';
         $this->model_id = 'generic';
       }
-    
+      */
+      
       return;
     }
     /* -------------------------------------------------------------------------*/

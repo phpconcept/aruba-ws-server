@@ -62,17 +62,20 @@
       ArubaWssTool::log('debug', "ATC Humidity from advert is : ".$v_humi." %");
       ArubaWssTool::log('debug', "ATC Battery from advert is : ".$v_val_battery." %");
       
-      $v_telemetry_values[0]['name'] = 'temperatureC';
-      $v_telemetry_values[0]['value'] = $v_temp;
-      $v_telemetry_values[0]['type'] = '';
+      $i=0;
+      $v_telemetry_values[$i]['name'] = 'temperatureC';
+      $v_telemetry_values[$i]['value'] = $v_temp;
+      $v_telemetry_values[$i]['type'] = '';
                   
-      $v_telemetry_values[1]['name'] = 'humidity';
-      $v_telemetry_values[1]['value'] = $v_humi;
-      $v_telemetry_values[1]['type'] = '';
+      $i++;
+      $v_telemetry_values[$i]['name'] = 'humidity';
+      $v_telemetry_values[$i]['value'] = $v_humi;
+      $v_telemetry_values[$i]['type'] = '';
 
-      $v_telemetry_values[1]['name'] = 'battery';
-      $v_telemetry_values[1]['value'] = $v_val_battery;
-      $v_telemetry_values[1]['type'] = '';
+      $i++;
+      $v_telemetry_values[$i]['name'] = 'battery';
+      $v_telemetry_values[$i]['value'] = $v_val_battery;
+      $v_telemetry_values[$i]['type'] = '';
 
     }
     

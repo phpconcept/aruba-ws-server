@@ -57,13 +57,15 @@
       ArubaWssTool::log('debug', "Jinou Temperature from advert is : ".$v_temp);
       ArubaWssTool::log('debug', "Jinou Humidity from advert is : ".$v_humi);
       
-      $v_telemetry_values[0]['name'] = 'temperatureC';
-      $v_telemetry_values[0]['value'] = $v_temp;
-      $v_telemetry_values[0]['type'] = '';
+      $i=0;
+      $v_telemetry_values[$i]['name'] = 'temperatureC';
+      $v_telemetry_values[$i]['value'] = $v_temp;
+      $v_telemetry_values[$i]['type'] = '';
                   
-      $v_telemetry_values[1]['name'] = 'humidity';
-      $v_telemetry_values[1]['value'] = $v_humi;
-      $v_telemetry_values[1]['type'] = '';
+      $i++;
+      $v_telemetry_values[$i]['name'] = 'humidity';
+      $v_telemetry_values[$i]['value'] = $v_humi;
+      $v_telemetry_values[$i]['type'] = '';
       
     }
                 

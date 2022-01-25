@@ -1,12 +1,21 @@
-[
-  {
-    "regex" : "/ATC_[0-9,A-F]{6}$/",
-    "vendor_id" : "ATC",
-    "model_id" : "LYWSD03MMC"      
-  },
-  {
-    "regex" : "/Jinou_Sensor_HumiTemp$/",
-    "vendor_id" : "Jinou",
-    "model_id" : "Sensor_HumiTemp"      
-  } 
-]
+{ 
+  "local_name_regex" : [
+    {
+      "regex" : "/ATC_[0-9,A-F]{6}$/",
+      "vendor_id" : "ATC",
+      "model_id" : "LYWSD03MMC"      
+    },
+    {
+      "regex" : "/Jinou_Sensor_HumiTemp$/",
+      "vendor_id" : "Jinou",
+      "model_id" : "Sensor_HumiTemp"      
+    } 
+  ],
+  "vendor_name_regex" : [
+    {
+      "regex" : "/Jinou/",
+      "vendor_id" : "Jinou",
+      "model_id" : "generic"      
+    } 
+  ]
+}
