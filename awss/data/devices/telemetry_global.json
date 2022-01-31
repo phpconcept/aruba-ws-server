@@ -1,5 +1,6 @@
 [
-  "illumination": {
+  {
+    "id": "illumination",
     "name": "Illumination",
     "description": "light intensity (Lux)",
     "type" : "numeric",

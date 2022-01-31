@@ -361,6 +361,37 @@
      */
     static function arubaClassToVendor($p_classname) {
       $v_result = array();
+      
+      // ----- Get known device class list
+      $v_list = ArubaWssTool::getDeviceClassList();
+      
+      // ----- Extract vendor_id:device_id from Aruba classname
+      foreach ($v_list as $v_key => $v_vendor) {
+        foreach ($v_vendor['devices'] as $v_device) {
+          ArubaWssTool::log('debug', "Look for : ".$v_vendor['name'].':'.$v_device['name']);
+          if ($v_device['aruba_class'] == $p_classname) {
+            $v_result['vendor_id'] = $v_vendor['name'];
+            $v_result['model_id'] = $v_device['name'];
+            return($v_result);
+          }
+        }
+      }
+
+      // ----- Not found      
+      $v_result['vendor_id'] = 'generic';
+      $v_result['model_id'] = 'generic';
+
+      return($v_result);
+    }
+    /* -------------------------------------------------------------------------*/
+    
+    /**---------------------------------------------------------------------------
+     * Method : arubaClassToVendor()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    static function arubaClassToVendor_BACK($p_classname) {
+      $v_result = array();
       $v_result['vendor_id'] = 'generic';
       $v_result['model_id'] = 'generic';
       
@@ -718,43 +749,244 @@
      * ---------------------------------------------------------------------------
      */
     private function loadDeviceClassList() {
+    
+      // ----- Look Aruba Class JSON file
+      $v_filename = __DIR__."/awss/data/devices/aruba_class.json";
+      if (!file_exists($v_filename)) {
+        ArubaWssTool::log('error', "Missing Aruba Class JSON file '".$v_filename."'");
+        return;
+      }
+      
+      // ----- Read file
+      if (($v_handle = @fopen($v_filename, "r")) === null) {
+        ArubaWssTool::log('error', "Fail to open Aruba Class JSON file '".$v_filename."'");
+        return;
+      }
+      $v_list_json = @fread($v_handle, filesize($v_filename));
+      @fclose($v_handle);
+      
+      if (($this->device_class_list = json_decode($v_list_json, true)) === null) {
+        ArubaWssTool::log('error', "Badly formatted JSON content in file '".$v_filename."'");
+        return;
+      }
+      
+      // ----- Add a type field to identify 'known' BLE vendor Aruba class
+      // will be used later to add 'unclassified' BLE vendors.
+      foreach ($this->device_class_list as $v_key => $v_vendor) {
+        $this->device_class_list[$v_key]['type'] = 'classified';  
+      }
+      
+      //ArubaWssTool::log('debug', "device_class_list : ".print_r($this->device_class_list, true));
+    
+      return($this->device_class_list);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : loadDeviceClassList()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    private function loadDeviceClassList_BACK() {
 
       $v_class_json = <<<JSON_EOT
 {
+  "Aruba": {
+    "name": "Aruba",
+    "description": "",
+    "devices": {
+      "Beacon": {
+        "aruba_class": "arubaBeacon", 
+        "name": "Beacon",
+        "description": ""
+      },
+      "Tag": {
+        "aruba_class": "arubaTag", 
+        "name": "Tag",
+        "description": ""
+      },
+      "Sensor": {
+        "aruba_class": "arubaSensor", 
+        "name": "Sensor",
+        "description": ""
+      }
+    }
+  },
+  
+  "ZF": {
+    "name": "ZF",
+    "description": "",
+    "devices": {
+      "Tag": {
+        "aruba_class": "zfTag", 
+        "name": "Tag",
+        "description": ""
+      }
+    }
+  },
+  
+  "Stanley": {
+    "name": "Stanley",
+    "description": "",
+    "devices": {
+      "Tag": {
+        "aruba_class": "stanleyTag", 
+        "name": "Tag",
+        "description": ""
+      }
+    }
+  },
+  
+  "Virgin": {
+    "name": "Virgin",
+    "description": "",
+    "devices": {
+      "Beacon": {
+        "aruba_class": "virginBeacon", 
+        "name": "Beacon",
+        "description": ""
+      }
+    }
+  },
+  
   "Enocean": {
     "name": "EnOcean",
     "description": "",
     "devices": {
       "Sensor": {
+        "aruba_class": "enoceanSensor", 
         "name": "Sensor",
-        "description": "",
-        "sensors": {
-          "illumination": {
-            "name": "Illumination",
-            "description": "light intensity (Lux)",
-            "type" : "numeric",
-            "unit" : "Lux",
-            "min_value" : 0,
-            "max_value" : 100
-          },
-          "occupancy": {
-            "name": "Occupancy",
-            "description": "occupancy level in percentage of max capacity",
-            "type" : "numeric",
-            "unit" : "%",
-            "min_value" : 0,
-            "max_value" : 100
-          }
-        },
-        "commands": {
-        }
+        "description": ""
       },
       "Switch": {
+        "aruba_class": "enoceanSwitch", 
         "name": "Switch",
         "description": ""
       }
     }
+  },
+  
+  "ABB": {
+    "name": "ABB",
+    "description": "",
+    "devices": {
+      "Sensor": {
+        "aruba_class": "abbSensor", 
+        "name": "Sensor",
+        "description": ""
+      }
+    }
+  },
+  
+  "MySphera": {
+    "name": "MySphera",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "mysphera", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Wiliot": {
+    "name": "Wiliot",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "wiliot", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Onity": {
+    "name": "Onity",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "onity", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Minew": {
+    "name": "Minew",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "minew", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Google": {
+    "name": "Google",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "google", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Polestar": {
+    "name": "Polestar",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "polestar", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Blyott": {
+    "name": "Blyott",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "blyott", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Diract": {
+    "name": "Diract",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "diract", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Gwahygiene": {
+    "name": "Gwahygiene",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "gwahygiene", 
+        "name": "generic",
+        "description": ""
+      }
+    }
   }
+  
+  
 }
 JSON_EOT;
 
@@ -6281,22 +6513,6 @@ enum NbTopic {
         }
       }
       
-      /*
-      // ----- Look from local name
-      if ($this->local_name == 'Jinou_Sensor_HumiTemp') {
-        $this->vendor_id = 'Jinou';
-        $this->model_id = 'Sensor_HumiTemp';
-      }
-      else if (preg_match('/ATC_[0-9,A-F]{6}$/', $this->local_name) === 1) {
-        $this->vendor_id = 'ATC';
-        $this->model_id = 'LYWSD03MMC';
-      }
-      else {
-        $this->vendor_id = 'generic';
-        $this->model_id = 'generic';
-      }
-      */
-      
       return;
     }
     /* -------------------------------------------------------------------------*/
@@ -6356,6 +6572,70 @@ enum NbTopic {
      * ---------------------------------------------------------------------------
      */
     public function setTelemetryFromCharacteristic($p_service_uuid, $p_char_uuid, $p_value, $p_char_types='') {
+
+      // ----- Result for telemety values extracted by custom php
+      $v_telemetry_values = array();
+
+      // ----- Include custom PHP code for this device model      
+      $v_filename = __DIR__.'/awss/data/devices/'.$this->vendor_id.'/'.$this->model_id.'/'.$this->vendor_id.'_'.$this->model_id.'.char.php';
+      if (($this->vendor_id != '') && ($this->vendor_id != '') && @is_file($v_filename)) {
+        include($v_filename);
+      }
+      
+      // ----- Set the telemetry values
+      foreach ($v_telemetry_values as $v_telemetry) {
+        $this->setTelemetryValue($v_telemetry['name'], $v_telemetry['value'], $v_telemetry['type']);
+      }
+
+
+      // TBC : Need to be more generic !!!
+      
+      if (($this->vendor_id == 'Jinou') && ($this->model_id == 'Sensor_HumiTemp')) {
+        if (($p_service_uuid == "AA-20") && ($p_char_uuid == "AA-21") && ($p_value != '')) {
+        /*
+          Service 0XAA20. Temp & humid data. There are 6 bytes.
+          1. Temperature positive/negative: 0 means positive (+) and 1 means negative (-)
+          2. Integer part of temperature. Show in Hexadecimal.
+          3. Decimal part of temperature. Show in Hexadecimal.
+          4. Reserved byte. Ignore it.
+          5. Integer part of humidity. Show in Hexadecimal.
+          6. Decimal part of humidity. Show in Hexadecimal.
+          For example: 00 14 05 22 32 08 means +20.5C 50.8%
+          01 08 09 00 14 05 means -8.9C 20.5%        
+        */
+        
+          $v_item = explode('-', $p_value);
+          if (sizeof($v_item) != 6) {
+            ArubaWssTool::log('debug', "Characteristic value from Jinou should be 6 bytes. Ignore.");
+            return;
+          }
+          
+          $v_val_sign = hexdec($v_item[0]);
+          $v_val_temp_int = hexdec($v_item[1]);
+          $v_val_temp_dec = hexdec($v_item[2]);
+          $v_val_humi_int = hexdec($v_item[4]);
+          $v_val_humi_dec = hexdec($v_item[5]);
+          
+          $v_temp = ($v_val_sign==1?-1:1) * ( $v_val_temp_int + $v_val_temp_dec/100 );
+          $v_humi = $v_val_humi_int + $v_val_humi_dec/100;
+      
+          ArubaWssTool::log('debug', "Temperature is : ".$v_temp);
+          ArubaWssTool::log('debug', "Humidity is : ".$v_humi);
+          
+          $this->setTelemetryValue('temperatureC', $v_temp);
+          $this->setTelemetryValue('humidity', $v_humi);        
+          //$this->setChangedFlag('telemetry_value');                
+        }
+      }
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : setTelemetryFromCharacteristic()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function setTelemetryFromCharacteristic_BAK($p_service_uuid, $p_char_uuid, $p_value, $p_char_types='') {
       // TBC : Need to be more generic !!!
       
       if (($this->vendor_id == 'Jinou') && ($this->model_id == 'Sensor_HumiTemp')) {

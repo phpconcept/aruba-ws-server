@@ -213,6 +213,8 @@ iot useTransportProfile Test
 
 Above configuration will allow for Enocean BLE devices (sensors and switches), and for unclassified BLE devices which MAC address begins with A4:C1:38 or E6:FE:37.
 Using the right filtering will lower the load on the Websocket Server.
+Filter "localNameFilter Jinou,ATC", will allow all unclassified BLE devices with 'Jinou' or 'ATC' in their local name.
+ 
 
 ### AWSS Client
 

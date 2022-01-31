@@ -1,0 +1,198 @@
+[
+  {
+    "name": "Aruba",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "arubaBeacon", 
+        "name": "Beacon",
+        "description": ""
+      },
+      {
+        "aruba_class": "arubaTag", 
+        "name": "Tag",
+        "description": ""
+      },
+      {
+        "aruba_class": "arubaSensor", 
+        "name": "Sensor",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "ZF",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "zfTag", 
+        "name": "Tag",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "Stanley",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "stanleyTag", 
+        "name": "Tag",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "Virgin",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "virginBeacon", 
+        "name": "Beacon",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "EnOcean",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "enoceanSensor", 
+        "name": "Sensor",
+        "description": ""
+      },
+      {
+        "aruba_class": "enoceanSwitch", 
+        "name": "Switch",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "ABB",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "abbSensor", 
+        "name": "Sensor",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "MySphera",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "mysphera", 
+        "name": "generic",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "Wiliot",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "wiliot", 
+        "name": "generic",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "Onity",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "onity", 
+        "name": "generic",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "Minew",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "minew", 
+        "name": "generic",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "Google",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "google", 
+        "name": "generic",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "Polestar",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "polestar", 
+        "name": "generic",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "Blyott",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "blyott", 
+        "name": "generic",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "Diract",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "diract", 
+        "name": "generic",
+        "description": ""
+      }
+    ]
+  },
+  
+  {
+    "name": "Gwahygiene",
+    "description": "",
+    "devices": [
+      {
+        "aruba_class": "gwahygiene", 
+        "name": "generic",
+        "description": ""
+      }
+    ]
+  }
+  
+  
+]

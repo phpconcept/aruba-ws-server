@@ -4,6 +4,7 @@
     "model_id": "Sensor_HumiTemp",
     "name": "Jinou_Sensor_HumiTemp",
     "description": "",
+    "gatt_supported": 1,
     "telemetry_auto" : 1,
     "telemetry_allowed": ["any"],
     "telemetry_expected": ["temperatureC", "humidity", "battery"],
