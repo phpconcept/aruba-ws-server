@@ -65,10 +65,10 @@ aruba-ws-server
 14=awss\data\devices\aruba_class.json
 [Selected Project Files]
 Main=
-Selected=awss\data\devices\telemetry_global.json
+Selected=aruba-ws-server.php
 [aruba-ws-server.php]
-TopLine=9
-Caret=8,378
+TopLine=364
+Caret=1,362
 Mark1=55,6622
 [awss\client\websocket_client.html]
 TopLine=181
@@ -96,7 +96,7 @@ TopLine=1
 Caret=9,14
 [awss\data\devices\telemetry_global.json]
 TopLine=1
-Caret=3,2
+Caret=1,3
 [awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.json]
 TopLine=1
 Caret=20,7
@@ -111,4 +111,4 @@ TopLine=48
 Caret=19,69
 [awss\data\devices\aruba_class.json]
 TopLine=1
-Caret=21,17
+Caret=23,13
