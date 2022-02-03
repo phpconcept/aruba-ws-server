@@ -5453,14 +5453,6 @@ enum NbTopic {
         return(0);
       }
 
-/*
-      // ----- Add a disconnect action : to free the ble connect and the AP ...
-      // Only one connect available per AP, so free the connection after the read
-      if ($this->gattAddActionDisconnect($v_gatt_msg) != 1) {
-        return(0);
-      }
-      */
-
       // ----- Add a connect action
       if ($this->gattSendMessage($v_gatt_msg) != 1) {
         return(0);
@@ -5520,22 +5512,13 @@ enum NbTopic {
       }
       
       // ----- Look if connect needed
-//      if (($v_device->getConnectStatus() != AWSS_STATUS_CONNECT_INITIATED) 
-//          && ($v_device->getConnectStatus() != AWSS_STATUS_CONNECTED)) {     
       if ($v_device->getConnectStatus() != AWSS_STATUS_CONNECTED) {     
         ArubaWssTool::log('debug', 'Device not connected, connect before read');   
-          
+
         // ----- Add a connect action
-        if ($this->gattAddActionConnect($v_gatt_msg) == 1) {
-          // ----- Change the gatt status of the device
-          //if (!$v_device->changeConnectStatus(AWSS_STATUS_CONNECT_INITIATED)) {
-          //if (!$this->changeDeviceConnectStatus($v_device, AWSS_STATUS_CONNECTED)) {                
-            // Nothing to do, no change needed
-          //}
+        if ($this->gattAddActionConnect($v_gatt_msg) != 1) {
+          return(0);
         }
-        else {
-          // Nothing to do, wait to fail elsewhere
-        }    
       }
       
       // ----- Add read action
@@ -5553,15 +5536,6 @@ enum NbTopic {
       if ($this->gattSendMessage($v_gatt_msg) != 1) {
         return(0);
       }
-      
-      /*
-      // ----- Prepare a callback to disconnect in 10 to 20 sec.
-      // This will allow any other request while ble cnx is up, avoiding multiple cnx/dcnx
-      // I put the time to 20sec because it will be in reality between 10 and 20 sec depending on where is the clock when
-      // the acllback is registered. And because this is a onetime callabck.
-      $v_str = '{"name" : "ble_disconnect", "data": {"device_mac":"'.$p_device_mac.'"}}';
-      $this->setCronCallback(md5(AWSS_STATUS_DISCONNECTED.$p_device_mac), $v_str, 20, 1);
-      */
       
       return(1);
     }
@@ -5657,16 +5631,9 @@ enum NbTopic {
         ArubaWssTool::log('debug', 'Device not connected, connect before read');   
           
         // ----- Add a connect action
-        if ($this->gattAddActionConnect($v_gatt_msg) == 1) {
-          // ----- Change the gatt status of the device
-//          if (!$v_device->changeConnectStatus(AWSS_STATUS_CONNECT_INITIATED)) {
-          //if (!$this->changeDeviceConnectStatus($v_device, AWSS_STATUS_CONNECTED)) {                
-            // Nothing to do, no change needed
-          //}
+        if ($this->gattAddActionConnect($v_gatt_msg) != 1) {
+          return(0);
         }
-        else {
-          // Nothing to do, wait to fail elsewhere
-        }    
       }
       
       // ----- Add read action
