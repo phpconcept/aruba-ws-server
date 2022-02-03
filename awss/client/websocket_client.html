@@ -38,7 +38,9 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     "current_device_mac":"",
     
     "current_service_uuid":"",
-    "current_char_uuid":""
+    "current_char_uuid":"",
+    
+    "char_list" : null
     };
   var g_socket = null;
   
@@ -88,6 +90,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     
     g_server['url'] = "http://"+g_server['ip_address']+":"+g_server['tcp_port']+"/api";
     g_server['ws_url'] = "ws://"+g_server['ip_address']+":"+g_server['tcp_port']+"/api";
+    
+    g_server['char_list'] = new Array();
     
     g_socket = new WebSocket(g_server['ws_url']);
 
@@ -168,6 +172,16 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
           // Nothing to do ... may be log message
         }
         else if ((obj.from_event) && (obj.from_event == 'ble_read') && (obj.status == 'success') ) {
+          // For now, just releoad all the device
+          // TBC : to  be optimized, update only the value ?
+          if ((obj.data.device_mac) && (obj.data.device_mac == g_server['current_device_mac']) ) {
+            awss_api_device_info(g_server['current_device_mac']);
+          }
+        }
+        else if ((obj.from_event) && (obj.from_event == 'ble_read_multiple') && (obj.status == 'initiated') ) {
+          // Nothing to do ... may be log message
+        }
+        else if ((obj.from_event) && (obj.from_event == 'ble_read_multiple') && (obj.status == 'success') ) {
           // For now, just releoad all the device
           // TBC : to  be optimized, update only the value ?
           if ((obj.data.device_mac) && (obj.data.device_mac == g_server['current_device_mac']) ) {
@@ -450,6 +464,91 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     return;  
   }
   
+  function awss_device_char_read_select(p_mac, p_service, p_char, p_select) {
+    //alert('look for :'+p_mac+','+p_service+','+p_char+','+p_select);
+    v_id = p_mac+'+'+p_service+'+'+p_char;
+    
+  v_index = g_server['char_list'].findIndex(function(p_item) {
+    //alert('compare :'+p_item.id+' with '+this);
+    if (p_item == this) return true; else return false;
+  }, v_id);
+  //alert('index:'+v_index);
+  
+   // ----- Look if selected
+   if (p_select) {
+     if (v_index == -1) {
+       //alert('not in, add');
+       g_server['char_list'].push(v_id);
+     }
+     else {
+       // nothing to do
+       //alert(' already in');
+     }
+   }
+   // Look if deselected
+   else {
+     if (v_index == -1) {
+       // nothing to do
+       //alert('already not in');
+     }
+     else {
+       //alert('in, remove');
+       g_server['char_list'].splice(v_index,1);
+     }
+   }
+
+
+    return;  
+  }
+  
+  function awss_device_char_read_list(p_mac, p_service, p_char) {
+  //alert('look for :'+p_mac+','+p_service+','+p_char);
+  
+    if (g_server['char_list'].length == 0) {
+      return;
+    }
+    
+    var v_list = new Array();
+    var p_mac='';
+    var v_val = '';
+    var j=0;
+    for (var i = 0; i < g_server['char_list'].length; i++) {
+      v_val = v_val+' // '+g_server['char_list'][i];
+      v_item = g_server['char_list'][i].split('+');
+      if (p_mac == '') {
+      p_mac = v_item[0];
+      }
+      else {
+        // All must be for same mac@
+        if (p_mac != v_item[0]) {
+          return;
+        }
+      }
+      v_list[j] = new Array();
+      var v_obj = {'service_uuid': v_item[1], 'char_uuid':v_item[2]};
+      v_list[j]=v_obj;
+      j++;
+    }
+    //alert(v_val);
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"ble_read_multiple",
+        "data": {
+        "device_mac":p_mac,
+          "char_list":v_list
+        }
+      }
+    };
+
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+
+    return;  
+  }
+  
   function awss_device_char_notify(p_mac, p_service, p_char, p_mode) {
   //alert('look for :'+p_mac+','+p_service+','+p_char);
   
@@ -595,6 +694,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       awss_device_change_to_disconnected(p_data.device.mac);
     }
     
+    g_server['char_list'] = new Array();
+        
     document.getElementById("device_name").innerHTML = p_data.device.name;
     document.getElementById("device_mac").innerHTML = p_data.device.mac;
     document.getElementById("device_classname").innerHTML = p_data.device.classname;
@@ -654,6 +755,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
         //v_html += '<span class="w3-right"><label class="w3-text-black" style="cursor: pointer;" onclick="awss_device_char_read(\''+p_data.device.mac+'\', \''+p_data.device.services[i].uuid+'\', \''+p_data.device.services[i].char_list[j].uuid+'\');">&nbsp;&nbsp; read</label></span>';
         v_html += '<span class="w3-right">';
         if (v_types.includes('read')) {
+          v_html += '<input type="checkbox" onchange="awss_device_char_read_select(\''+p_data.device.mac+'\', \''+p_data.device.services[i].uuid+'\', \''+p_data.device.services[i].char_list[j].uuid+'\', this.checked);"> ';
           v_html += '<button type="button" class="btn btn-xs" onclick="awss_device_char_read(\''+p_data.device.mac+'\', \''+p_data.device.services[i].uuid+'\', \''+p_data.device.services[i].char_list[j].uuid+'\');">read</button>';
         } 
         /*
@@ -1486,6 +1588,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
         <h2><span class="glyphicon glyphicon-tag"></span>
         <span id="char_list_name">Device Characteristics</span>&nbsp;<span class="w3-badge w3-green w3-medium" id="char_list_nb" style="vertical-align: top;">0</span>
+        <span class="w3-right"><button type="button" class="btn btn-xs" onclick="awss_device_char_read_list();">read multiple</button></span>
         </h2>
         <input type="hidden" id="char_list_id" value="aruba ">
 

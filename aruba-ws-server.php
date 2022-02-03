@@ -1889,12 +1889,12 @@ JSON_EOT;
       $v_response = array();
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
-      $v_response['from_event'] = 'ble_read';
+      $v_response['from_event'] = 'ble_read_multiple';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
 
       // ----- Check mandatory fields are present
-      if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac','service_uuid','char_uuid'))) {
+      if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac','char_list'))) {
         return($v_response);
       }
 
@@ -1902,36 +1902,18 @@ JSON_EOT;
       if (isset($p_data['device_mac'])) {        
         $v_device_mac = filter_var(trim(strtoupper($p_data['device_mac'])), FILTER_VALIDATE_MAC);
       }
-      $v_response['data']['device_mac'] = $p_device_mac;
-      
-      $v_service_uuid = "";
-      if (isset($p_data['service_uuid'])) {        
-        $v_service_uuid = trim(strtoupper($p_data['service_uuid']));
-      }
-      
-      $v_char_uuid = "";
-      if (isset($p_data['char_uuid'])) {        
-        $v_char_uuid = trim(strtoupper($p_data['char_uuid']));
-      }
-      
-      ArubaWssTool::log('debug', 'Send Gatt read');
+      $v_response['data']['device_mac'] = $p_device_mac;      
       
       $v_list = array();
       $i=0;
-      $v_list[$i]['service_uuid'] = $v_service_uuid;
-      $v_list[$i]['char_uuid'] = $v_char_uuid;
-      $i++;
-      $v_list[$i]['service_uuid'] = '18-00';
-      $v_list[$i]['char_uuid'] = '2A-00';
-      $i++;
-      $v_list[$i]['service_uuid'] = '18-00';
-      $v_list[$i]['char_uuid'] = '2A-01';
-      $i++;
-      $v_list[$i]['service_uuid'] = '18-00';
-      $v_list[$i]['char_uuid'] = '2A-04';
-      $i++;
-      $v_list[$i]['service_uuid'] = '18-00';
-      $v_list[$i]['char_uuid'] = '2A-A6';
+      foreach ($p_data['char_list'] as $v_item) {
+        if (isset($v_item['service_uuid']) && isset($v_item['char_uuid'])) {
+          $v_list[$i] = $v_item;
+          $i++;
+        }
+      }
+
+      ArubaWssTool::log('debug', 'Send Gatt read multiple data');
 
       if (($v_value = $this->gattDeviceReadMultiple($v_device_mac, $v_list, $p_cnx_id, $p_external_id)) > 0) {                    
         $v_response['status'] = 'initiated';
