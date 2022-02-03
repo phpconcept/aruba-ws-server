@@ -1881,6 +1881,72 @@ JSON_EOT;
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : apiEvent_ble_read_multiple()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    protected function apiEvent_ble_read_multiple($p_data, $p_cnx_id='', $p_external_id='') {
+      $v_response = array();
+      $v_response['status'] = 'fail';
+      $v_response['status_msg'] = '';
+      $v_response['from_event'] = 'ble_read';
+      $v_response['event_id'] = $p_external_id;
+      $v_response['data'] = array();
+
+      // ----- Check mandatory fields are present
+      if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac','service_uuid','char_uuid'))) {
+        return($v_response);
+      }
+
+      $v_device_mac = "";
+      if (isset($p_data['device_mac'])) {        
+        $v_device_mac = filter_var(trim(strtoupper($p_data['device_mac'])), FILTER_VALIDATE_MAC);
+      }
+      $v_response['data']['device_mac'] = $p_device_mac;
+      
+      $v_service_uuid = "";
+      if (isset($p_data['service_uuid'])) {        
+        $v_service_uuid = trim(strtoupper($p_data['service_uuid']));
+      }
+      
+      $v_char_uuid = "";
+      if (isset($p_data['char_uuid'])) {        
+        $v_char_uuid = trim(strtoupper($p_data['char_uuid']));
+      }
+      
+      ArubaWssTool::log('debug', 'Send Gatt read');
+      
+      $v_list = array();
+      $i=0;
+      $v_list[$i]['service_uuid'] = $v_service_uuid;
+      $v_list[$i]['char_uuid'] = $v_char_uuid;
+      $i++;
+      $v_list[$i]['service_uuid'] = '18-00';
+      $v_list[$i]['char_uuid'] = '2A-00';
+      $i++;
+      $v_list[$i]['service_uuid'] = '18-00';
+      $v_list[$i]['char_uuid'] = '2A-01';
+      $i++;
+      $v_list[$i]['service_uuid'] = '18-00';
+      $v_list[$i]['char_uuid'] = '2A-04';
+      $i++;
+      $v_list[$i]['service_uuid'] = '18-00';
+      $v_list[$i]['char_uuid'] = '2A-A6';
+
+      if (($v_value = $this->gattDeviceReadMultiple($v_device_mac, $v_list, $p_cnx_id, $p_external_id)) > 0) {                    
+        $v_response['status'] = 'initiated';
+        $v_response['status_msg'] = 'gattRead initiated.';
+      }
+      else {
+        $v_response['status'] = 'fail';
+        $v_response['status_msg'] = $this->gatt_log_msg;
+      }
+                    
+      return($v_response);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : apiEvent_ble_read()
      * Description :
      * ---------------------------------------------------------------------------
@@ -1915,7 +1981,6 @@ JSON_EOT;
       }
       
       ArubaWssTool::log('debug', 'Send Gatt read');
-      //$v_value = $this->gattDeviceRead($v_device_mac, $v_service_uuid, $v_char_uuid, $p_cnx_id, $p_external_id);
       if (($v_value = $this->gattDeviceRead($v_device_mac, $v_service_uuid, $v_char_uuid, $p_cnx_id, $p_external_id)) > 0) {                    
         $v_response['status'] = 'initiated';
         $v_response['status_msg'] = 'gattRead initiated.';
@@ -2029,7 +2094,6 @@ JSON_EOT;
       }
       
       ArubaWssTool::log('debug', 'Send Gatt read repeat');
-      //$v_value = $this->gattDeviceReadRepeat($v_device_mac, $v_service_uuid, $v_char_uuid, $v_repeat_time, $v_repeat_count);
       if (($v_value = $this->gattDeviceReadRepeat($v_device_mac, $v_service_uuid, $v_char_uuid, $v_repeat_time, $v_repeat_count)) > 0) {                    
         $v_response['status'] = 'initiated';
         $v_response['status_msg'] = 'Repeated gattRead initiated.';
@@ -4843,21 +4907,12 @@ enum NbTopic {
      */
     private function gattCreateMessage(&$p_gatt_msg, $p_device, $p_cnx_id='', $p_external_id='', $p_close_cnx=false) {
 
-/*
-      $v_device = $this->getDeviceByMac($p_device);
-      if ($v_device === null) {
-        ArubaWssTool::log('debug', 'Fail to find device with mac '.$p_device);
-        return(0);
-      }
-      */
-
       if ($p_device === null) {
         ArubaWssTool::log('debug', 'Missing valid p_device.');
         return(0);
       }
       
       // ----- Find nearest reporter        
-      //$v_ap_mac = $p_device->getNearestApMac();    
       $v_ap_mac = $p_device->getConnectApMac();    
       $v_reporter = $this->getReporterByMac($v_ap_mac);
       if ($v_reporter === null) {
@@ -4868,20 +4923,9 @@ enum NbTopic {
       // ----- Look if reporter is available to connect
       // ok if reporter not alreay connected, or already connected with same device
       if (!$v_reporter->isAvailableToConnectWith($p_device->getMac())) {
-      //if (!$v_reporter->changeConnectStatus(AWSS_STATUS_CONNECTED, $p_device->getMac())) {
         ArubaWssTool::log('debug', 'Reporter is already connected with another device');
         return(0);
       }
-      
-      /*
-      // ----- Find associated websocket connection for the reporter
-      $v_cnx = $this->getConnectionByReporterMac($v_ap_mac);      
-      if ($v_cnx === null) {
-        ArubaWssTool::log('debug', 'Fail to find websocket connection for the reporter '.$v_ap_mac);
-        return(0);
-      }
-      ArubaWssTool::log('debug', 'Connection to be used is '.$v_cnx->my_id);
-      */
       
       // ----- Create gatt_msg array to store infos
       $p_gatt_msg = array();
@@ -4922,6 +4966,7 @@ enum NbTopic {
      */
     private function gattSendMessage(&$p_gatt_msg) {
     
+      // ----- Get websocket cnx associated with reporter AP
       $v_cnx = $this->getConnectionByReporterMac($p_gatt_msg['reporter_mac']);      
       if ($v_cnx === null) {
         ArubaWssTool::log('debug', 'Fail to find connection for the reporter '.$p_gatt_msg['reporter_mac']);
@@ -5524,6 +5569,66 @@ enum NbTopic {
       // ----- Add read action
       if ($this->gattAddActionRead($v_gatt_msg, $p_service_uuid, $p_char_uuid) != 1) {
         return(0);
+      }
+
+      // ----- Add a disconnect action : to free the ble connect and the AP ...
+      // Only one connect available per AP, so free the connection after the read
+      if ($this->gattAddActionDisconnect($v_gatt_msg) != 1) {
+        return(0);
+      }
+
+      // ----- Add a connect action
+      if ($this->gattSendMessage($v_gatt_msg) != 1) {
+        return(0);
+      }
+      
+      return(1);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : gattDeviceReadMultiple()
+     * Description :
+     *   Same as gattDeviceRead() but with several char at the same time.
+     * ---------------------------------------------------------------------------
+     */
+    public function gattDeviceReadMultiple($p_device_mac, $p_char_list, $p_cnx_id='', $p_external_id='', $p_close_cnx=false) {
+    
+      // ----- Reset log message
+      $this->gatt_log_msg = '';
+      
+      // ----- Internal structure for gatt message
+      $v_gatt_msg = array();
+      
+      // ----- Get the device (if any)
+      $v_device = $this->getDeviceByMac($p_device_mac);
+      if ($v_device === null) {
+        $this->gatt_log_msg = 'Fail to find device with mac '.$p_device_mac;
+        ArubaWssTool::log('debug', $this->gatt_log_msg);
+        return(0);
+      }
+
+      // ----- Prepare a GATT (protobuf) message
+      if ($this->gattCreateMessage($v_gatt_msg, $v_device, $p_cnx_id, $p_external_id, $p_close_cnx) != 1) {
+        return(0);
+      }
+      
+      // ----- Look if connect needed
+      if ($v_device->getConnectStatus() != AWSS_STATUS_CONNECTED) {     
+        ArubaWssTool::log('debug', 'Device not connected, connect before read');   
+
+        // ----- Add a connect action
+        if ($this->gattAddActionConnect($v_gatt_msg) != 1) {
+          return(0);
+        }
+      }
+      
+      // ----- Add one action per item
+      foreach ($p_char_list as $v_char_item) {
+        // ----- Add read action
+        if ($this->gattAddActionRead($v_gatt_msg, $v_char_item['service_uuid'], $v_char_item['char_uuid']) != 1) {
+          return(0);
+        }
       }
 
       // ----- Add a disconnect action : to free the ble connect and the AP ...
