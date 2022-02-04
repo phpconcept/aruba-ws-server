@@ -190,10 +190,12 @@ don't forget to add a rule in order to accept incoming connection on port 8081 (
 
 ### Aruba Access Point Configuration
 
+Aruba Access Point (IAP mode) are communicating with BLE IoT devices by 3 ways :
+- BLE Telemetry : IAP are sending regular telemetry data for known vendor devices
+- BLE Data : IAP are sending immediate BLE data (advertissments and scan responses) receive for any BLE devices, which are allowed by filtering (macOuiFilter or localNameFilter).
+- BLE GATT Protocol : IAP can communicate to BLE devices using the standard BLE GATT protocol. Today AWSS supports only the connect/disconnect and read capabilities.
+
 Below is an example of an Aruba Access Point (IAP mode) configuration (AOS version 8.9) to have the IOT Gateway sending telemetry data to websocket server.
-
-Please notice that URI "/telemetry" is used for the endpointURL. For all other attributes of the transportProfile, please refer to Aruba documentation. The right configuration will improve the load on the websocket server.
-
 
 ```cli
 iot transportProfile Test
@@ -203,17 +205,33 @@ iot transportProfile Test
  payloadContent managed-tags
  payloadContent enocean-switches
  payloadContent enocean-sensors
+ endpointToken 12346
+ transportInterval 30
+
+iot useTransportProfile Test
+```
+Please notice that URI "/telemetry" is used for the endpointURL. For all other attributes of the transportProfile, please refer to Aruba documentation. The right configuration will improve the load on the websocket server.
+
+Below is an example of an Aruba Access Point (IAP mode) configuration (AOS version 8.9) to have the IOT Gateway sending telemetry data and BLE data of any unclassified (but filtered) BLE device to websocket server.
+
+```cli
+iot transportProfile Test
+ endpointURL ws://<websocket_server_ip_address>:8081/telemetry
+ endpointType telemetry-websocket
+ payloadContent enocean-switches
+ payloadContent enocean-sensors
  payloadContent unclassified
  endpointToken 12346
  transportInterval 30
+ bleDataForwarding
  macOuiFilter A4C138,E6FE37
+ localNameFilter Jinou,ATC,iTAG
 
 iot useTransportProfile Test
 ```
 
-Above configuration will allow for Enocean BLE devices (sensors and switches), and for unclassified BLE devices which MAC address begins with A4:C1:38 or E6:FE:37.
+Above configuration will allow for Enocean BLE devices (sensors and switches), and for unclassified BLE devices which MAC address begins with A4:C1:38 or E6:FE:37, or which have the substrings "Jinou", "ATC" or "iTAG" in their advertised BLE local name.
 Using the right filtering will lower the load on the Websocket Server.
-Filter "localNameFilter Jinou,ATC", will allow all unclassified BLE devices with 'Jinou' or 'ATC' in their local name.
  
 
 ### AWSS Client
@@ -256,7 +274,7 @@ The "Characteristics Discovery" button will start a GATT BLE connection to the d
 
 ![Devices Characteristics Discovery](doc/images/device_discovery.png)
 
-When available, a click on the "read" button will read the characteristic value
+When available, a click on the "read" button will read the characteristic value. Using the check boxes and the "read multiple" button (in the table header) will trigger the read of multiple characteristics in a single command.
 
 ![Devices Characteristics Discovery](doc/images/device_read.png)
 
@@ -290,7 +308,7 @@ The Websocket Server can be accessed by JSON API, description of the API is here
 
 ## Change Logs
 
-Release v1.3-beta :
+Release v1.3 :
 - Add an API capability to do a GATT Read with multiple requested characteristics. The characteristics must be for the same device mac@.
 - Add a more scalable way to add new generic (Aruba unspecified class) IOT devices without changing core code. The list of devices is in floder awss/data/devices/. Each vendor class has a folder, and each model of device has a folder in the vendor class. In this folder, a json file is describing the device, an .adv.php file is containing the custom code to extract the telemetry values from the BLE advertissement payload.
 - Use new Function API for supporting guzzlehttp/psr7 version 2.0+ (see https://github.com/guzzle/psr7#upgrading-from-function-api). Update composer.json.
