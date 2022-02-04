@@ -65,10 +65,10 @@ aruba-ws-server
 14=awss\data\devices\aruba_class.json
 [Selected Project Files]
 Main=
-Selected=aruba-ws-server.php
+Selected=README.md
 [aruba-ws-server.php]
-TopLine=1884
-Caret=57,1905
+TopLine=1
+Caret=35,17
 Mark1=55,6676
 [awss\client\websocket_client.html]
 TopLine=506
@@ -105,8 +105,8 @@ Caret=20,7
 TopLine=31
 Caret=1,69
 [README.md]
-TopLine=275
-Caret=52,303
+TopLine=289
+Caret=13,311
 [awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php]
 TopLine=48
 Caret=19,69

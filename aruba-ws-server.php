@@ -350,7 +350,7 @@
      */
     static function getDeviceClassList() {
       global $aruba_iot_websocket;
-      return($aruba_iot_websocket->getDeviceClassList($p_mac));
+      return($aruba_iot_websocket->getDeviceClassList());
     }
     /* -------------------------------------------------------------------------*/
 
@@ -6933,7 +6933,7 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
     public function setChangedFlag($p_flag_type, $p_flag_name='') {
       // ----- Store the changed flag
       if ($p_flag_type != '') {
-        if (!is_array($this->change_flag[$p_flag_type])) {
+        if (!isset($this->change_flag[$p_flag_type])) {
           $this->change_flag[$p_flag_type] = array();
         }
         if ($p_flag_name != '') {
