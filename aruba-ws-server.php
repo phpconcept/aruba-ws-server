@@ -14,7 +14,7 @@
  */
 
   ini_set('display_errors', '1');
-  define('ARUBA_WSS_VERSION', '1.2');
+  define('ARUBA_WSS_VERSION', '1.3');
 
   /**
    * Look for specific arguments to manage extensions and console log
@@ -38,11 +38,6 @@
     $v_count++;
   }      
       
-  // ----- Temporary Trick
-  //if (($g_awss_extension == '') && (file_exists(__DIR__.'/ArubaWssJeedom.class.php'))) {
-  //  $g_awss_extension = 'Jeedom';
-  //} 
-  
   // ----- Extension include
   if (($g_awss_extension != '') && ($g_awss_extension != 'no')) {
     $v_filemane = __DIR__.'/ArubaWss'.$g_awss_extension.'.class.php';
@@ -349,11 +344,53 @@
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : getDeviceClassList()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    static function getDeviceClassList() {
+      global $aruba_iot_websocket;
+      return($aruba_iot_websocket->getDeviceClassList());
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : arubaClassToVendor()
      * Description :
      * ---------------------------------------------------------------------------
      */
     static function arubaClassToVendor($p_classname) {
+      $v_result = array();
+      
+      // ----- Get known device class list
+      $v_list = ArubaWssTool::getDeviceClassList();
+      
+      // ----- Extract vendor_id:device_id from Aruba classname
+      foreach ($v_list as $v_key => $v_vendor) {
+        foreach ($v_vendor['devices'] as $v_device) {
+          ArubaWssTool::log('debug', "Look for : ".$v_vendor['name'].':'.$v_device['name']);
+          if ($v_device['aruba_class'] == $p_classname) {
+            $v_result['vendor_id'] = $v_vendor['name'];
+            $v_result['model_id'] = $v_device['name'];
+            return($v_result);
+          }
+        }
+      }
+
+      // ----- Not found      
+      $v_result['vendor_id'] = 'generic';
+      $v_result['model_id'] = 'generic';
+
+      return($v_result);
+    }
+    /* -------------------------------------------------------------------------*/
+    
+    /**---------------------------------------------------------------------------
+     * Method : arubaClassToVendor()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    static function arubaClassToVendor_BACK($p_classname) {
       $v_result = array();
       $v_result['vendor_id'] = 'generic';
       $v_result['model_id'] = 'generic';
@@ -697,6 +734,269 @@
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : getDeviceClassList()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function getDeviceClassList() {
+      return($this->device_class_list);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : loadDeviceClassList()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    private function loadDeviceClassList() {
+    
+      // ----- Look Aruba Class JSON file
+      $v_filename = __DIR__."/awss/data/devices/aruba_class.json";
+      if (!file_exists($v_filename)) {
+        ArubaWssTool::log('error', "Missing Aruba Class JSON file '".$v_filename."'");
+        return;
+      }
+      
+      // ----- Read file
+      if (($v_handle = @fopen($v_filename, "r")) === null) {
+        ArubaWssTool::log('error', "Fail to open Aruba Class JSON file '".$v_filename."'");
+        return;
+      }
+      $v_list_json = @fread($v_handle, filesize($v_filename));
+      @fclose($v_handle);
+      
+      if (($this->device_class_list = json_decode($v_list_json, true)) === null) {
+        ArubaWssTool::log('error', "Badly formatted JSON content in file '".$v_filename."'");
+        return;
+      }
+      
+      // ----- Add a type field to identify 'known' BLE vendor Aruba class
+      // will be used later to add 'unclassified' BLE vendors.
+      foreach ($this->device_class_list as $v_key => $v_vendor) {
+        $this->device_class_list[$v_key]['type'] = 'classified';  
+      }
+      
+      //ArubaWssTool::log('debug', "device_class_list : ".print_r($this->device_class_list, true));
+    
+      return($this->device_class_list);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : loadDeviceClassList()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    private function loadDeviceClassList_BACK() {
+
+      $v_class_json = <<<JSON_EOT
+{
+  "Aruba": {
+    "name": "Aruba",
+    "description": "",
+    "devices": {
+      "Beacon": {
+        "aruba_class": "arubaBeacon", 
+        "name": "Beacon",
+        "description": ""
+      },
+      "Tag": {
+        "aruba_class": "arubaTag", 
+        "name": "Tag",
+        "description": ""
+      },
+      "Sensor": {
+        "aruba_class": "arubaSensor", 
+        "name": "Sensor",
+        "description": ""
+      }
+    }
+  },
+  
+  "ZF": {
+    "name": "ZF",
+    "description": "",
+    "devices": {
+      "Tag": {
+        "aruba_class": "zfTag", 
+        "name": "Tag",
+        "description": ""
+      }
+    }
+  },
+  
+  "Stanley": {
+    "name": "Stanley",
+    "description": "",
+    "devices": {
+      "Tag": {
+        "aruba_class": "stanleyTag", 
+        "name": "Tag",
+        "description": ""
+      }
+    }
+  },
+  
+  "Virgin": {
+    "name": "Virgin",
+    "description": "",
+    "devices": {
+      "Beacon": {
+        "aruba_class": "virginBeacon", 
+        "name": "Beacon",
+        "description": ""
+      }
+    }
+  },
+  
+  "Enocean": {
+    "name": "EnOcean",
+    "description": "",
+    "devices": {
+      "Sensor": {
+        "aruba_class": "enoceanSensor", 
+        "name": "Sensor",
+        "description": ""
+      },
+      "Switch": {
+        "aruba_class": "enoceanSwitch", 
+        "name": "Switch",
+        "description": ""
+      }
+    }
+  },
+  
+  "ABB": {
+    "name": "ABB",
+    "description": "",
+    "devices": {
+      "Sensor": {
+        "aruba_class": "abbSensor", 
+        "name": "Sensor",
+        "description": ""
+      }
+    }
+  },
+  
+  "MySphera": {
+    "name": "MySphera",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "mysphera", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Wiliot": {
+    "name": "Wiliot",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "wiliot", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Onity": {
+    "name": "Onity",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "onity", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Minew": {
+    "name": "Minew",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "minew", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Google": {
+    "name": "Google",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "google", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Polestar": {
+    "name": "Polestar",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "polestar", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Blyott": {
+    "name": "Blyott",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "blyott", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Diract": {
+    "name": "Diract",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "diract", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  },
+  
+  "Gwahygiene": {
+    "name": "Gwahygiene",
+    "description": "",
+    "devices": {
+      "generic": {
+        "aruba_class": "gwahygiene", 
+        "name": "generic",
+        "description": ""
+      }
+    }
+  }
+  
+  
+}
+JSON_EOT;
+
+      $this->device_class_list = json_decode($v_class_json, true);
+
+      return($this->device_class_list);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : toArray()
      * Description :
      * ---------------------------------------------------------------------------
@@ -797,7 +1097,19 @@
     
         if (($arg == '-help') || ($arg == '--help')) {
           echo "----- \n";
-          echo $p_argv[0]." [-help] [-console_log] [-debug_level X] [-server_ip X.X.X.X] [-server_port XXX] [-api_key XXX] [-reporters_key XXX] [-reporters_list X1,X2,X3...] [-devices_list X1,X2,X3...] [-display_ping] [-display_raw_data] [-no_extension] [-extension <extension_name>] [-file <debug_message_filename>]\n";
+          echo $p_argv[0]." [-help] [-version] [-console_log] [-debug_level X] ";
+          echo "[-server_ip X.X.X.X] [-server_port XXX] [-api_key XXX] ";
+          echo "[-reporters_key XXX] [-reporters_list X1,X2,X3...] ";
+          echo "[-devices_list X1,X2,X3...] [-display_ping] [-display_raw_data] ";
+          echo "[-no_extension] [-extension <extension_name>] ";
+          echo "[-file <debug_message_filename>]\n";
+          echo "----- \n";
+          exit();
+        }
+    
+        if (($arg == '-version') || ($arg == '--version')) {
+          echo "----- \n";
+          echo $p_argv[0]." ".ARUBA_WSS_VERSION."\n";
           echo "----- \n";
           exit();
         }
@@ -882,6 +1194,9 @@
           }
         }
       }
+      
+      // ----- Load unknown device class list
+      $this->loadDeviceClassList();
       
       // ----- Pre-load devices
       if (isset($p_args['devices_list'])) {
@@ -1566,6 +1881,54 @@
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : apiEvent_ble_read_multiple()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    protected function apiEvent_ble_read_multiple($p_data, $p_cnx_id='', $p_external_id='') {
+      $v_response = array();
+      $v_response['status'] = 'fail';
+      $v_response['status_msg'] = '';
+      $v_response['from_event'] = 'ble_read_multiple';
+      $v_response['event_id'] = $p_external_id;
+      $v_response['data'] = array();
+
+      // ----- Check mandatory fields are present
+      if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac','char_list'))) {
+        return($v_response);
+      }
+
+      $v_device_mac = "";
+      if (isset($p_data['device_mac'])) {        
+        $v_device_mac = filter_var(trim(strtoupper($p_data['device_mac'])), FILTER_VALIDATE_MAC);
+      }
+      $v_response['data']['device_mac'] = $p_device_mac;      
+      
+      $v_list = array();
+      $i=0;
+      foreach ($p_data['char_list'] as $v_item) {
+        if (isset($v_item['service_uuid']) && isset($v_item['char_uuid'])) {
+          $v_list[$i] = $v_item;
+          $i++;
+        }
+      }
+
+      ArubaWssTool::log('debug', 'Send Gatt read multiple data');
+
+      if (($v_value = $this->gattDeviceReadMultiple($v_device_mac, $v_list, $p_cnx_id, $p_external_id)) > 0) {                    
+        $v_response['status'] = 'initiated';
+        $v_response['status_msg'] = 'gattRead initiated.';
+      }
+      else {
+        $v_response['status'] = 'fail';
+        $v_response['status_msg'] = $this->gatt_log_msg;
+      }
+                    
+      return($v_response);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : apiEvent_ble_read()
      * Description :
      * ---------------------------------------------------------------------------
@@ -1600,7 +1963,6 @@
       }
       
       ArubaWssTool::log('debug', 'Send Gatt read');
-      //$v_value = $this->gattDeviceRead($v_device_mac, $v_service_uuid, $v_char_uuid, $p_cnx_id, $p_external_id);
       if (($v_value = $this->gattDeviceRead($v_device_mac, $v_service_uuid, $v_char_uuid, $p_cnx_id, $p_external_id)) > 0) {                    
         $v_response['status'] = 'initiated';
         $v_response['status_msg'] = 'gattRead initiated.';
@@ -1714,7 +2076,6 @@
       }
       
       ArubaWssTool::log('debug', 'Send Gatt read repeat');
-      //$v_value = $this->gattDeviceReadRepeat($v_device_mac, $v_service_uuid, $v_char_uuid, $v_repeat_time, $v_repeat_count);
       if (($v_value = $this->gattDeviceReadRepeat($v_device_mac, $v_service_uuid, $v_char_uuid, $v_repeat_time, $v_repeat_count)) > 0) {                    
         $v_response['status'] = 'initiated';
         $v_response['status_msg'] = 'Repeated gattRead initiated.';
@@ -4528,21 +4889,12 @@ enum NbTopic {
      */
     private function gattCreateMessage(&$p_gatt_msg, $p_device, $p_cnx_id='', $p_external_id='', $p_close_cnx=false) {
 
-/*
-      $v_device = $this->getDeviceByMac($p_device);
-      if ($v_device === null) {
-        ArubaWssTool::log('debug', 'Fail to find device with mac '.$p_device);
-        return(0);
-      }
-      */
-
       if ($p_device === null) {
         ArubaWssTool::log('debug', 'Missing valid p_device.');
         return(0);
       }
       
       // ----- Find nearest reporter        
-      //$v_ap_mac = $p_device->getNearestApMac();    
       $v_ap_mac = $p_device->getConnectApMac();    
       $v_reporter = $this->getReporterByMac($v_ap_mac);
       if ($v_reporter === null) {
@@ -4553,20 +4905,9 @@ enum NbTopic {
       // ----- Look if reporter is available to connect
       // ok if reporter not alreay connected, or already connected with same device
       if (!$v_reporter->isAvailableToConnectWith($p_device->getMac())) {
-      //if (!$v_reporter->changeConnectStatus(AWSS_STATUS_CONNECTED, $p_device->getMac())) {
         ArubaWssTool::log('debug', 'Reporter is already connected with another device');
         return(0);
       }
-      
-      /*
-      // ----- Find associated websocket connection for the reporter
-      $v_cnx = $this->getConnectionByReporterMac($v_ap_mac);      
-      if ($v_cnx === null) {
-        ArubaWssTool::log('debug', 'Fail to find websocket connection for the reporter '.$v_ap_mac);
-        return(0);
-      }
-      ArubaWssTool::log('debug', 'Connection to be used is '.$v_cnx->my_id);
-      */
       
       // ----- Create gatt_msg array to store infos
       $p_gatt_msg = array();
@@ -4607,6 +4948,7 @@ enum NbTopic {
      */
     private function gattSendMessage(&$p_gatt_msg) {
     
+      // ----- Get websocket cnx associated with reporter AP
       $v_cnx = $this->getConnectionByReporterMac($p_gatt_msg['reporter_mac']);      
       if ($v_cnx === null) {
         ArubaWssTool::log('debug', 'Fail to find connection for the reporter '.$p_gatt_msg['reporter_mac']);
@@ -5138,14 +5480,6 @@ enum NbTopic {
         return(0);
       }
 
-/*
-      // ----- Add a disconnect action : to free the ble connect and the AP ...
-      // Only one connect available per AP, so free the connection after the read
-      if ($this->gattAddActionDisconnect($v_gatt_msg) != 1) {
-        return(0);
-      }
-      */
-
       // ----- Add a connect action
       if ($this->gattSendMessage($v_gatt_msg) != 1) {
         return(0);
@@ -5205,22 +5539,13 @@ enum NbTopic {
       }
       
       // ----- Look if connect needed
-//      if (($v_device->getConnectStatus() != AWSS_STATUS_CONNECT_INITIATED) 
-//          && ($v_device->getConnectStatus() != AWSS_STATUS_CONNECTED)) {     
       if ($v_device->getConnectStatus() != AWSS_STATUS_CONNECTED) {     
         ArubaWssTool::log('debug', 'Device not connected, connect before read');   
-          
+
         // ----- Add a connect action
-        if ($this->gattAddActionConnect($v_gatt_msg) == 1) {
-          // ----- Change the gatt status of the device
-          //if (!$v_device->changeConnectStatus(AWSS_STATUS_CONNECT_INITIATED)) {
-          //if (!$this->changeDeviceConnectStatus($v_device, AWSS_STATUS_CONNECTED)) {                
-            // Nothing to do, no change needed
-          //}
+        if ($this->gattAddActionConnect($v_gatt_msg) != 1) {
+          return(0);
         }
-        else {
-          // Nothing to do, wait to fail elsewhere
-        }    
       }
       
       // ----- Add read action
@@ -5239,14 +5564,65 @@ enum NbTopic {
         return(0);
       }
       
-      /*
-      // ----- Prepare a callback to disconnect in 10 to 20 sec.
-      // This will allow any other request while ble cnx is up, avoiding multiple cnx/dcnx
-      // I put the time to 20sec because it will be in reality between 10 and 20 sec depending on where is the clock when
-      // the acllback is registered. And because this is a onetime callabck.
-      $v_str = '{"name" : "ble_disconnect", "data": {"device_mac":"'.$p_device_mac.'"}}';
-      $this->setCronCallback(md5(AWSS_STATUS_DISCONNECTED.$p_device_mac), $v_str, 20, 1);
-      */
+      return(1);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : gattDeviceReadMultiple()
+     * Description :
+     *   Same as gattDeviceRead() but with several char at the same time.
+     * ---------------------------------------------------------------------------
+     */
+    public function gattDeviceReadMultiple($p_device_mac, $p_char_list, $p_cnx_id='', $p_external_id='', $p_close_cnx=false) {
+    
+      // ----- Reset log message
+      $this->gatt_log_msg = '';
+      
+      // ----- Internal structure for gatt message
+      $v_gatt_msg = array();
+      
+      // ----- Get the device (if any)
+      $v_device = $this->getDeviceByMac($p_device_mac);
+      if ($v_device === null) {
+        $this->gatt_log_msg = 'Fail to find device with mac '.$p_device_mac;
+        ArubaWssTool::log('debug', $this->gatt_log_msg);
+        return(0);
+      }
+
+      // ----- Prepare a GATT (protobuf) message
+      if ($this->gattCreateMessage($v_gatt_msg, $v_device, $p_cnx_id, $p_external_id, $p_close_cnx) != 1) {
+        return(0);
+      }
+      
+      // ----- Look if connect needed
+      if ($v_device->getConnectStatus() != AWSS_STATUS_CONNECTED) {     
+        ArubaWssTool::log('debug', 'Device not connected, connect before read');   
+
+        // ----- Add a connect action
+        if ($this->gattAddActionConnect($v_gatt_msg) != 1) {
+          return(0);
+        }
+      }
+      
+      // ----- Add one action per item
+      foreach ($p_char_list as $v_char_item) {
+        // ----- Add read action
+        if ($this->gattAddActionRead($v_gatt_msg, $v_char_item['service_uuid'], $v_char_item['char_uuid']) != 1) {
+          return(0);
+        }
+      }
+
+      // ----- Add a disconnect action : to free the ble connect and the AP ...
+      // Only one connect available per AP, so free the connection after the read
+      if ($this->gattAddActionDisconnect($v_gatt_msg) != 1) {
+        return(0);
+      }
+
+      // ----- Add a connect action
+      if ($this->gattSendMessage($v_gatt_msg) != 1) {
+        return(0);
+      }
       
       return(1);
     }
@@ -5342,16 +5718,9 @@ enum NbTopic {
         ArubaWssTool::log('debug', 'Device not connected, connect before read');   
           
         // ----- Add a connect action
-        if ($this->gattAddActionConnect($v_gatt_msg) == 1) {
-          // ----- Change the gatt status of the device
-//          if (!$v_device->changeConnectStatus(AWSS_STATUS_CONNECT_INITIATED)) {
-          //if (!$this->changeDeviceConnectStatus($v_device, AWSS_STATUS_CONNECTED)) {                
-            // Nothing to do, no change needed
-          //}
+        if ($this->gattAddActionConnect($v_gatt_msg) != 1) {
+          return(0);
         }
-        else {
-          // Nothing to do, wait to fail elsewhere
-        }    
       }
       
       // ----- Add read action
@@ -5638,31 +6007,6 @@ enum NbTopic {
         $v_count++;
       }
       return($v_count);
-    }
-    /* -------------------------------------------------------------------------*/
-
-    /**---------------------------------------------------------------------------
-     * Method : notificationTriggerDeviceStatus()
-     * Description :
-     * ---------------------------------------------------------------------------
-     */
-    public function notificationTriggerDeviceStatus_DEPRECATED($p_device) {
-      ArubaWssTool::log('debug', 'notificationTriggerDeviceStatus()');
-      
-      foreach ($this->notification_queue as $v_item) {
-        if (   ($v_item['notification_type'] == 'device_status') 
-            && ($v_item['data']['device_mac'] == $p_device->getMac()) ) {
-          // ----- API Notify response
-          if ($v_item['cb_type'] == 'ws_api') {
-            $v_data = array();
-            $v_data['type'] = 'device_status';
-            $v_data['device_mac'] = $p_device->getMac();
-            $v_data['status'] = $p_device->getConnectStatus();     
-            ArubaWssTool::log('debug', 'Trigger status :'.$p_device->getConnectStatus());       
-            $this->apiNotify_notification($v_item['cb_id'], $v_data, $v_item['cb_id']);
-          }
-        }
-      }
     }
     /* -------------------------------------------------------------------------*/
 
@@ -6175,6 +6519,59 @@ enum NbTopic {
     /* -------------------------------------------------------------------------*/
     
     /**---------------------------------------------------------------------------
+     * Method : setDeviceClassFromRegex()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function setDeviceClassFromRegex() {
+      if ($this->vendor_id != '') {
+        return;
+      }
+
+      // ----- Set default value          
+      $this->vendor_id = 'generic';
+      $this->model_id = 'generic';
+      
+      // ----- Look for external regex file
+      $v_filename = __DIR__."/awss/data/devices/class_regex.json";
+      if (!file_exists($v_filename)) {
+        ArubaWssTool::log('debug', "No customized regex file '".$v_filename."'");
+        return;
+      }
+      
+      // ----- Read file
+      if (($v_handle = @fopen($v_filename, "r")) === null) {
+        ArubaWssTool::log('error', "Fail to open regex file '".$v_filename."'");
+        return;
+      }
+      $v_list_json = @fread($v_handle, filesize($v_filename));
+      @fclose($v_handle);
+      
+      if (($v_list = json_decode($v_list_json, true)) === null) {
+        ArubaWssTool::log('error', "Badly formatted JSON content in file '".$v_filename."'");
+        return;
+      }
+      
+      // ----- Look first for local name
+      if (isset($v_list['local_name_regex'])) {
+        ArubaWssTool::log('debug:6', 'local_name_regex='.print_r($v_list['local_name_regex'], true));
+        
+        // ----- Search by regex the right device
+        foreach ($v_list['local_name_regex'] as $v_item) {
+          if (preg_match($v_item['regex'], $this->local_name) === 1) {
+            $this->vendor_id = $v_item['vendor_id'];
+            $this->model_id = $v_item['model_id'];
+            ArubaWssTool::log('debug', "vendor_id:'".$this->vendor_id."' and model_id:'".$this->model_id."' found by regex '".$v_item['regex']."'");
+            return;
+          }
+        }
+      }
+      
+      return;
+    }
+    /* -------------------------------------------------------------------------*/
+    
+    /**---------------------------------------------------------------------------
      * Method : setCharacteristic()
      * Description :
      * ---------------------------------------------------------------------------
@@ -6229,6 +6626,70 @@ enum NbTopic {
      * ---------------------------------------------------------------------------
      */
     public function setTelemetryFromCharacteristic($p_service_uuid, $p_char_uuid, $p_value, $p_char_types='') {
+
+      // ----- Result for telemety values extracted by custom php
+      $v_telemetry_values = array();
+
+      // ----- Include custom PHP code for this device model      
+      $v_filename = __DIR__.'/awss/data/devices/'.$this->vendor_id.'/'.$this->model_id.'/'.$this->vendor_id.'_'.$this->model_id.'.char.php';
+      if (($this->vendor_id != '') && ($this->vendor_id != '') && @is_file($v_filename)) {
+        include($v_filename);
+      }
+      
+      // ----- Set the telemetry values
+      foreach ($v_telemetry_values as $v_telemetry) {
+        $this->setTelemetryValue($v_telemetry['name'], $v_telemetry['value'], $v_telemetry['type']);
+      }
+
+
+      // TBC : Need to be more generic !!!
+      
+      if (($this->vendor_id == 'Jinou') && ($this->model_id == 'Sensor_HumiTemp')) {
+        if (($p_service_uuid == "AA-20") && ($p_char_uuid == "AA-21") && ($p_value != '')) {
+        /*
+          Service 0XAA20. Temp & humid data. There are 6 bytes.
+          1. Temperature positive/negative: 0 means positive (+) and 1 means negative (-)
+          2. Integer part of temperature. Show in Hexadecimal.
+          3. Decimal part of temperature. Show in Hexadecimal.
+          4. Reserved byte. Ignore it.
+          5. Integer part of humidity. Show in Hexadecimal.
+          6. Decimal part of humidity. Show in Hexadecimal.
+          For example: 00 14 05 22 32 08 means +20.5C 50.8%
+          01 08 09 00 14 05 means -8.9C 20.5%        
+        */
+        
+          $v_item = explode('-', $p_value);
+          if (sizeof($v_item) != 6) {
+            ArubaWssTool::log('debug', "Characteristic value from Jinou should be 6 bytes. Ignore.");
+            return;
+          }
+          
+          $v_val_sign = hexdec($v_item[0]);
+          $v_val_temp_int = hexdec($v_item[1]);
+          $v_val_temp_dec = hexdec($v_item[2]);
+          $v_val_humi_int = hexdec($v_item[4]);
+          $v_val_humi_dec = hexdec($v_item[5]);
+          
+          $v_temp = ($v_val_sign==1?-1:1) * ( $v_val_temp_int + $v_val_temp_dec/100 );
+          $v_humi = $v_val_humi_int + $v_val_humi_dec/100;
+      
+          ArubaWssTool::log('debug', "Temperature is : ".$v_temp);
+          ArubaWssTool::log('debug', "Humidity is : ".$v_humi);
+          
+          $this->setTelemetryValue('temperatureC', $v_temp);
+          $this->setTelemetryValue('humidity', $v_humi);        
+          //$this->setChangedFlag('telemetry_value');                
+        }
+      }
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : setTelemetryFromCharacteristic()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function setTelemetryFromCharacteristic_BAK($p_service_uuid, $p_char_uuid, $p_value, $p_char_types='') {
       // TBC : Need to be more generic !!!
       
       if (($this->vendor_id == 'Jinou') && ($this->model_id == 'Sensor_HumiTemp')) {
@@ -6277,9 +6738,32 @@ enum NbTopic {
      * ---------------------------------------------------------------------------
      */
     public function setTelemetryFromAdvert($p_value) {
-      // TBC : Need to be more generic !!!
+    
+      // ----- Result for telemety values extracted by custom php
+      $v_telemetry_values = array();
+
+      // ----- Include custom PHP code for this device model      
+      $v_filename = __DIR__.'/awss/data/devices/'.$this->vendor_id.'/'.$this->model_id.'/'.$this->vendor_id.'_'.$this->model_id.'.adv.php';
+      if (($this->vendor_id != '') && ($this->vendor_id != '') && @is_file($v_filename)) {
+        include($v_filename);
+      }
       
-      if (($this->vendor_id == 'Jinou') && ($this->model_id == 'Sensor_HumiTemp')) {
+      // ----- Set the telemetry values
+      foreach ($v_telemetry_values as $v_telemetry) {
+        $this->setTelemetryValue($v_telemetry['name'], $v_telemetry['value'], $v_telemetry['type']);
+      }
+
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : setTelemetryFromAdvert()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function setTelemetryFromAdvert_BAK($p_value) {
+    
+      if (($this->vendor_id == 'Jinou_BAK') && ($this->model_id == 'Sensor_HumiTemp')) {
 
         /*
           Service 0XAA20. Temp & humid data. There are 6 bytes.
@@ -6370,7 +6854,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
           $this->setTelemetryValue('humidity', $v_humi);        
           //$this->setChangedFlag('telemetry_value');        
           
-          $this->setTelemetryBatteryValue($v_val_battery);        
+          //$this->setTelemetryBatteryValue($v_val_battery);        
+          $this->setTelemetryValue('battery', $v_val_battery);        
         }
 
 
@@ -6448,25 +6933,12 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
     public function setChangedFlag($p_flag_type, $p_flag_name='') {
       // ----- Store the changed flag
       if ($p_flag_type != '') {
-        if (!is_array($this->change_flag[$p_flag_type])) {
+        if (!isset($this->change_flag[$p_flag_type])) {
           $this->change_flag[$p_flag_type] = array();
         }
         if ($p_flag_name != '') {
           $this->change_flag[$p_flag_type][$p_flag_name] = true;
         }
-      }
-    }
-    /* -------------------------------------------------------------------------*/
-
-    /**---------------------------------------------------------------------------
-     * Method : setChangedFlag()
-     * Description :
-     * ---------------------------------------------------------------------------
-     */
-    public function setChangedFlag_SAVE($p_flag_string='', $p_value=TRUE) {
-      // ----- Store the changed flag
-      if ($p_flag_string != '') {
-        $this->change_flag[$p_flag_string] = $p_value;
       }
     }
     /* -------------------------------------------------------------------------*/
@@ -6479,7 +6951,24 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
      */
     public function setTelemetryValue($p_name, $p_value, $p_type='') {
     
-      // TBC : should check with regexp that name is valid ascii value for array index ?     
+      // TBC : should check with regexp that name is valid ascii value for array index ?    
+      
+      // ----- Look for specific case of battery value
+      if ($p_name == 'battery') {
+        if (($p_value < 0) || ($p_value > 101)) {
+          $p_value = 101; // means unknown
+        }
+        
+        // ----- Flag only if new value
+        if ($this->battery_value != $p_value) {
+          $this->battery_value = $p_value;
+          $this->setChangedFlag('battery');
+        }
+  
+        $this->battery_timestamp = time();
+        
+        return;
+      } 
       
       // ----- Look if no existing value for this name. Create one.
       if (!isset($this->telemetry_value_list[$p_name])) {
@@ -6541,7 +7030,7 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
      * Return Value :
      * ---------------------------------------------------------------------------
      */
-    public function setTelemetryBatteryValue($p_value) {
+    public function setTelemetryBatteryValue_DEPRECATED($p_value) {
     
       if (($p_value < 0) || ($p_value > 101)) {
         $p_value = 101; // means unknown
@@ -6739,190 +7228,6 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
       return($this->updateNearestAPNew($p_reporter, $v_lastseen, $v_rssi));
     }
     /* -------------------------------------------------------------------------*/
-
-
-    /**---------------------------------------------------------------------------
-     * Method : updateNearestAP()
-     * Description :
-     * Return Value :
-     *   True : if telemetry values are to be updated
-     *   False : if telemetry values are to be ignored
-     * ---------------------------------------------------------------------------
-     */
-    public function updateNearestAP_SAVE(&$p_reporter, $p_telemetry) {
-
-      $v_debug_msg = '';
-      
-      // ----- Get reporter mac@
-      $p_reporter_mac = $p_reporter->getMac();
-      ArubaWssTool::log('debug', "Look to update nearestAP with ".$p_reporter_mac);
-      
-      $v_debug_msg .= $p_reporter->getName().":";
-
-      // ----- Get device presence timeout
-      $v_timeout = ArubaWssTool::getConfig('presence_timeout');
-      $v_presence_min_rssi = ArubaWssTool::getConfig('presence_min_rssi');
-      $v_presence_rssi_hysteresis = ArubaWssTool::getConfig('presence_rssi_hysteresis');
-
-      // ----- Get last seen (if any)
-      $v_lastseen = 0;
-      if ($p_telemetry->hasLastSeen()) {
-        $v_lastseen = $p_telemetry->getLastSeen();
-        ArubaWssTool::log('debug', "LastSeen is : ".$v_lastseen." (".date("Y-m-d H:i:s", $v_lastseen).")");
-      }
-      else {
-        // Should not occur ... I not yet seen an object without this value ...
-        $v_lastseen = time();
-        //ArubaWssTool::log('debug', "LastSeen is missing, use current time : ".$v_lastseen." (".date("Y-m-d H:i:s", $v_lastseen).")");
-        ArubaWssTool::log('debug', "LastSeen is missing in telemetry data. Skip presence & nearestAP update.");
-
-      $v_debug_msg .= "LastSeen: no value !";
-        ArubaWssTool::log('debug', "********** ".$v_debug_msg);
-
-        return(false);
-      }
-
-      $v_debug_msg .= "LastSeen:".date("Y-m-d H:i:s", $v_lastseen)."(".$v_lastseen.")".":";
-
-      // ----- Get RSSI (if any)
-      $v_rssi = -110;
-      if ($p_telemetry->hasRSSI()) {
-        $v_val = explode(':', $p_telemetry->getRSSI());
-        $v_rssi = (isset($v_val[1]) ? intval($v_val[1]) : $v_rssi);
-      }
-      else {
-        // Il semble que lorsque l'IAP ne reçoit plus de beacons, il continu
-        // à envoyer un message de télémetry avec comme date la dernière fois
-        // qu'il a vu le beacon, mais plus de valeur de RSSI.
-        $v_debug_msg .= "(no_rssi)";
-        
-      // Debug Sharan
-      /*
-        if ($this->mac_address == "54:6C:0E:05:A3:5C") {
-        ob_start();
-   var_dump($p_telemetry);
-   $data = ob_get_contents();
-   ob_end_clean();
-   $order   = array("\r\n", "\n", "\r");
-   $data = str_replace($order, "", $data);
-        ArubaWssTool::log('debug', "Sharan ----- ".$data);
-        }
-        */
-      }
-
-      $v_debug_msg .= "RSSI:".$v_rssi."";
-
-      // ----- Look for too old data for updating presence
-      // Even if this is a better RSSI the timestamp is too old for the presence flag.
-      if ( (($v_lastseen + $v_timeout) < time())) {
-        ArubaWssTool::log('debug', "LastSeen value from this AP is already older than presence timeout. Skip presence update.");
-      }
-      else {
-        // ----- Look if last seen timestamp is better than current one
-        // if not then this is an old telemetry data compare to others previously 
-        // received (by same AP or other AP)
-        if ($this->presence_last_seen < $v_lastseen) {
-          // ----- Look if RSSI is not too far to be "present"
-          if (($v_rssi < $v_presence_min_rssi) && ($this->presence == 0)) {
-            ArubaWssTool::log('debug', "RSSI (".$v_rssi.") is not enought to change from absence to presence.");
-          }
-          else if (($v_rssi < ($v_presence_min_rssi-$v_presence_rssi_hysteresis)) && ($this->presence == 1)) {
-            ArubaWssTool::log('debug', "RSSI (".$v_rssi.") is not enought to update presence.");
-          }
-          else {
-            $this->setPresence(1, $v_lastseen);
-          }
-        }
-        else {
-          ArubaWssTool::log('debug', "Presence : received lastseen value in telemetry is older than a previous one.");
-        }
-      }
-
-      $v_debug_msg .= ' ->'.($this->presence?'present':'absent')."";
-
-      // ----- Look if this is the current best reporter (nearest ap)
-      if ($this->getNearestApMac() == $p_reporter->getMac()) {
-        ArubaWssTool::log('debug', "Reporter '".$p_reporter->getMac()."' is the current nearest reporter. Update last seen value");
-
-        // ----- No change in last seen value => repeated old value ...
-        // No : in fact we can receive 2 payloads with the same timestamp (in sec) with different values
-        // exemple is the switch up-idle-bottom values
-        /*
-        if ($this->nearest_ap_last_seen == $v_lastseen) {
-          ArubaWssTool::log('debug', "New last seen value is the same : repeated old telemetry data. Skip telemetry data.");
-          return(false);
-        }
-        */
-
-        // ----- Should never occur ...
-        if ($this->nearest_ap_last_seen > $v_lastseen) {
-          ArubaWssTool::log('error', "New last seen value is older than previous one ! Should never occur. Skip telemetry data.");
-          return(false);
-        }
-
-        // ----- Update latest RSSI.
-        //  if no RSSI, keep the old one ... ?
-        //  an object should always send an RSSI or never send an RSSI.
-        $this->setNearestAp($this->getNearestApMac(), $v_rssi, $v_lastseen);
-
-        return(true);
-      }
-      
-      // ----- Now look the case when the AP is not the current nearest AP
-
-      $swap_ap_flag = false;
-
-      // ----- Look for no current nearest AP
-      if ($this->getNearestApMac() == '') {
-        ArubaWssTool::log('debug', "No existing nearest reporter.");
-        $swap_ap_flag = true;
-      }
-
-      // ----- Look if new reporter has a better RSSI than current nearest
-      $v_nearest_ap_hysteresis = ArubaWssTool::getConfig('nearest_ap_hysteresis');
-      if (!$swap_ap_flag && ($v_rssi != -110) && ($v_rssi > ($this->nearest_ap_rssi + $v_nearest_ap_hysteresis))) {
-        ArubaWssTool::log('debug', "Swap for a new nearest AP with better RSSI, from '".$this->getNearestApMac()."' (RSSI '".$this->nearest_ap_rssi."') to '".$p_reporter->getMac()."' (RSSI '".$v_rssi."')");
-        $swap_ap_flag = true;
-      }
-
-      /*
-      // ----- Look if current reporter has a very long last_seen value
-      $v_nearest_ap_timeout = ArubaIotConfig::byKey('nearest_ap_timeout', 'ArubaIot');
-      if (!$swap_ap_flag && (($this->nearest_ap_last_seen + $v_nearest_ap_timeout) < time())) {
-        ArubaWssTool::log('debug', "Swap for a new nearest AP with better last-seen value, from '".$this->getNearestApMac()."' (".date("Y-m-d H:i:s", $this->nearest_ap_last_seen).") to '".$p_reporter->getMac()."' (".date("Y-m-d H:i:s", $v_lastseen).").");
-        $swap_ap_flag = true;
-      }
-      */
-
-      // ----- Look if rssi lower than the minimum to swap
-      if ($swap_ap_flag) {
-        $v_nearest_ap_min_rssi = ArubaWssTool::getConfig('nearest_ap_min_rssi');
-
-        if ($v_rssi < $v_nearest_ap_min_rssi) {
-          ArubaWssTool::log('debug', "RSSI (".$v_rssi.") is not enought to become a nearestAP.");
-          $swap_ap_flag = false;
-        }
-      }
-
-      // ----- Look if swap to new AP is to be done
-      if ($swap_ap_flag) {
-        ArubaWssTool::log('debug', "Swap for new nearest reporter '".$p_reporter->getMac()."'");
-
-        // ----- Swap for new nearest AP
-        $this->setNearestAp($p_reporter->getMac(), $v_rssi, $v_lastseen);
-
-        return(true);
-      }
-
-      // ----- Compare new AP lastseen to nearestAP timestamp
-      // Update timer only if already in present state ?
-
-      ArubaWssTool::log('debug', "Reporter '".$p_reporter->getMac()."' not a new nearest reporter compared to current '".$this->getNearestApMac()."'. Skip telemetry data.");
-
-      return(false);
-    }
-    /* -------------------------------------------------------------------------*/
-
 
     /**---------------------------------------------------------------------------
      * Method : updateAbsence()
@@ -7177,7 +7482,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
         // ----- Update battery level
         if ($v_item->hasBattery()) {
           ArubaWssTool::log('debug', "Battery value is : ".$v_item->getBattery());
-          $this->setTelemetryBatteryValue($v_item->getBattery());
+          //$this->setTelemetryBatteryValue($v_item->getBattery());
+          $this->setTelemetryValue('battery', $v_item->getBattery());
         }
 
         // ----- For future use :
@@ -7207,7 +7513,12 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
      */
     public function updateObjectClass($p_telemetry, $p_class_name) {
         
-      if (($this->classname != 'auto') && ($this->classname != $p_class_name)) {
+      if ($this->classname == 'auto') {
+        $this->classname = $p_class_name;
+        $this->setChangedFlag('classname');
+        ArubaWssTool::log('debug', "Change classname to '".$this->classname."' for device '".$this->getMac()."' ");
+      }
+      else if ($this->classname != $p_class_name) {
         ArubaWssTool::log('debug', "Device '".$this->getMac()."' is announcing type '".$p_class_name."', when type '".$this->classname."' is expected. Skip telemetry data.");
         return(0);
       }
@@ -7228,15 +7539,11 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
         ArubaWssTool::log('debug', "Change model to '".$this->model."' for device '".$this->getMac()."' ");
       }
       
-      if ($this->classname == 'auto') {
-        $this->classname = $p_class_name;
-        $this->setChangedFlag('classname');
-        ArubaWssTool::log('debug', "Change classname to '".$this->classname."' for device '".$this->getMac()."' ");
-      }
-
       if ($this->vendor_id == '') {
         if ($this->classname == 'generic') {
           // TBC
+          $this->setDeviceClassFromRegex();
+          /*
           if ($this->local_name == 'Jinou_Sensor_HumiTemp') {
             $this->vendor_id = 'Jinou';
             $this->model_id = 'Sensor_HumiTemp';
@@ -7245,6 +7552,7 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
             $this->vendor_id = 'ATC';
             $this->model_id = 'LYWSD03MMC';
           }
+          */
         }
         else {
           // ----- Look to find exact vendor and device model
@@ -7887,7 +8195,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
           
           // ----- Parse HTTTP Header
           $headerComplete = true;
-          $psrRequest = \GuzzleHttp\Psr7\parse_request($parts[0] . "\r\n\r\n");
+          //$psrRequest = \GuzzleHttp\Psr7\parse_request($parts[0] . "\r\n\r\n");
+          $psrRequest = \GuzzleHttp\Psr7\Message::parseRequest($parts[0] . "\r\n\r\n");
           
           // ----- Look for websocket connection
           $v_flag_websocket = false;
@@ -7911,8 +8220,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
               $v_json_response = $aruba_iot_websocket->onApiCall($connection, (isset($parts[1])?$parts[1]:''));
   
               // ----- Send response
-              //$connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], $v_json_response . PHP_EOL)));
-              $connection->end(\GuzzleHttp\Psr7\str(new Response(200, ['User-Agent'=>'ArubaWebsocketServer/1.0','Access-Control-Allow-Origin'=>'*','Accept'=>'application/json'], $v_json_response . PHP_EOL)));
+              //$connection->end(\GuzzleHttp\Psr7\str(new Response(200, ['User-Agent'=>'ArubaWebsocketServer/1.0','Access-Control-Allow-Origin'=>'*','Accept'=>'application/json'], $v_json_response . PHP_EOL)));
+              $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(200, ['User-Agent'=>'ArubaWebsocketServer/1.0','Access-Control-Allow-Origin'=>'*','Accept'=>'application/json'], $v_json_response . PHP_EOL)));
               return;
             }
           }
@@ -7926,7 +8235,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
           }
           /* Need to add authentication for shutdown !!
           else if ($psrRequest->getUri()->getPath() === '/shutdown') {
-              $connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], 'Shutting down echo server.' . PHP_EOL)));
+              //$connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], 'Shutting down echo server.' . PHP_EOL)));
+              $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(200, [], 'Shutting down echo server.' . PHP_EOL)));
               $socket->close();
               return;
           }
@@ -7935,7 +8245,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
             $aruba_iot_websocket->onOpen($connection, 'http');
             
             if ($psrRequest->getUri()->getPath() === '/favicon.ico') {
-              $connection->end(\GuzzleHttp\Psr7\str(new Response(404, [], '' . PHP_EOL)));
+              //$connection->end(\GuzzleHttp\Psr7\str(new Response(404, [], '' . PHP_EOL)));
+              $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(404, [], '' . PHP_EOL)));
               return;
             }
             
@@ -7950,16 +8261,19 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
                 fclose($handle);
               
                 // ----- Send response
-                $connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], $contents . PHP_EOL)));
+                //$connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], $contents . PHP_EOL)));
+                $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(200, [], $contents . PHP_EOL)));
               }
               else {
-                $connection->end(\GuzzleHttp\Psr7\str(new Response(403, [], 'Missing client file.' . PHP_EOL)));
+                //$connection->end(\GuzzleHttp\Psr7\str(new Response(403, [], 'Missing client file.' . PHP_EOL)));
+                $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(403, [], 'Missing client file.' . PHP_EOL)));
               }
             }
             else {
               ArubaWssTool::log('debug', "HTTP request on bad URI");
               // ----- Send response
-              $connection->end(\GuzzleHttp\Psr7\str(new Response(403, [], '' . PHP_EOL)));
+              //$connection->end(\GuzzleHttp\Psr7\str(new Response(403, [], '' . PHP_EOL)));
+              $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(403, [], '' . PHP_EOL)));
             }
             return;
           }
@@ -7970,16 +8284,14 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
           $negotiatorResponse = $negotiatorResponse->withAddedHeader("Content-Length", "0");
 
           if ($negotiatorResponse->getStatusCode() !== 101 && $psrRequest->getUri()->getPath() === '/shutdown') {
-              $connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], 'Shutting down echo server.' . PHP_EOL)));
+              //$connection->end(\GuzzleHttp\Psr7\str(new Response(200, [], 'Shutting down echo server.' . PHP_EOL)));
+              $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(200, [], 'Shutting down echo server.' . PHP_EOL)));
               $socket->close();
               return;
           };
 
-          //echo "Negociator response -----\n";
-          //var_dump(\GuzzleHttp\Psr7\str($negotiatorResponse));
-          //echo "-----\n";
-
-          $connection->write(\GuzzleHttp\Psr7\str($negotiatorResponse));
+          //$connection->write(\GuzzleHttp\Psr7\str($negotiatorResponse));
+          $connection->write(\GuzzleHttp\Psr7\Message::toString($negotiatorResponse));
 
           if ($negotiatorResponse->getStatusCode() !== 101) {
               $connection->end();
@@ -8003,7 +8315,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
                 if (!$aruba_iot_websocket->onMessage($connection, $message->getPayload())) {
                   ArubaWssTool::log('debug', "Close cnx on onmessage() return");
                   // ----- Close connection
-                  $connection->end(\GuzzleHttp\Psr7\str(new Response(403, [], '' . PHP_EOL)));
+                  //$connection->end(\GuzzleHttp\Psr7\str(new Response(403, [], '' . PHP_EOL)));
+                  $connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(403, [], '' . PHP_EOL)));
                   return;
                 }
 

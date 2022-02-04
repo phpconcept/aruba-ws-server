@@ -16,11 +16,22 @@ HTServer=localhost
 [Project tree]
 aruba-ws-server
 	+Websocket
+		+Data
+			+Jinou_Sensor_HumiTemp
+				awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.json
+				awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.adv.php
+				awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php
+			awss\data\devices\class_regex.json
+			awss\data\devices\telemetry_global.json
+			awss\data\devices\aruba_class.json
+		+Install
+			composer.json
 		+Doc
 			README.md
 			doc\API.md
 			doc\install\install_docker\Dockerfile
 			doc\Proto.md
+			doc\Dependencies.md
 		+Client-Test
 			awss\client\websocket_client.html
 		+Proto-class
@@ -42,34 +53,27 @@ aruba-ws-server
 2=doc\API.md
 3=src\aruba_telemetry\BleData.php
 4=src\aruba_telemetry\BleFrameType.php
-5=README.md
-6=doc\install\install_docker\Dockerfile
-7=doc\Proto.md
-8=composer.json
+5=doc\Proto.md
+6=composer.json
+7=doc\Dependencies.md
+8=awss\data\devices\class_regex.json
+9=awss\data\devices\telemetry_global.json
+10=awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.json
+11=awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.adv.php
+12=README.md
+13=awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php
+14=awss\data\devices\aruba_class.json
 [Selected Project Files]
 Main=
 Selected=README.md
 [aruba-ws-server.php]
 TopLine=1
 Caret=35,17
-Mark1=11,7564
-Mark2=1,2711
-Mark3=70,2955
-Mark4=11,6846
-Mark5=1,6035
-Mark6=61,6085
-Mark7=14,4596
-Mark8=65,3532
-Mark9=51,2085
-Mark10=46,6457
-Mark11=6,5931
-Mark12=35,7041
-Mark13=62,4827
-Mark14=39,6236
-Mark15=72,6972
+Mark1=55,6676
 [awss\client\websocket_client.html]
-TopLine=181
-Caret=104,192
+TopLine=506
+Caret=21,541
+Mark1=1,500
 [doc\API.md]
 TopLine=1
 Caret=1,1
@@ -79,15 +83,33 @@ Caret=1,111
 [src\aruba_telemetry\BleFrameType.php]
 TopLine=117
 Caret=41,134
-[README.md]
-TopLine=1
-Caret=1,2
-[doc\install\install_docker\Dockerfile]
-TopLine=15
-Caret=1,38
 [doc\Proto.md]
 TopLine=1
-Caret=67,1
+Caret=1,24
 [composer.json]
 TopLine=1
-Caret=35,20
+Caret=33,20
+[doc\Dependencies.md]
+TopLine=1
+Caret=70,18
+[awss\data\devices\class_regex.json]
+TopLine=1
+Caret=9,14
+[awss\data\devices\telemetry_global.json]
+TopLine=1
+Caret=1,3
+[awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.json]
+TopLine=1
+Caret=20,7
+[awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.adv.php]
+TopLine=31
+Caret=1,69
+[README.md]
+TopLine=289
+Caret=13,311
+[awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php]
+TopLine=48
+Caret=19,69
+[awss\data\devices\aruba_class.json]
+TopLine=1
+Caret=23,13
