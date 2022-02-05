@@ -308,6 +308,8 @@ The Websocket Server can be accessed by JSON API, description of the API is here
 
 ## Change Logs
 
+Release v1.4-beta :
+
 Release v1.3 :
 - Add an API capability to do a GATT Read with multiple requested characteristics. The characteristics must be for the same device mac@.
 - Add a more scalable way to add new generic (Aruba unspecified class) IOT devices without changing core code. The list of devices is in floder awss/data/devices/. Each vendor class has a folder, and each model of device has a folder in the vendor class. In this folder, a json file is describing the device, an .adv.php file is containing the custom code to extract the telemetry values from the BLE advertissement payload.
