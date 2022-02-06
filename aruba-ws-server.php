@@ -3901,12 +3901,6 @@ characteristics {
       // ----- Take only first one
       $v_characteristic = $v_list[0];
 
-
-      // ----- Temporary stored seen objects in the msg
-      //$v_temp_mac_list = array();
-      
-      // ----- Look at each reported device
-//      foreach ($v_list as $v_characteristic) {
         // ----- Get device mac
         if (!$v_characteristic->hasDeviceMac()) {
           ArubaWssTool::log('debug', "Characteristic with no device mac@. Skip.");
@@ -3920,21 +3914,7 @@ characteristics {
           ArubaWssTool::log('debug', "Device mac@ in action result and characteristics are different !. Skip.");
           return(true);
         }
-        /*
-        // ----- Look for valid device in cache
-        $v_device = $this->getDeviceByMac($v_mac);
-        if ($v_device === null) {
-          ArubaWssTool::log('debug', "Fail to find a device in cache with mac '".$v_mac."'. Skip.");
-          continue;
-        }
-        */
 
-/*        
-        // ----- Reset modif flag
-        $v_temp_mac_list[$v_mac] = $v_device;
-        $v_device->resetChangedFlag();
-   
-   */     
         $v_service_uuid = '';
         if ($v_characteristic->hasServiceUuid()) {
           $v_value = $v_characteristic->getServiceUuid();
@@ -3950,14 +3930,6 @@ characteristics {
         }
 
         $v_description = '';
-        /*
-        Don't really care
-        
-        if ($v_characteristic->hasDescription()) {
-          $v_description = $v_characteristic->hasDescription();
-          ArubaWssTool::log('debug', "Description is '".$v_description."'.");
-        }
-        */
         
         $v_char_value = null;
         if ($v_characteristic->hasValue()) {
@@ -3967,36 +3939,15 @@ characteristics {
         }
 
         $v_char_types = '';
-/*
-Here I don't care because it should be a response ....
-        $v_char_types_list = array();
-        if ($v_characteristic->hasPropertiesList()) {
-          $v_prop_list = $v_characteristic->getPropertiesList();
-          foreach ($v_prop_list as $v_prop) {
-            $v_char_types_list[] = $v_prop->name();
-          }
-          sort($v_char_types_list);
-          $v_char_types = implode(',', $v_char_types_list);
-          ArubaWssTool::log('debug', "Characteristics types are : '".$v_char_types."'.");
-        }
-*/
         
         // ----- Add Characteristics to device
         if (($v_service_uuid != '') && ($v_char_uuid != '')) {
           $v_device->setCharacteristic($v_service_uuid, $v_char_uuid, $v_char_types, $v_char_value, $v_description);
         }
-// end foreach      }
       
       // ----- Look for post action if some value modified
       $v_device->doActionIfModified();
       
-      /*
-      foreach ($v_temp_mac_list as $v_device) {
-        $v_device->doActionIfModified();
-      } 
-      
-      */     
-
       // ----- Get queued action for call back
       $v_action_item = $this->gattQueueGetAction($v_action_id, $v_action_type, $v_device_mac);
       if ($v_action_item !== null) {
