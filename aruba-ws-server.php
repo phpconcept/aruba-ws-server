@@ -533,7 +533,7 @@
      * Function : log()
      * Description :
      *   $p_type : '<main>' or '<main>:<level>' or '<main>-<subtype>:<level>'
-     *     <main> : must be 'debug', 'info', 'error'
+     *     <main> : must be 'debug', 'info', 'error', 'warning'
      *     <subtype> : future use (filtering by block)
      *     <level> : debug level
      *   $p_message : log message.
@@ -1405,6 +1405,9 @@ JSON_EOT;
         $v_reporter = $this->getReporterByMac($connection->my_reporter_id);
         if ($v_reporter !== null) {
           $v_reporter->disconnect($connection);
+          foreach ($this->cached_devices as $v_device) {
+            $v_device->reporterDisconnectNotification($v_reporter->getMac());
+          }
         }
       }
       
@@ -3365,6 +3368,33 @@ JSON_EOT;
         ArubaWssTool::log('debug', "Not supported message response for '".$v_action_type."'. Skip.");
       }
       
+      else if ($v_action_type == '') {
+        // ----- Some results don't include action_type nor action_id. 
+        // Try in this section to manage this situtation ...        
+        /*
+        Seen cases :
+        Response received when triggering a connect/read on a characteristic
+results {
+  deviceMac:
+  status: invalidRequest
+  statusString: "Device does not match configured device class filter in iot transport profile"
+}        
+        */
+        
+        if ($v_device !== null) {
+          // ----- The device might be in connecting phase ... the errors means a connect fail
+          if ($v_device->getConnectStatus() == AWSS_STATUS_CONNECTED) {
+            // ----- Change status to disconnected
+            $this->changeDeviceConnectStatus($v_device, AWSS_STATUS_DISCONNECTED, ($p_status_string==''?$p_status:$v_status.':'.$v_status_string));      
+          }
+        }
+        ArubaWssTool::log('debug', "Not supported message response for '".$v_action_type."'. Skip.");
+      }
+      
+      else {
+        ArubaWssTool::log('debug', "Unexpected action_type '".$v_action_type."' (not supported). Skip.");
+      }
+      
       return(true);
     }
     /* -------------------------------------------------------------------------*/
@@ -3702,13 +3732,15 @@ characteristics {
           ArubaWssTool::log('debug', "Description is '".$v_description."'.");
         }
         
-        // TBC : Normally in discovery we should not see a value ....
+        // ----- Normally in discovery we should not see a value ....
+        /*
         $v_char_value = null;
         if ($v_characteristic->hasValue()) {
           $v_value = $v_characteristic->getValue();
           $v_char_value = ArubaWssTool::bytesToString($v_value);
           ArubaWssTool::log('debug', "Characteristic Value is '".$v_char_value."' (".ArubaWssTool::stringbytesToText($v_char_value, true).").");
         }
+        */
 
         $v_char_types = '';
         $v_char_types_list = array();
@@ -3723,9 +3755,8 @@ characteristics {
         }
         
         // ----- Add Characteristics to device
-        // TBC : Should add a characteristic, but no value ....
         if (($v_service_uuid != '') && ($v_char_uuid != '')) {
-          $v_device->setCharacteristic($v_service_uuid, $v_char_uuid, $v_char_types, $v_char_value, $v_description);
+          $v_device->setCharacteristic($v_service_uuid, $v_char_uuid, $v_char_types, $v_description);
         }
       }
       
@@ -3929,8 +3960,6 @@ characteristics {
           ArubaWssTool::log('debug', "Characteristic UUID is '".$v_char_uuid."'.");
         }
 
-        $v_description = '';
-        
         $v_char_value = null;
         if ($v_characteristic->hasValue()) {
           $v_value = $v_characteristic->getValue();
@@ -3938,11 +3967,9 @@ characteristics {
           ArubaWssTool::log('debug', "Characteristic Value is '".$v_char_value."' (".ArubaWssTool::stringbytesToText($v_char_value, true).").");
         }
 
-        $v_char_types = '';
-        
         // ----- Add Characteristics to device
         if (($v_service_uuid != '') && ($v_char_uuid != '')) {
-          $v_device->setCharacteristic($v_service_uuid, $v_char_uuid, $v_char_types, $v_char_value, $v_description);
+          $v_device->setCharacteristicValue($v_service_uuid, $v_char_uuid, $v_char_value);
         }
       
       // ----- Look for post action if some value modified
@@ -6273,6 +6300,30 @@ enum NbTopic {
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : reporterDisconnectNotification()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function reporterDisconnectNotification($p_mac) {
+      // ----- Look to reset BLE connect status
+      if ($p_mac == $this->connect_ap_mac) {
+        $this->connect_status = AWSS_STATUS_DISCONNECTED;
+        $this->connect_status_last_reason = '';
+        $this->connect_ap_mac = '';
+      }
+      
+      // ----- Look to reset nearest AP
+      if ($p_mac == $this->nearest_ap_mac) {
+        $this->nearest_ap_mac = '';
+        $this->nearest_ap_rssi = -999;
+        $this->nearest_ap_last_seen = 0;
+      }
+    }
+    /* -------------------------------------------------------------------------*/
+
+
+
+    /**---------------------------------------------------------------------------
      * Method : setConnectAp()
      * Description :
      * ---------------------------------------------------------------------------
@@ -6527,7 +6578,7 @@ enum NbTopic {
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function setCharacteristic($p_service_uuid, $p_char_uuid, $p_char_types='', $p_value=null, $p_description='') {
+    public function setCharacteristic($p_service_uuid, $p_char_uuid, $p_char_types='', $p_description='') {
     
       // ----- Look if service exists
       if (!isset($this->service_list[$p_service_uuid])) {
@@ -6552,10 +6603,22 @@ enum NbTopic {
       }
       if (($p_description != '') && ($p_description != $this->service_list[$p_service_uuid]['char_list'][$p_char_uuid]['description'])) {
         $this->service_list[$p_service_uuid]['char_list'][$p_char_uuid]['description'] = $p_description;
-      }
-      
-      // ----- Update value (if any)
-      if ($p_value !== null) {
+      }      
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : setCharacteristicValue()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function setCharacteristicValue($p_service_uuid, $p_char_uuid, $p_value) {
+    
+      // ----- Look if service exists and Update value (if any)
+      if (   isset($this->service_list[$p_service_uuid]) 
+          && isset($this->service_list[$p_service_uuid]['char_list'][$p_char_uuid])
+          && ($p_value !== null)) {
+        
         $this->service_list[$p_service_uuid]['char_list'][$p_char_uuid]['value'] = $p_value;
         
         // ----- Add a string value when needed
@@ -6565,7 +6628,10 @@ enum NbTopic {
         }
         
         // ----- Set telemetry value from characteristic
-        $this->setTelemetryFromCharacteristic($p_service_uuid, $p_char_uuid, $p_value, $p_char_types);
+        $this->setTelemetryFromCharacteristic($p_service_uuid, $p_char_uuid, $p_value);
+      }
+      else {
+        ArubaWssTool::log('warning', "Service UUID '".$p_service_uuid."' and/or Characteristic UUID '".$p_char_uuid."' don't exist for device '".$this->mac_address."'.");
       }
             
     }
@@ -6576,7 +6642,7 @@ enum NbTopic {
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function setTelemetryFromCharacteristic($p_service_uuid, $p_char_uuid, $p_value, $p_char_types='') {
+    public function setTelemetryFromCharacteristic($p_service_uuid, $p_char_uuid, $p_value) {
 
       // ----- Result for telemety values extracted by custom php
       $v_telemetry_values = array();
@@ -6592,54 +6658,6 @@ enum NbTopic {
         $this->setTelemetryValue($v_telemetry['name'], $v_telemetry['value'], $v_telemetry['type']);
       }
       
-    }
-    /* -------------------------------------------------------------------------*/
-
-    /**---------------------------------------------------------------------------
-     * Method : setTelemetryFromCharacteristic()
-     * Description :
-     * ---------------------------------------------------------------------------
-     */
-    public function setTelemetryFromCharacteristic_BAK($p_service_uuid, $p_char_uuid, $p_value, $p_char_types='') {
-      // TBC : Need to be more generic !!!
-      
-      if (($this->vendor_id == 'Jinou') && ($this->model_id == 'Sensor_HumiTemp')) {
-        if (($p_service_uuid == "AA-20") && ($p_char_uuid == "AA-21") && ($p_value != '')) {
-        /*
-          Service 0XAA20. Temp & humid data. There are 6 bytes.
-          1. Temperature positive/negative: 0 means positive (+) and 1 means negative (-)
-          2. Integer part of temperature. Show in Hexadecimal.
-          3. Decimal part of temperature. Show in Hexadecimal.
-          4. Reserved byte. Ignore it.
-          5. Integer part of humidity. Show in Hexadecimal.
-          6. Decimal part of humidity. Show in Hexadecimal.
-          For example: 00 14 05 22 32 08 means +20.5C 50.8%
-          01 08 09 00 14 05 means -8.9C 20.5%        
-        */
-        
-          $v_item = explode('-', $p_value);
-          if (sizeof($v_item) != 6) {
-            ArubaWssTool::log('debug', "Characteristic value from Jinou should be 6 bytes. Ignore.");
-            return;
-          }
-          
-          $v_val_sign = hexdec($v_item[0]);
-          $v_val_temp_int = hexdec($v_item[1]);
-          $v_val_temp_dec = hexdec($v_item[2]);
-          $v_val_humi_int = hexdec($v_item[4]);
-          $v_val_humi_dec = hexdec($v_item[5]);
-          
-          $v_temp = ($v_val_sign==1?-1:1) * ( $v_val_temp_int + $v_val_temp_dec/100 );
-          $v_humi = $v_val_humi_int + $v_val_humi_dec/100;
-      
-          ArubaWssTool::log('debug', "Temperature is : ".$v_temp);
-          ArubaWssTool::log('debug', "Humidity is : ".$v_humi);
-          
-          $this->setTelemetryValue('temperatureC', $v_temp);
-          $this->setTelemetryValue('humidity', $v_humi);        
-          //$this->setChangedFlag('telemetry_value');                
-        }
-      }
     }
     /* -------------------------------------------------------------------------*/
 
@@ -6663,112 +6681,6 @@ enum NbTopic {
       foreach ($v_telemetry_values as $v_telemetry) {
         $this->setTelemetryValue($v_telemetry['name'], $v_telemetry['value'], $v_telemetry['type']);
       }
-
-    }
-    /* -------------------------------------------------------------------------*/
-
-    /**---------------------------------------------------------------------------
-     * Method : setTelemetryFromAdvert()
-     * Description :
-     * ---------------------------------------------------------------------------
-     */
-    public function setTelemetryFromAdvert_BAK($p_value) {
-    
-      if (($this->vendor_id == 'Jinou_BAK') && ($this->model_id == 'Sensor_HumiTemp')) {
-
-        /*
-          Service 0XAA20. Temp & humid data. There are 6 bytes.
-          1. Temperature positive/negative: 0 means positive (+) and 1 means negative (-)
-          2. Integer part of temperature. Show in Hexadecimal.
-          3. Decimal part of temperature. Show in Hexadecimal.
-          4. Reserved byte. Ignore it.
-          5. Integer part of humidity. Show in Hexadecimal.
-          6. Decimal part of humidity. Show in Hexadecimal.
-          For example: 00 14 05 22 32 08 means +20.5C 50.8%
-          01 08 09 00 14 05 means -8.9C 20.5%        
-          
-[2021-09-16 10:59:26] [debug]:Device MAC is 'E6:FE:37:0D:A4:D7'.
-[2021-09-16 10:59:26] [debug]:Data is '02-01-06-03-02-20-AA-0E-FF-00-19-00-00-3E-00-64-E6-FE-37-0D-A4-D7'.
-
-
-La valeur se retrouve là : 00-19-00-00-3E-00
-
-          
-        */
-        
-          $v_item = explode('-', $p_value);
-          if (sizeof($v_item) < 15) {
-            ArubaWssTool::log('debug', "Adv_Ind value from Jinou should be 15 bytes or more. Ignore.");
-            return;
-          }
-          
-          $v_val_sign = hexdec($v_item[9]);
-          $v_val_temp_int = hexdec($v_item[10]);
-          $v_val_temp_dec = hexdec($v_item[11]);
-          $v_val_humi_int = hexdec($v_item[13]);
-          $v_val_humi_dec = hexdec($v_item[14]);
-          
-          $v_temp = ($v_val_sign==1?-1:1) * ( $v_val_temp_int + $v_val_temp_dec/100 );
-          $v_humi = $v_val_humi_int + $v_val_humi_dec/100;
-      
-          ArubaWssTool::log('debug', "Jinou Temperature from advert is : ".$v_temp);
-          ArubaWssTool::log('debug', "Jinou Humidity from advert is : ".$v_humi);
-          
-          $this->setTelemetryValue('temperatureC', $v_temp);
-          $this->setTelemetryValue('humidity', $v_humi);        
-          //$this->setChangedFlag('telemetry_value');                
-        }
-        
-      else if (($this->vendor_id == 'ATC') && ($this->model_id == 'LYWSD03MMC')) {
-
-        /*
-[2021-11-30 17:37:45] [debug]:Data is '10-16-1A-18-A4-C1-38-07-FC-EE-00-ED-24-29-0A-3F-08'.
-
-The custom firmware sends every minute an update of advertising data on the UUID 0x181A with the Tempereature, Humidity and Battery data.
-
-The format of the advertising data is as follow:
-
-Byte 5-10 MAC in correct order
-Byte 11-12 Temperature in int16
-Byte 13 Humidity in percent
-Byte 14 Battery in percent
-Byte 15-16 Battery in mV uint16_t
-Byte 17 frame packet counter
-
-Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa, 0xbb, 0xcc, 0xdd, 0xdd, 0x00
-          
-        */
-        
-          $v_item = explode('-', $p_value);
-          if (sizeof($v_item) != 17) {
-            ArubaWssTool::log('debug', "Adv_Ind value from ATC should be 17 bytes. Ignore.");
-            return;
-          }
-          
-          $v_val_temp = hexdec($v_item[10].$v_item[11]);
-          $v_val_humi = hexdec($v_item[12]);
-          $v_val_battery = hexdec($v_item[13]);
-          
-          ArubaWssTool::log('debug', "v_val_temp : ".$v_val_temp);
-          ArubaWssTool::log('debug', "v_val_humi : ".$v_val_humi);
-          ArubaWssTool::log('debug', "v_val_battery : ".$v_val_battery);
-
-          //$v_temp = ($v_val_sign==1?-1:1) * ( $v_val_temp_int + $v_val_temp_dec/100 );
-          $v_temp = $v_val_temp/10;
-          $v_humi = $v_val_humi;
-      
-          ArubaWssTool::log('debug', "ATC Temperature from advert is : ".$v_temp." C");
-          ArubaWssTool::log('debug', "ATC Humidity from advert is : ".$v_humi." %");
-          ArubaWssTool::log('debug', "ATC Battery from advert is : ".$v_val_battery." %");
-          
-          $this->setTelemetryValue('temperatureC', $v_temp);
-          $this->setTelemetryValue('humidity', $v_humi);        
-          //$this->setChangedFlag('telemetry_value');        
-          
-          //$this->setTelemetryBatteryValue($v_val_battery);        
-          $this->setTelemetryValue('battery', $v_val_battery);        
-        }
-
 
     }
     /* -------------------------------------------------------------------------*/
@@ -7754,15 +7666,32 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
       $v_result = true;
       
       if (($this->ble_connect_status == AWSS_STATUS_CONNECTED) && ($p_status == AWSS_STATUS_CONNECTED)) {
-        if ($p_device_mac == $this->ble_connect_mac) {
+        if (($p_device_mac == '') || ($this->ble_connect_mac == '')) {
+          ArubaWssTool::log('error', "For AWSS_STATUS_CONNECTED device can't be empty.");
+          return(false);
+        }
+        else if ($p_device_mac == $this->ble_connect_mac) {
           ArubaWssTool::log('debug', "Reporter already ble_connected with this device (".$this->ble_connect_mac.").");
           return(false);
         }
         else {
           ArubaWssTool::log('debug', "Reporter already ble_connected with another device (".$this->ble_connect_mac.").");
-          return(false);
+          // This case should not occur in normal situation ... this is an unknown state
+          // ----- Disconnect already connected device
+          $v_device = ArubaWssTool::getDeviceByMac($this->ble_connect_mac);
+          if ($v_device !== null) {
+            // ----- Change BLE connect status of the device
+            // Will return false if the status is already the same
+            $v_device->changeConnectStatus(AWSS_STATUS_DISCONNECTED, 'Force disconnect. Sticky device ??');
+          }          
+          ArubaWssTool::log('debug', "Change reporter ble_connected status to ".$p_status." for device '".$p_device_mac."'.");
+          $this->ble_connect_status = AWSS_STATUS_CONNECTED;
+          $this->ble_connect_mac = $p_device_mac;
+          return(true);
         }
       }
+      
+      
       else if (($this->ble_connect_status == AWSS_STATUS_CONNECTED) && ($p_status == AWSS_STATUS_DISCONNECTED)) {
         if ($p_device_mac == $this->ble_connect_mac) {
           ArubaWssTool::log('debug', "Change reporter ble_connected status to ".$p_status.".");
@@ -7793,11 +7722,15 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
           return(false);
         }
       }
+      
+      
       else if (($this->ble_connect_status == AWSS_STATUS_DISCONNECTED) && ($p_status == AWSS_STATUS_DISCONNECTED)) {
         ArubaWssTool::log('debug', "Reporter ble_connected already in '".$p_status."'.");
         $this->ble_connect_mac = '';  // for sanity check, should already by ''
         return(false);
       }
+      
+      
       else if (($this->ble_connect_status == AWSS_STATUS_DISCONNECTED) && ($p_status == AWSS_STATUS_CONNECTED)) {
         if ($p_device_mac == '') {
           ArubaWssTool::log('debug', "To change reporter ble_connected status to ".$p_status." not empty device mac expected.");
@@ -7810,7 +7743,7 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
           return(true);
         }
       }
-      else {}
+      
     }
     /* -------------------------------------------------------------------------*/
 
@@ -7877,23 +7810,29 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
         return(false);
       }
 
-      if ( isset($this->connection_id_list[$v_id]) ) {
-        ArubaWssTool::log('debug', "Removing connection '".$v_id."' for reporter '".$this->mac_address."'");
-        ArubaWssTool::log('warning', "Reporter '".$this->name."' (".$this->mac_address."), lost connection");
-        unset($this->connection_id_list[$v_id]);
-        $this->setRemoteIp('');
-        $p_connection->my_reporter_id = '';
-        
-        // ----- Look for last cnx in the list - means reporter becomes inactive
-        if (sizeof($this->connection_id_list) == 0) {
-          $this->setStatus('inactive');
-        }
-        return(true);
-      }
-      else {
+      if (!isset($this->connection_id_list[$v_id]) ) {
         ArubaWssTool::log('debug', "Connection '".$p_connection_id."' is not attached to reporter '".$this->mac_address."'");
         return(false);
       }
+      
+      ArubaWssTool::log('debug', "Removing connection '".$v_id."' for reporter '".$this->mac_address."'");
+      ArubaWssTool::log('warning', "Reporter '".$this->name."' (".$this->mac_address."), lost connection");
+      unset($this->connection_id_list[$v_id]);
+      $this->setRemoteIp('');
+      $p_connection->my_reporter_id = '';
+      
+      // ----- Reset BLE connect status
+      $this->ble_connect_status = AWSS_STATUS_DISCONNECTED;
+      $this->ble_connect_mac = '';
+      
+      // ----- Clean all devices regarding nearest AP and BLE connect status
+      // TBC
+      
+      // ----- Look for last cnx in the list - means reporter becomes inactive
+      if (sizeof($this->connection_id_list) == 0) {
+        $this->setStatus('inactive');
+      }
+      return(true);
 
     }
     /* -------------------------------------------------------------------------*/
@@ -7902,6 +7841,8 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
     /**---------------------------------------------------------------------------
      * Method : connect()
      * Description :
+     *   This method is called to link a reporter object to an established websocket cnx.
+     *   Must be called only the first time, until decnx of the cnx.
      * ---------------------------------------------------------------------------
      */
     public function connect(&$p_connection) {
@@ -7917,42 +7858,33 @@ Example: 0x0e, 0x16, 0x1a, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xaa,
         return(false);
       }
 
-      if (!isset($this->connection_id_list[$v_id])) {
-        ArubaWssTool::log('debug', "Adding new connection '".$v_id."' for reporter '".$this->mac_address."'");
-        ArubaWssTool::log('info', "Reporter '".$this->name."' (".$this->mac_address."), is connected from IP ".$v_id."");
-        $this->connection_id_list[$v_id] = array();
-        $this->connection_id_list[$v_id]['type'] = $v_type;
-        $this->setRemoteIp($p_connection->my_remote_ip);
-        $p_connection->my_reporter_id = $this->mac_address;
-        $this->setStatus('active');
-        return(true);
-      }
-      else {
+      if (isset($this->connection_id_list[$v_id])) {
         ArubaWssTool::log('debug', "Connection '".$v_id."' already attached to this reporter '".$this->mac_address."'");
         return(false);
       }
+
+      // ----- Add the cnx info in the reporter list. A reporter may have multiple websocket cnx.
+      ArubaWssTool::log('debug', "Adding new connection '".$v_id."' for reporter '".$this->mac_address."'");
+      ArubaWssTool::log('info', "Reporter '".$this->name."' (".$this->mac_address."), is connected from IP ".$v_id."");
+      $this->connection_id_list[$v_id] = array();
+      $this->connection_id_list[$v_id]['type'] = $v_type;
+      
+      // ----- Set remote IP (public IP) to the reporter
+      $this->setRemoteIp($p_connection->my_remote_ip);
+      
+      // ----- Update cnx info with reporter mac@
+      $p_connection->my_reporter_id = $this->mac_address;
+      
+      // ----- Reset parameters (to clean the situation if needed)
+      $this->ble_connect_status = AWSS_STATUS_DISCONNECTED;
+      $this->ble_connect_mac = '';
+
+      // ----- Change reporter status to 'active'
+      $this->setStatus('active');
+      
+      return(true);
     }
     /* -------------------------------------------------------------------------*/
-
-    /**---------------------------------------------------------------------------
-     * Method : getConnection()
-     * Description :
-     * ---------------------------------------------------------------------------
-     */
-     /*
-    public function getConnection($p_type, &$p_connection) {
-      foreach ($this->connection_id_list as $key => $v_cnx) {
-        if ($v_cnx['type'] == $p_type) {
-          $p_connection = $this->getConnectionById($key);
-          break;
-        }
-      }
-      $p_connection = null;
-      return;
-    }
-    */
-    /* -------------------------------------------------------------------------*/
-
 
     /**---------------------------------------------------------------------------
      * Method : stats()

@@ -2,7 +2,7 @@
 /**---------------------------------------------------------------------------
  * Custom Extraction Code from BLE GATT Read
  * 
- * This code is dynamically included inside methode ArubaWssDevice::setTelemetryFromCharacteristic($p_service_uuid, $p_char_uuid, $p_value, $p_char_types='')
+ * This code is dynamically included inside methode ArubaWssDevice::setTelemetryFromCharacteristic($p_service_uuid, $p_char_uuid, $p_value)
  * It must not include any 'return' or 'exit' commands.
  * 
  * The BLE Characteristic raw value is in variable $p_value. It is string containing 
@@ -61,6 +61,7 @@
       $v_telemetry_values[$i]['name'] = 'humidity';
       $v_telemetry_values[$i]['value'] = $v_humi;
       $v_telemetry_values[$i]['type'] = '';
+
     }
   }
   
