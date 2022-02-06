@@ -4331,6 +4331,28 @@ status {
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : onMsgZigbeeData()
+     * Description :
+     * 
+     * 
+     *   Exemple of message :
+
+
+     * 
+     * 
+     * ---------------------------------------------------------------------------
+     */
+    public function onMsgZigbeeData(&$p_reporter, $v_at_telemetry_msg) {
+
+      ArubaWssTool::log('debug',  "Received zbNbData message from ".$p_reporter->getName()."");
+      
+      ArubaWssTool::log('debug:4', $v_at_telemetry_msg);
+      
+      return(true);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : onMessage()
      * Description :
      * ---------------------------------------------------------------------------
@@ -4462,8 +4484,11 @@ enum NbTopic {
          return($this->onMsgStatus($v_reporter, $v_at_telemetry_msg));
        break;
        case 'zbNbData':
-         ArubaWssTool::log('debug', "zbNbData not yet supported by websocket.");
-         return(true);
+         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $p_msg, $v_at_telemetry_msg);
+         if ($v_reporter === null) {
+           return(false);
+         }
+         return($this->onMsgZigbeeData($v_reporter, $v_at_telemetry_msg));
        break;
        case 'serialDataNb':
          $v_reporter = $this->getReporterFromProtoMessage($p_connection, $p_msg, $v_at_telemetry_msg);
