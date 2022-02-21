@@ -309,6 +309,10 @@ The Websocket Server can be accessed by JSON API, description of the API is here
 ## Change Logs
 
 Release v1.4-beta :
+- Adding support for Aruba controller based deployment :
+  - Changing the way connections/reporters are associated in order to support IoT with controller. In this case a single connection can host multiple reporters.
+  - Add capabilities to reporters to have 4 different cnx types : a Telemetry BLE cnx, a RTLS cnx, a Serial cnx and a zigbee cnx. Manage this complexity.
+  - A single connexion is not anymore associated to a single reporter.
 - Improve code to extract telemetry values from BLE Characteristics using a per device extraction code. This will easier the add of new IoT devices. (similar to the extraction from BLE advertissements).
 - Improve cleaning when IAP (reporter) is disconnecting.
 
@@ -343,7 +347,8 @@ Release v1.0 :
 
 As of today, some known caveats are :
 - /!\ Only ws:// is supported today by the websocket daemon, which means communication is in clear. No support yet of wss:// with certificate.
-- AWSS is only supporting Aruba Instant Access Point deployment model, because only tested in this environment. Use of controlled model, or through Aruba Cental IOT Connector is not yet tested.
+- In case of controller based deployment, resiliency (swap to the backup controller) was never tested and may show unexpected behaviour.
+- AWSS was not tested in environment using Aruba Cental IOT Connector.
 - In some situation BLE connection is rejected by IAP, but AWSS keep the "connected" status for the AP. Thus no more BLE connect can be initiated. Workaround is to restart AWSS.
 
 ## WARNING :
