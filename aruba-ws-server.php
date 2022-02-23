@@ -645,28 +645,10 @@
       return(null);
     }
 
-    public function getConnectionByReporterMac_DEPRECATED($p_mac) {
-      foreach ($this->connections_list as $v_connection) {
-        if ($v_connection->my_reporter_id == $p_mac) {
-          return($v_connection);
-        }
-      }
-      return(null);
-    }
-
     public function getConnectionBleByReporterMac($p_mac) {
       $v_reporter = $this->getReporterByMac($p_mac);
       if ($v_reporter != null) {
         return($this->getConnectionById($v_reporter->getConnectionIdBle()));
-      }
-      return(null);
-    }
-
-    public function getConnectionByRemoteIp($p_ip) {
-      foreach ($this->connections_list as $v_connection) {
-        if ($v_connection->my_remote_ip == $p_ip) {
-          return($v_connection);
-        }
       }
       return(null);
     }
@@ -1370,22 +1352,13 @@ JSON_EOT;
       // ----- Add my own attributes to the connection object ....
       $p_connection->my_id = $v_id;
       
-      // ----- Type of the connexion
+      // ----- Type of the connexion from the requested URI
       // 'telemetry', 'rtls', 'serial', 'zigbee', api', 'ws_api', 'http'
       $p_connection->my_type = $p_type;
       
       // ----- Store remote IP of the connexion (mayb useful later)
       $p_connection->my_remote_ip = $v_ip;
-      //$p_connection->my_reporter_id = '';
       
-      // ----- A connexion is active only when a first valid paquet can identify the discussing reporter
-      if ( ($p_type == 'telemetry') || ($p_type == 'rtls') || ($p_type == 'serial') || ($p_type == 'zigbee')) {
-        $p_connection->my_status = 'initiated';      // initiated=valid conx, active=reporter identifed
-      }
-      else {
-        $p_connection->my_status = 'active';
-      }
-
       // ----- Attach connection in the list
       $this->connections_list->attach($p_connection);
 
@@ -1423,7 +1396,6 @@ JSON_EOT;
         // ----- Remove cross-links between connection and reporter
         foreach ($this->reporters_list as $v_reporter) {
           // ----- Get reporter
-          //$v_reporter = $this->getReporterByMac($connection->my_reporter_id);
           if ($v_reporter->isConnectedWith($v_cnx_id)) {
             $v_reporter->disconnect($connection);
             foreach ($this->cached_devices as $v_device) {
@@ -2863,8 +2835,6 @@ JSON_EOT;
           $v_item['id'] = $v_connection->my_id;
           $v_item['type'] = $v_connection->my_type;
           $v_item['remote_ip'] = $v_connection->my_remote_ip;
-          $v_item['status'] = $v_connection->my_status;
-          //$v_item['reporter_id'] = $v_connection->my_reporter_id;
 
           $v_list[] = $v_item;
         }
@@ -4452,21 +4422,21 @@ enum NbTopic {
       // ----- Switch on topic value
      switch ($v_topic) {
        case 'telemetry':
-         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $p_msg, $v_at_telemetry_msg);
+         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $v_topic, $p_msg, $v_at_telemetry_msg);
          if ($v_reporter === null) {
            return(false);
          }
          return($this->onMsgTelemetry($v_reporter, $v_at_telemetry_msg));
        break;
        case 'actionResults':
-         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $p_msg, $v_at_telemetry_msg);
+         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $v_topic, $p_msg, $v_at_telemetry_msg);
          if ($v_reporter === null) {
            return(false);
          }
          return($this->onMsgActionResultsList($v_reporter, $v_at_telemetry_msg));
        break;
        case 'characteristics':
-         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $p_msg, $v_at_telemetry_msg);
+         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $v_topic, $p_msg, $v_at_telemetry_msg);
          if ($v_reporter === null) {
            return(false);
          }
@@ -4483,14 +4453,14 @@ enum NbTopic {
         }         
        break;
        case 'bleData':
-         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $p_msg, $v_at_telemetry_msg);
+         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $v_topic, $p_msg, $v_at_telemetry_msg);
          if ($v_reporter === null) {
            return(false);
          }
          return($this->onMsgBleData($v_reporter, $v_at_telemetry_msg));
        break;
        case 'wifiData':
-         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $p_msg, $v_at_telemetry_msg);
+         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $v_topic, $p_msg, $v_at_telemetry_msg);
          if ($v_reporter === null) {
            return(false);
          }
@@ -4501,28 +4471,28 @@ enum NbTopic {
          return(true);
        break;
        case 'status':
-         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $p_msg, $v_at_telemetry_msg);
+         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $v_topic, $p_msg, $v_at_telemetry_msg);
          if ($v_reporter === null) {
            return(false);
          }
          return($this->onMsgStatus($v_reporter, $v_at_telemetry_msg));
        break;
        case 'zbNbData':
-         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $p_msg, $v_at_telemetry_msg);
+         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $v_topic, $p_msg, $v_at_telemetry_msg);
          if ($v_reporter === null) {
            return(false);
          }
          return($this->onMsgZigbeeData($v_reporter, $v_at_telemetry_msg));
        break;
        case 'serialDataNb':
-         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $p_msg, $v_at_telemetry_msg);
+         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $v_topic, $p_msg, $v_at_telemetry_msg);
          if ($v_reporter === null) {
            return(false);
          }
          return($this->onMsgSerialDataNb($v_reporter, $v_at_telemetry_msg));
        break;
        case 'apHealthUpdate':
-         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $p_msg, $v_at_telemetry_msg);
+         $v_reporter = $this->getReporterFromProtoMessage($p_connection, $v_topic, $p_msg, $v_at_telemetry_msg);
          if ($v_reporter === null) {
            return(false);
          }
@@ -4541,7 +4511,7 @@ enum NbTopic {
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function getReporterFromProtoMessage(ConnectionInterface &$p_connection, $p_msg, $p_at_telemetry_msg) {
+    public function getReporterFromProtoMessage(ConnectionInterface &$p_connection, $p_topic, $p_msg, $p_at_telemetry_msg) {
 
       // ----- Get telemetry msg
       $v_at_telemetry_msg = $p_at_telemetry_msg;
@@ -4608,180 +4578,34 @@ enum NbTopic {
         
       }
 
-      // ----- Look for new connection and attach reporter if needed
-      if ($p_connection->my_status == 'initiated') {
-
-        // ----- Connect the reporter with the connection
-        $v_reporter->connect($p_connection);
-
-        ArubaWssTool::log('debug', "Attaching Reporter '".$v_mac."' (".$v_reporter->getName().") to connection '".$p_connection->my_id."'.");
-
-        // ----- Update connection custom attributes
-        $p_connection->my_status = 'active';
+      // ----- Get cnx supported type
+      $v_cnx_type = '';
+      switch ($v_topic) {
+        case 'telemetry':
+        case 'actionResults':
+        case 'characteristics':
+        case 'bleData':
+        case 'status':
+        case 'deviceCount':
+          $v_cnx_type = 'ble';
+        break;
+        case 'wifiData':
+          $v_cnx_type = 'rtls';
+        break;
+        case 'zbNbData':
+          $v_cnx_type = 'zigbee';
+        break;
+        case 'serialDataNb':
+          $v_cnx_type = 'serial';
+        break;
+        case 'apHealthUpdate':
+        break;
+        default:
+         //ArubaWssTool::log('debug', "Missing or unknown NbTopic value ('".$p_topic."').");
       }
 
-      else if ($p_connection->my_status == 'active') {
-        // ----- Connect the reporter with the connection (if not already done)
-        $v_reporter->connect($p_connection);
-      }
-
-/*
-      // ----- Look for already established connection with valid reporter
-      else if ( ($p_connection->my_status == 'active') && ($v_reporter->getMac() != $p_connection->my_reporter_id) ) {
-        ArubaWssTool::log('debug', "An active connection with reporter '".$p_connection->my_reporter_id."' receiving data from an other reporter '".$v_reporter->getMac()."' ... should not occur. Ignore data.");
-        return(null);
-      }
-*/
-
-      else if ($p_connection->my_status != 'active') {
-        ArubaWssTool::log('debug', "Bad status '".$p_connection->my_status."' for connexion '".$p_connection->my_id."'. Please report a bug.");
-        return(null);
-      }
-
-      // ----- Update changed attributes of the reporter
-      if ($v_reporter->getName() != $v_at_reporter->getName()) {
-        ArubaWssTool::log('info', "Reporter '".$v_reporter->getMac()."' changed name '".$v_reporter->getName()."' for '".$v_at_reporter->getName()."'");
-        $v_reporter->setName($v_at_reporter->getName());
-      }
-      $v_ip = ($v_at_reporter->hasIpv4() ? $v_at_reporter->getIpv4() : '');
-      if ($v_reporter->getLocalIp() != $v_ip) {
-        ArubaWssTool::log('info', "Reporter '".$v_reporter->getMac()."' changed local IP '".$v_reporter->getLocalIp()."' for '".$v_ip."'");
-        $v_reporter->setLocalIp($v_ip);
-      }
-      $v_hard = $v_at_reporter->getHwType();
-      if ($v_reporter->getHardwareType() != $v_hard) {
-        ArubaWssTool::log('info', "Reporter '".$v_reporter->getMac()."' changed hardware type '".$v_reporter->getHardwareType()."' for '".$v_hard."'");
-        $v_reporter->setHardwareType($v_hard);
-      }
-      $v_soft = $v_at_reporter->getSwVersion();
-      if ($v_reporter->getSoftwareVersion() != $v_soft) {
-        ArubaWssTool::log('info', "Reporter '".$v_reporter->getMac()."' changed software version '".$v_reporter->getSoftwareVersion()."' for '".$v_soft."'");
-        $v_reporter->setSoftwareVersion($v_soft);
-      }
-      $v_soft = $v_at_reporter->getSwBuild();
-      if ($v_reporter->getSoftwareBuild() != $v_soft) {
-        ArubaWssTool::log('info', "Reporter '".$v_reporter->getMac()."' changed software build '".$v_reporter->getSoftwareBuild()."' for '".$v_soft."'");
-        $v_reporter->setSoftwareBuild($v_soft);
-      }
-
-      // ----- Stats
-      $v_stat_data_payload = strlen($p_msg);
-      $v_reporter->stats('data_payload', $v_stat_data_payload);
-
-      // ----- Update last seen value
-      $v_reporter->setLastSeen($v_at_reporter->getTime());
-
-      return($v_reporter);
-    }
-    /* -------------------------------------------------------------------------*/
-
-    /**---------------------------------------------------------------------------
-     * Method : getReporterFromProtoMessage()
-     * Description :
-     * ---------------------------------------------------------------------------
-     */
-    public function getReporterFromProtoMessage_SAVE(ConnectionInterface &$p_connection, $p_msg, $p_at_telemetry_msg) {
-
-      // ----- Get telemetry msg
-      $v_at_telemetry_msg = $p_at_telemetry_msg;
-      
-      // ----- Check if reporter info is valid
-      if (!$v_at_telemetry_msg->hasReporter()) {
-        ArubaWssTool::log('debug', "Missing reporter information in telemetry payload. Message ignored.");
-        return(null);
-      }
-      
-      // ----- Get reporter infos
-      $v_at_reporter = $v_at_telemetry_msg->getReporter();
-
-      // ----- Check if reporter has a valid MAC@
-      if (!$v_at_reporter->hasMac()) {
-        ArubaWssTool::log('debug', "Missing MAC@ for reporter in telemetry payload. Message ignored.");
-        return(null);
-      }
-      
-      // ----- Get Reporter mac@
-      $v_mac = ArubaWssTool::macToString($v_at_reporter->getMac());
-      $v_ipv4 = ($v_at_reporter->hasIpv4() ? $v_at_reporter->getIpv4() : '');
-
-      ArubaWssTool::log('debug', "--------- Reporter :");
-      ArubaWssTool::log('debug', "  Name: ".($v_at_reporter->hasName() ? $v_at_reporter->getName() : '')."");
-      ArubaWssTool::log('debug', "  Mac: ".$v_mac."");
-      ArubaWssTool::log('debug', "  IPv4: ".$v_ipv4."");
-      ArubaWssTool::log('debug', "  IPv6: ".($v_at_reporter->hasIpv6() ? $v_at_reporter->getIpv6() : '-')."");
-      ArubaWssTool::log('debug', "  hwType: ".($v_at_reporter->hasHwType() ? $v_at_reporter->getHwType() : '-')."");
-      ArubaWssTool::log('debug', "  swVersion: ".($v_at_reporter->hasSwVersion() ? $v_at_reporter->getSwVersion() : '-')."");
-      ArubaWssTool::log('debug', "  swBuild: ".($v_at_reporter->hasSwBuild() ? $v_at_reporter->getSwBuild() : '-')."");
-      ArubaWssTool::log('debug', "  Time: ".date("Y-m-d H:i:s", $v_at_reporter->getTime())." (".$v_at_reporter->getTime().")");
-      ArubaWssTool::log('debug', "---------");
-      ArubaWssTool::log('debug', "");
-
-      // ----- Look for controlled list of reporters by MAC@
-      if (sizeof($this->reporters_allow_list) > 0) {
-        if (!in_array($v_mac, $this->reporters_allow_list)) {
-          ArubaWssTool::log('info', "Received message from not allowed reporter (".$v_mac.",".$v_ipv4."). Closing connection.");
-          return(null);
-        }
-      }
-
-      // ----- Look for existing reporter in the list
-      $v_reporter = $this->getReporterByMac($v_mac);
-
-      // ----- Look for new connection with no reporter (normally first message following connection)
-      if ( ($p_connection->my_status == 'initiated') && ($v_reporter === null) ) {
-
-        ArubaWssTool::log('info', "Creating new reporter with MAC@ : ".$v_mac."");
-
-        // ----- Create a new reporter
-        $v_reporter = new ArubaWssReporter($v_mac);
-
-        // ----- Set additional attributes
-        $v_reporter->setName($v_at_reporter->getName());
-        $v_reporter->setLocalIp(($v_at_reporter->hasIpv4() ? $v_at_reporter->getIpv4() : ''));
-        //$v_reporter->setLocalIpv6(($v_at_reporter->hasIpv6() ? $v_at_reporter->getIpv6() : ''));
-        $v_reporter->setHardwareType($v_at_reporter->getHwType());
-        $v_reporter->setSoftwareVersion($v_at_reporter->getSwVersion());
-        $v_reporter->setSoftwareBuild($v_at_reporter->getSwBuild());
-        $v_reporter->setLastSeen($v_at_reporter->getTime());
-        //$v_reporter->setLastUpdateTime(date("Y-m-d H:i:s", $v_at_reporter->getTime()));
-
-        // ----- Attach to list
-        $this->reporters_list[$v_mac] = $v_reporter;
-
-        // ----- Connect the reporter with the connection
-        $v_reporter->connect($p_connection);
-
-        ArubaWssTool::log('debug', "Attaching Reporter '".$v_mac."' (".$v_reporter->getName().") to connection '".$p_connection->my_id."'.");
-
-        // ----- Update connection custom attributes
-        $p_connection->my_status = 'active';
-
-
-      }
-      // ----- Look for new connection with existing reporter
-      else if ( ($p_connection->my_status == 'initiated') && ($v_reporter !== null) ) {
-
-        // ----- Connect the reporter with the connection
-        $v_reporter->connect($p_connection);
-
-        ArubaWssTool::log('debug', "Attaching Reporter '".$v_mac."' (".$v_reporter->getName().") to connection '".$p_connection->my_id."'.");
-
-        // ----- Update connection custom attributes
-        $p_connection->my_status = 'active';
-      }
-
-      // ----- Look for already established connection with valid reporter
-      else if ( ($p_connection->my_status == 'active') && ($v_reporter !== null) ) {
-        // ----- Look for reporter sync
-        if ($v_reporter->getMac() != $p_connection->my_reporter_id) {
-          ArubaWssTool::log('debug', "An active connection with reporter '".$p_connection->my_reporter_id."' receiving data from an other reporter '".$v_reporter->getMac()."' ... should not occur. Ignore data.");
-          return(null);
-        }
-      }
-
-      else /* if ( ($p_connection->my_status == 'active') && ($v_reporter === null) ) */ {
-        // Should not occur .... !
-      }
+      // ----- Connect the reporter with the connection
+      $v_reporter->connect($p_connection, $v_cnx_type);
 
       // ----- Update changed attributes of the reporter
       if ($v_reporter->getName() != $v_at_reporter->getName()) {
@@ -8050,10 +7874,8 @@ enum NbTopic {
       ArubaWssTool::log('warning', "Reporter '".$this->name."' (".$this->mac_address."), lost connection");
       $this->setRemoteIp('');
       
-      $v_type = $p_connection->my_type; 
-
       // ----- Look for BLE Telemetry cnx
-      if ($v_type == 'telemetry') {
+      if ($this->connection_id_ble == $v_id) {
         $this->connection_id_ble = '';
         
         // ----- Reset parameters (to clean the situation if needed)
@@ -8062,17 +7884,17 @@ enum NbTopic {
       }
 
       // ----- Look for WiFi RTLS cnx
-      else if ($v_type == 'rtls') {
+      if ($this->connection_id_rtls == $v_id) {
         $this->connection_id_rtls = '';
       }
 
       // ----- Look for SerialData cnx
-      else if ($v_type == 'serial') {
+      if ($this->connection_id_serial == $v_id) {
         $this->connection_id_serial = '';
       }
 
       // ----- Look for Zigbee cnx
-      else if ($v_type == 'zigbee') {
+      if ($this->connection_id_zigbee == $v_id) {
         $this->connection_id_zigbee = '';
       }
       
@@ -8100,21 +7922,15 @@ enum NbTopic {
      *   Must be called only the first time, until decnx of the cnx.
      * ---------------------------------------------------------------------------
      */
-    public function connect(&$p_connection) {
+    public function connect(&$p_connection, $p_cnx_type) {
       $v_id = $p_connection->my_id;
       if ($v_id == '') {
         ArubaWssTool::log('debug', "Invalid empty id for connection. Failed to attach connection to reporter.");
         return(false);
       }
-
-      $v_type = $p_connection->my_type;
-      if (($v_type != 'telemetry') && ($v_type != 'rtls') && ($v_type != 'serial') && ($v_type != 'zigbee')) {
-        ArubaWssTool::log('debug', "Invalid connection type '".$v_type."'. Failed to attach connection to reporter.");
-        return(false);
-      }
             
       // ----- Look for BLE Telemetry cnx
-      if ($v_type == 'telemetry') {
+      if ($p_cnx_type == 'ble') {
         if ($this->connection_id_ble != $v_id) {
           ArubaWssTool::log('debug', "Adding BLE connection '".$v_id."' to reporter '".$this->mac_address."'");
           $this->connection_id_ble = $v_id;
@@ -8131,7 +7947,7 @@ enum NbTopic {
       }
 
       // ----- Look for WiFi RTLS cnx
-      else if ($v_type == 'rtls') {
+      else if ($p_cnx_type == 'rtls') {
         if ($this->connection_id_rtls != $v_id) {
           ArubaWssTool::log('debug', "Adding RTLS connection '".$v_id."' to reporter '".$this->mac_address."'");
           $this->connection_id_rtls = $v_id;
@@ -8139,7 +7955,7 @@ enum NbTopic {
       }
 
       // ----- Look for SerialData cnx
-      else if ($v_type == 'serial') {
+      else if ($p_cnx_type == 'serial') {
         if ($this->connection_id_serial != $v_id) {
           ArubaWssTool::log('debug', "Adding SerialData connection '".$v_id."' to reporter '".$this->mac_address."'");
           $this->connection_id_serial = $v_id;
@@ -8147,7 +7963,7 @@ enum NbTopic {
       }
 
       // ----- Look for Zigbee cnx
-      else if ($v_type == 'zigbee') {
+      else if ($p_cnx_type == 'zigbee') {
         if ($this->connection_id_zigbee != $v_id) {
           ArubaWssTool::log('debug', "Adding Zigbee connection '".$v_id."' to reporter '".$this->mac_address."'");
           $this->connection_id_zigbee = $v_id;

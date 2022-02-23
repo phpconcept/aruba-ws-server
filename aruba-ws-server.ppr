@@ -69,11 +69,11 @@ aruba-ws-server
 Main=
 Selected=aruba-ws-server.php
 [aruba-ws-server.php]
-TopLine=8073
-Caret=1,8079
-Mark1=55,6702
-Mark2=79,1417
-Mark3=95,3393
+TopLine=1311
+Caret=1,1326
+Mark1=55,6530
+Mark2=95,3367
+Mark3=76,1399
 [awss\client\websocket_client.html]
 TopLine=506
 Caret=21,541
@@ -109,8 +109,8 @@ Caret=20,7
 TopLine=31
 Caret=1,69
 [README.md]
-TopLine=293
-Caret=1,312
+TopLine=316
+Caret=1,353
 [awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php]
 TopLine=45
 Caret=11,47
