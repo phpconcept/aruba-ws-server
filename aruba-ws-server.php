@@ -991,13 +991,13 @@ JSON_EOT;
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function toArray($p_mode='') {
+    public function toArray($p_level='') {
       $v_item = array();
       
       $v_item['aruba_ws_version'] = ARUBA_WSS_VERSION;
       $v_item['ip_address'] = $this->getIpAddress();
       $v_item['tcp_port'] = $this->getTcpPort();
-      $v_item['up_time'] = $this->up_time;
+      $v_item['up_time'] = date("Y-m-d H:i:s", $this->up_time);
       
       $v_item['presence_timeout'] = $this->presence_timeout;
       $v_item['presence_min_rssi'] = $this->presence_min_rssi;
@@ -1024,7 +1024,16 @@ JSON_EOT;
     
       $v_item['gatt_queue_nb'] = sizeof($this->gatt_queue); 
       
-      if ($p_mode == 'extended') {
+      if ($p_level == 'extended') {
+      
+        $v_item['connections_list'] = array();
+        foreach ($this->connections_list as $v_connection) {
+          $v_item['connections_list'][$v_connection->my_id] = array();
+          $v_item['connections_list'][$v_connection->my_id]['id'] = $v_connection->my_id;
+          $v_item['connections_list'][$v_connection->my_id]['type'] = $v_connection->my_type;
+          $v_item['connections_list'][$v_connection->my_id]['remote_ip'] = $v_connection->my_remote_ip;
+        }
+      
       }
       
       return($v_item);
@@ -2372,9 +2381,15 @@ JSON_EOT;
       //if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
       //  return($v_response);
       //}
+      
+      // ----- Look for extended infos
+      $v_level = '';
+      if (isset($p_data['level']) && ($p_data['level'] == 'extended')) {
+        $v_level = 'extended';
+      }
 
       $v_response['status'] = 'success';
-      $v_response['data']['websocket'] = $this->toArray();
+      $v_response['data']['websocket'] = $this->toArray($v_level);
 
       return($v_response);
     }
@@ -4580,7 +4595,7 @@ enum NbTopic {
 
       // ----- Get cnx supported type
       $v_cnx_type = '';
-      switch ($v_topic) {
+      switch ($p_topic) {
         case 'telemetry':
         case 'actionResults':
         case 'characteristics':
@@ -7800,7 +7815,7 @@ enum NbTopic {
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function toArray($p_mode='') {
+    public function toArray($p_level='') {
       $v_item = array();
       
       $v_item['mac'] = $this->getMac();
@@ -7814,7 +7829,7 @@ enum NbTopic {
       $v_item['software_build'] = $this->software_build;
       $v_item['uptime'] = date("Y-m-d H:i:s", $this->date_created);
                 
-      if ($p_mode == 'extended') {
+      if ($p_level == 'extended') {
         $v_item['stats'] = $this->getStats();
       }
       
