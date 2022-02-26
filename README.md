@@ -309,6 +309,8 @@ The Websocket Server can be accessed by JSON API, description of the API is here
 ## Change Logs
 
 Release v1.4-beta :
+- Improve Web client, with improved display of datas.
+- Improve detection of dead websocket connection.
 - Adding support for Aruba controller based deployment :
   - Changing the way connections/reporters are associated in order to support IoT with controller. In this case a single connection can host multiple reporters.
   - Add capabilities to reporters to have 4 different cnx types : a Telemetry BLE cnx, a RTLS cnx, a Serial cnx and a zigbee cnx. Manage this complexity.

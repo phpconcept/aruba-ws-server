@@ -385,60 +385,6 @@
     }
     /* -------------------------------------------------------------------------*/
     
-    /**---------------------------------------------------------------------------
-     * Method : arubaClassToVendor()
-     * Description :
-     * ---------------------------------------------------------------------------
-     */
-    static function arubaClassToVendor_BACK($p_classname) {
-      $v_result = array();
-      $v_result['vendor_id'] = 'generic';
-      $v_result['model_id'] = 'generic';
-      
-      $v_list = array(
-        "unclassified"=>"generic:generic",
-        "arubaBeacon"=>"Aruba:Beacon",
-        "arubaTag"=>"Aruba:Tag",
-        "zfTag"=>"ZF:Tag",
-        "stanleyTag"=>"Stanley:Tag",
-        "virginBeacon"=>"Virgin:Beacon",
-        "enoceanSensor"=>"Enocean:Sensor",
-        "enoceanSwitch"=>"Enocean:Switch",
-        "iBeacon"=>"generic:generic",
-        "allBleData"=>"generic:generic",
-        "RawBleData"=>"generic:generic",
-        "eddystone"=>"generic:generic",
-        "assaAbloy"=>"AssaAbloy:generic",
-        "arubaSensor"=>"Aruba:Sensor",
-        "abbSensor"=>"ABB:Sensor",
-        //"wifiTag"=>"generic:generic",
-        //"wifiAssocSta"=>"generic:generic",
-        //"wifiUnassocSta"=>"generic:generic",
-        "mysphera"=>"MySphera:generic",
-        "sBeacon"=>"generic:generic",
-        "wiliot"=>"Wiliot:generic",
-        "ZSD"=>"ZSD:generic",
-        //"serialdata"=>"generic:generic",
-        //"exposureNotification"=>"generic:generic",
-        "onity"=>"Onity:generic",
-        "minew"=>"Minew:generic",
-        "google"=>"Google:generic",
-        "polestar"=>"Polestar:generic",
-        "blyott"=>"Blyott:generic",
-        "diract"=>"Diract:generic",
-        "gwahygiene"=>"Gwahygiene:generic"
-        );
-      
-      if (isset($v_list[$p_classname])) {
-        $v_val = explode(":", $v_list[$p_classname]);
-        $v_result['vendor_id'] = $v_val[0];
-        $v_result['model_id'] = $v_val[1];
-      }
-      
-      return($v_result);
-    }
-    /* -------------------------------------------------------------------------*/
-    
   }
   /* -------------------------------------------------------------------------*/
 
@@ -1007,6 +953,9 @@ JSON_EOT;
       $v_item['nearest_ap_min_rssi'] = $this->nearest_ap_min_rssi; 
       $v_item['reporters_allow_list'] = implode(",", $this->reporters_allow_list);
       $v_item['access_token'] = $this->access_token;
+      
+      $v_item['telemetry_max_timestamp'] = $this->telemetry_max_timestamp;
+      
     
       $v_item['reporters_nb'] = sizeof($this->reporters_list);
       $v_item['devices_nb'] = sizeof($this->cached_devices);
@@ -1033,7 +982,16 @@ JSON_EOT;
           $v_item['connections_list'][$v_connection->my_id]['type'] = $v_connection->my_type;
           $v_item['connections_list'][$v_connection->my_id]['remote_ip'] = $v_connection->my_remote_ip;
         }
+        
+        $v_item['extension'] = array();
+        $v_item['extension']['status'] = 'no';
+        $v_item['extension']['name'] = '';
+        if (ARUBA_WSS_DEVICE_CLASS != 'ArubaWssDevice') {
+          $v_item['extension']['status'] = 'yes';
+          $v_item['extension']['name'] = ARUBA_WSS_DEVICE_CLASS;
+        }
       
+        $v_item['notification_queue'] = $this->notification_queue;        
       }
       
       return($v_item);
@@ -1368,6 +1326,10 @@ JSON_EOT;
       // ----- Store remote IP of the connexion (mayb useful later)
       $p_connection->my_remote_ip = $v_ip;
       
+      // ----- Store an health count which will be incremented on each ping.
+      // This will be used by regular interupt to check if the connexion is still alive
+      $p_connection->my_health_count = 1;
+      
       // ----- Attach connection in the list
       $this->connections_list->attach($p_connection);
 
@@ -1424,6 +1386,33 @@ JSON_EOT;
     }
     /* -------------------------------------------------------------------------*/
 
+    /**---------------------------------------------------------------------------
+     * Method : onPingMessage()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function onPingMessage(ConnectionInterface &$p_connection) {
+      // -----
+      // On telemetry websocket cnx Aruba AP sends a ping message every 3 seconds.
+      $p_connection->my_health_count++;
+      
+      
+      //ArubaWssTool::log('debug', "Received ping from ".$p_connection->my_id." (".date("Y-m-d H:i:s").")");
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : endConnection()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function endConnection(ConnectionInterface &$p_connection) {
+      ArubaWssTool::log('debug', "Closing connection ".$p_connection->my_id." with code 503 Service Unavailable (".date("Y-m-d H:i:s").")");
+      
+      // ----- Ending connection will automatically call onClose() method
+      $p_connection->end(\GuzzleHttp\Psr7\Message::toString(new Response(503, [], '' . PHP_EOL)));
+    }
+    /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
      * Method : onApiCall()
@@ -2423,6 +2412,7 @@ JSON_EOT;
         $v_item = array();
         $v_item['mac'] = $v_reporter->getMac();
         $v_item['name'] = $v_reporter->getName();
+        $v_item['status'] = $v_reporter->getStatus();
         $v_item['local_ip'] = $v_reporter->getLocalIp();
         $v_item['remote_ip'] = $v_reporter->getRemoteIp();
         $v_item['model'] = $v_reporter->getHardwareType();
@@ -4660,16 +4650,6 @@ enum NbTopic {
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
-     * Method : onPingMessage()
-     * Description :
-     * ---------------------------------------------------------------------------
-     */
-    public function onPingMessage(ConnectionInterface &$p_connection) {
-        //ArubaWssTool::log('debug', "Received ping from ".$connection->my_name." (".date("Y-m-d H:i:s").")");
-    }
-    /* -------------------------------------------------------------------------*/
-
-    /**---------------------------------------------------------------------------
      * Method : onInterrupt()
      * Description :
      * ---------------------------------------------------------------------------
@@ -4689,6 +4669,21 @@ enum NbTopic {
       // ----- Scan all devices for presence update
       foreach ($this->cached_devices as $v_device) {
         $v_device->updateAbsence();
+      }
+      
+      // ----- Scan all connections for health status
+      $v_types = array('telemetry', 'serial', 'rtls', 'zigbee');
+      foreach ($this->connections_list as $v_connection) {
+        if (in_array($v_connection->my_type, $v_types)) {
+          if ($v_connection->my_health_count > 0) {
+            $v_connection->my_health_count = 0;
+          }
+          // ----- Was already reset at last interruption ... cnx is dead ???
+          else {
+            ArubaWssTool::log('debug', 'Connection "'.$v_connection->my_id.'" seems to be dead ... ');
+            $this->endConnection($v_connection);
+          }  
+        }
       }
       
       // ----- Generic 'cron-like' mechanism
@@ -7828,6 +7823,11 @@ enum NbTopic {
       $v_item['software_version'] = $this->software_version;
       $v_item['software_build'] = $this->software_build;
       $v_item['uptime'] = date("Y-m-d H:i:s", $this->date_created);
+                                
+      $v_item['cnx_ble'] = $this->connection_id_ble;
+      $v_item['cnx_rtls'] = $this->connection_id_rtls;
+      $v_item['cnx_serial'] = $this->connection_id_serial;
+      $v_item['cnx_zigbee'] = $this->connection_id_zigbee;
                 
       if ($p_level == 'extended') {
         $v_item['stats'] = $this->getStats();
