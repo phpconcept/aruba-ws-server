@@ -209,6 +209,11 @@ iot transportProfile Test
  transportInterval 30
 
 iot useTransportProfile Test
+
+iot radio-profile BleRadio
+ radio-mode ble
+
+iot use-radio-profile BleRadio
 ```
 Please notice that URI "/telemetry" is used for the endpointURL. For all other attributes of the transportProfile, please refer to Aruba documentation. The right configuration will improve the load on the websocket server.
 
@@ -228,6 +233,11 @@ iot transportProfile Test
  localNameFilter Jinou,ATC,iTAG
 
 iot useTransportProfile Test
+
+iot radio-profile BleRadio
+ radio-mode ble
+
+iot use-radio-profile BleRadio
 ```
 
 Above configuration will allow for Enocean BLE devices (sensors and switches), and for unclassified BLE devices which MAC address begins with A4:C1:38 or E6:FE:37, or which have the substrings "Jinou", "ATC" or "iTAG" in their advertised BLE local name.

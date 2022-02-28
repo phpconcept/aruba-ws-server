@@ -67,7 +67,7 @@ aruba-ws-server
 15=awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.char.php
 [Selected Project Files]
 Main=
-Selected=composer.json
+Selected=README.md
 [aruba-ws-server.php]
 TopLine=4342
 Caret=34,4371
@@ -97,10 +97,10 @@ TopLine=1
 Caret=1,24
 [composer.json]
 TopLine=1
-Caret=33,20
+Caret=34,21
 [doc\Dependencies.md]
 TopLine=1
-Caret=70,18
+Caret=59,33
 [awss\data\devices\class_regex.json]
 TopLine=1
 Caret=9,14
@@ -114,8 +114,8 @@ Caret=20,7
 TopLine=31
 Caret=1,69
 [README.md]
-TopLine=293
-Caret=50,313
+TopLine=224
+Caret=1,237
 [awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php]
 TopLine=45
 Caret=11,47
