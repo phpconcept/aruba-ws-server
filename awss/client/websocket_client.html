@@ -37,6 +37,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     
     "current_device_mac":"",
     
+    "current_reporter_mac":"",
+    
     "current_service_uuid":"",
     "current_char_uuid":"",
     
@@ -221,10 +223,10 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
           
           else if (obj.data.type == 'reporter_status') {
             if (obj.data.status == 'active') {
-              //awss_device_change_to_connected(obj.data.device_mac);
+              awss_reporter_change_to_actif('');
             }
             else if (obj.data.status == 'inactive') {
-              //awss_device_change_to_disconnected(obj.data.device_mac);
+              awss_reporter_change_to_inactif('');
             }
             else {
               awss_log('Received unexpected reporter status: '+obj.data.status+' for :'+obj.data.device_mac);
@@ -833,6 +835,12 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     document.getElementById("device_local_name").innerHTML = p_data.device.local_name;
     document.getElementById("device_model").innerHTML = p_data.device.model;
     document.getElementById("device_rssi").innerHTML = p_data.device.rssi;
+    if ((p_data.device.presence) && (p_data.device.presence ==1 )) {
+      document.getElementById("device_status").innerHTML = '<button type="button" class="btn btn-success btn-xs" >Present</button>';
+    }
+    else {
+      document.getElementById("device_status").innerHTML = '<button type="button" class="btn btn-danger btn-xs" >Missing</button>';
+    }
 
     document.getElementById("tbody_telemetry_list").innerHTML = '';
     v_count_top_1 = 0;
@@ -1087,6 +1095,22 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     }
 
     return;
+  }
+
+  function awss_reporter_change_to_actif(p_mac) {
+    //if (p_mac != g_server['current_reporter_mac']) {
+    //  return;
+    //}    
+    // ----- Reload all the reporters
+    awss_api_reporter_list();
+  }
+
+  function awss_reporter_change_to_inactif(p_mac) {
+    //if (p_mac != g_server['current_reporter_mac']) {
+    //  return;
+    //}    
+    // ----- Reload all the reporters
+    awss_api_reporter_list();
   }
 
   function awss_api_reporter_list() {
@@ -1916,47 +1940,31 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     <div class="w3-col m8">
 
       <!-- Block -->
-      <div id="div_docs_exact" class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
 
-              <h2>Device "<span id="device_name"></span>" 
-              <span class="w3-right">
-              <button type="button" class="btn btn-success btn-xs" id="device_cnx_ok">Connected</button>
-              <span class="glyphicon glyphicon-refresh" onclick="awss_device_open(g_server['current_device_mac']);" style="cursor: pointer;"></span>&nbsp;
-              </span>
-              </h2>
+        <h2>Device "<span id="device_name"></span>" 
+        <span class="w3-right">
+        <button type="button" class="btn btn-success btn-xs" id="device_cnx_ok">Connected</button>
+        <span class="glyphicon glyphicon-refresh" onclick="awss_device_open(g_server['current_device_mac']);" style="cursor: pointer;"></span>&nbsp;
+        </span>
+        </h2>
 
-              <table class="table">
-                  <tbody>
-                    <tr>             
-              <td><h4><b>Device MAC</b> : <span id="device_mac"></span></h4></td>
-                    </tr>
-                    <tr><td>
-              <h4><i>Aruba Classname : </i><span id="device_classname"></span></h4>
-              <h4><i>BLE Vendor Name : </i><span id="device_vendor_name"></span></h4>
-              <h4><i>BLE Local Name : </i><span id="device_local_name"></span></h4>
-              <h4><i>BLE Model : </i><span id="device_model"></span></h4>
-                    </td></tr>
-                    <tr><td>
-              <h4><i>Vendor : </i><span id="device_vendor_id"></span></h4>
-              <h4><i>Model : </i><span id="device_model_id"></span></h4>
-                    </td></tr>
-                    <tr><td>
-              <h4><i>Nearest AP MAC : </i><span id="device_nearest_ap_mac"></span></h4>
-              <h4><i>RSSI : </i><span id="device_rssi"></span></h4>
-                    </td></tr>
-                  </tbody>
-              </table>
-
-        <h4 class="w3-center">
-          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_device_open(g_server['current_device_mac']);">Refresh</button>
-          &nbsp;&nbsp;  
-          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_discover" onclick="awss_api_device_discover(g_server['current_device_mac']);">Characteristics Discovery</button>
-          &nbsp;&nbsp;  
-          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_cnx" onclick="awss_api_device_connect(g_server['current_device_mac'], 1);">BLE Connect</button>
-          &nbsp;&nbsp;  
-          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_dcnx" onclick="awss_api_device_connect(g_server['current_device_mac'], 0);">BLE Disconnect</button>
-        </h4>
-
+        <table class="table">
+            <tbody>
+              <tr>             
+        <td align="right" style="width:25%">MAC Address : </td><td><span id="device_mac"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">Vendor, Model : </td><td><span id="device_vendor_id"></span>, <span id="device_model_id"></span></td>
+              </tr>
+              <tr>             
+        <td align="right" style="width:25%">Status : </td><td><span id="device_status"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">Active uptime : </td><td><span id="device_uptime"></span></td>
+              </tr>
+            </tbody>
+        </table>
 
       </div>
       <!-- Block -->
@@ -1980,6 +1988,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       </div>
       <!-- Block -->
 
+
       <!-- Block -->
       <div id="div_char_list" class="w3-container w3-card-2 w3-white w3-round w3-margin">
 
@@ -1988,6 +1997,16 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
         <span class="w3-right"><button type="button" class="btn btn-xs" onclick="awss_device_char_read_list();">read multiple</button></span>
         </h2>
         <input type="hidden" id="char_list_id" value="aruba ">
+
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_device_open(g_server['current_device_mac']);">Refresh</button>
+          &nbsp;&nbsp;  
+          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_discover" onclick="awss_api_device_discover(g_server['current_device_mac']);">Characteristics Discovery</button>
+          &nbsp;&nbsp;  
+          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_cnx" onclick="awss_api_device_connect(g_server['current_device_mac'], 1);">BLE Connect</button>
+          &nbsp;&nbsp;  
+          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_dcnx" onclick="awss_api_device_connect(g_server['current_device_mac'], 0);">BLE Disconnect</button>
+        </h4>
 
         <div class="table-responsive table-condensed" style="min-height:10px; max-height:400px;">
           <table class="table table-hover">
@@ -2000,12 +2019,47 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       </div>
       <!-- Block -->
 
-      <!-- Empty Block pour garder l'espace-->
-      <div class="">
-        &nbsp;
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+
+        <h3>Properties</h3>
+        <table class="table">
+            <tbody>
+              <tr>             
+        <td align="right" style="width:25%">Aruba Classname : </td><td><span id="device_classname"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">BLE Vendor Name : </td><td><span id="device_vendor_name"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">BLE Local Name : </td><td><span id="device_local_name"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">BLE Model : </td><td><span id="device_model"></span></td>
+              </tr>
+            </tbody>
+        </table>
+        
       </div>
       <!-- Block -->
 
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+
+        <h3>BLE Scaning</h3>
+        <table class="table">
+            <tbody>
+              <tr>             
+        <td align="right" style="width:25%">Nearest AP MAC : </td><td><span id="device_nearest_ap_mac"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">RSSI : </td><td><span id="device_rssi"></span></td>
+              </tr>
+            </tbody>
+        </table>
+        
+      </div>
+      <!-- Block -->
 
 
     <!-- End Central Column -->

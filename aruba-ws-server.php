@@ -300,6 +300,8 @@
       if (($p_cnx === null) || ($p_proto_msg === null)) {
         return(false);
       }
+      
+      ArubaWssTool::log('debug:4', $p_proto_msg);
 
       $v_closeFrameChecker = new \Ratchet\RFC6455\Messaging\CloseFrameChecker;
       $v_deflateOptions = null;      
@@ -1394,7 +1396,8 @@ JSON_EOT;
     public function onPingMessage(ConnectionInterface &$p_connection) {
       // -----
       // On telemetry websocket cnx Aruba AP sends a ping message every 3 seconds.
-      $p_connection->my_health_count++;
+      // Reset the health count on each ping
+      $p_connection->my_health_count=0;
       
       
       //ArubaWssTool::log('debug', "Received ping from ".$p_connection->my_id." (".date("Y-m-d H:i:s").")");
@@ -3384,10 +3387,10 @@ results {
           // ----- The device might be in connecting phase ... the errors means a connect fail
           if ($v_device->getConnectStatus() == AWSS_STATUS_CONNECTED) {
             // ----- Change status to disconnected
-            $this->changeDeviceConnectStatus($v_device, AWSS_STATUS_DISCONNECTED, ($p_status_string==''?$p_status:$v_status.':'.$v_status_string));      
+            $this->changeDeviceConnectStatus($v_device, AWSS_STATUS_DISCONNECTED, ($v_status_string==''?$v_status:$v_status.':'.$v_status_string));      
           }
         }
-        ArubaWssTool::log('debug', "Not supported message response for '".$v_action_type."'. Skip.");
+        ArubaWssTool::log('debug', "Unexpected empty action_type in actionResults, status '".$v_status."'. Skip.");
       }
       
       else {
@@ -4364,6 +4367,9 @@ status {
       if (isset($p_connection->my_type) && ($p_connection->my_type == 'ws_api')) {
         return($this->onWebsocketClientCall($p_connection, $p_msg));
       }
+      
+      // ----- Reset health count
+      $p_connection->my_health_count=0;
 
       // ----- Stats
       $v_stat_data_payload = strlen($p_msg);
@@ -4675,13 +4681,15 @@ enum NbTopic {
       $v_types = array('telemetry', 'serial', 'rtls', 'zigbee');
       foreach ($this->connections_list as $v_connection) {
         if (in_array($v_connection->my_type, $v_types)) {
-          if ($v_connection->my_health_count > 0) {
-            $v_connection->my_health_count = 0;
-          }
-          // ----- Was already reset at last interruption ... cnx is dead ???
-          else {
+          // ----- Look if count more than 60 sec.
+          if ($v_connection->my_health_count > 6) {
             ArubaWssTool::log('debug', 'Connection "'.$v_connection->my_id.'" seems to be dead ... ');
+            $v_connection->my_health_count = 0;
             $this->endConnection($v_connection);
+          }
+          // ----- Increment health_count
+          else {
+            $v_connection->my_health_count++;
           }  
         }
       }
@@ -4896,6 +4904,7 @@ enum NbTopic {
       
       // ----- Find nearest reporter        
       $v_ap_mac = $p_device->getConnectApMac();    
+      ArubaWssTool::log('debug', 'Nearest reporter for this device "'.$p_device->getMac().'" is "'.$v_ap_mac.'"');
       $v_reporter = $this->getReporterByMac($v_ap_mac);
       if ($v_reporter === null) {
         ArubaWssTool::log('debug', 'Fail to find nearest reporter for this device '.$v_ap_mac);
