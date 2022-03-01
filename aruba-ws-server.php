@@ -4376,8 +4376,12 @@ status {
       $this->stats('data_payload', $v_stat_data_payload);
 
       // ----- Parse Aruba protobuf message
-      // TBC : I should check that the telemetry object is ok
-      $v_at_telemetry_msg = new aruba_telemetry\Telemetry($p_msg);
+      try{
+        $v_at_telemetry_msg = new aruba_telemetry\Telemetry($p_msg);
+      } catch (\Exception $e) {
+        ArubaWssTool::log('error', 'Fail to parse protobuf telemetry payload (error: '.$e->getMessage().')');
+        return(true);
+      }
 
       //ArubaWssTool::log('trace', $v_at_telemetry_msg);
 

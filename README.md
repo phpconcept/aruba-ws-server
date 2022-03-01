@@ -1,7 +1,10 @@
 # Aruba IoT Demonstration Websocket Server
 
 aruba-ws-server is a websocket server, written in PHP, to test and demonstrate the IoT capabilities of Aruba Access Points.
-Today it supports only the BLE capabilities of Aruba Instant AP.
+
+AWSS server is supporting Intant AP (IAP) and Controller (ArubaOS) based deployment model of the Access Points.
+
+Current features are focused on BLE IoT, but the server has capabilities to evolve in order to support Serial, Zigbee and RTLS.
 
 ## Quick Start Guide
 
@@ -242,7 +245,34 @@ iot use-radio-profile BleRadio
 
 Above configuration will allow for Enocean BLE devices (sensors and switches), and for unclassified BLE devices which MAC address begins with A4:C1:38 or E6:FE:37, or which have the substrings "Jinou", "ATC" or "iTAG" in their advertised BLE local name.
 Using the right filtering will lower the load on the Websocket Server.
- 
+
+Do not forget to configure the "radio-profile", because without the server may receive telemetry data, but fail to send GATT command.
+
+Example of Aruba Controller (ArubaOS) configuration :
+
+```cli
+
+iot transportProfile "TestBle"
+ serverType Telemetry-Websocket
+ serverURL "ws://192.168.22.17:8081/telemetry"
+ accessToken "1234"
+ reportingInterval 30
+ deviceClassFilter enocean-sensors
+ deviceClassFilter enocean-switches
+ deviceClassFilter unclassified
+ include-ap-group "default"
+ localNameFilter "Jinou,ATC"
+
+iot useTransportProfile "TestBle"
+
+iot radio-profile "BleRadio"
+ radio-mode none ble
+
+ap-group "default"
+ iot radio-profile "BleRadio"
+```
+
+Notice that for ArubaOS configuration "radio-profile" is to be configured in the "ap-group" where your AP are. And the ap-group must also be configured in the transportProfile information.
 
 ### AWSS Client
 
@@ -256,14 +286,13 @@ Connect to the websocket server by using the secret API key which was specified 
 
 ### Introduction
 
-Following sections are covering some of the keep info in order to use the demo server.
+Following sections are covering some of the key info in order to use the demo server.
 
 ### Start Include Mode
 
 Be default the websocket server will listen to the reception port, and will accept incoming connections from Access Points. However it will not by default on-board all discovered BLE devices. An include mode feature will allow to select which kind of devices are to be monitored.
 To start the include mode from the client, connect to the server (if not already done), click on the "Start Include Mode" button.
-You can also use the API, which allow for additional parameters.
-After a while (the time for the first telemetry packet from the AP), the devices should be on-boarded.
+After a while (the time to receive the first telemetry packet from the AP), the devices should be on-boarded.
 The include mode can be stopped if needed.
 
 ![Devices List](doc/images/include_mode.png)
@@ -291,9 +320,10 @@ When available, a click on the "read" button will read the characteristic value.
 Buttons "Connect" and "Disconnect" will allow for starting a manual BLE GATT connect/disconnect to the device. This is mainly to test the BLE connection to the device.
 In normal case, discovery is a more efficient solution.
 
-#### Aruba Telemetry
+#### Device Telemetry
 
-When the device is supporting Aruba Telemetry (known device classes), the telemetry payloads are received automatically at the frequency configured in the Access Point configuration. In this case the value of the attributes are also available.
+Depending on device nature, multiple telemetry types and values may be available. These values can be received from Aruba Telemetry payload (for known device classes), or from BLE scaning results (bleData configuration). The telemetry payloads are received automatically at the frequency configured in the Access Point configuration, BLE advertissements are received in real time by the AP and forwarded to the server.
+
 
 ![Device Telemetry](doc/images/device_telemetry.png)
 
@@ -320,7 +350,7 @@ The Websocket Server can be accessed by JSON API, description of the API is here
 
 Release v1.4-beta :
 - Improve Web client, with improved display of datas.
-- Improve detection of dead websocket connection.
+- Improve detection of dead websocket connection. If the websocket cnx is not sending at list a message or a ping during 60 seconds, the cnx is seen as dead and is closed.
 - Adding support for Aruba controller based deployment :
   - Changing the way connections/reporters are associated in order to support IoT with controller. In this case a single connection can host multiple reporters.
   - Add capabilities to reporters to have 4 different cnx types : a Telemetry BLE cnx, a RTLS cnx, a Serial cnx and a zigbee cnx. Manage this complexity.
@@ -360,7 +390,7 @@ Release v1.0 :
 As of today, some known caveats are :
 - /!\ Only ws:// is supported today by the websocket daemon, which means communication is in clear. No support yet of wss:// with certificate.
 - In case of controller based deployment, resiliency (swap to the backup controller) was never tested and may show unexpected behaviour.
-- AWSS was not tested in environment using Aruba Cental IOT Connector.
+- AWSS was not tested in environment using Aruba Central IOT Connector.
 - In some situation BLE connection is rejected by IAP, but AWSS keep the "connected" status for the AP. Thus no more BLE connect can be initiated. Workaround is to restart AWSS.
 
 ## WARNING :

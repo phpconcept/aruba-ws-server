@@ -1993,14 +1993,10 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       <div id="div_char_list" class="w3-container w3-card-2 w3-white w3-round w3-margin">
 
         <h2><span class="glyphicon glyphicon-tag"></span>
-        <span id="char_list_name">Device Characteristics</span>&nbsp;<span class="w3-badge w3-green w3-medium" id="char_list_nb" style="vertical-align: top;">0</span>
-        <span class="w3-right"><button type="button" class="btn btn-xs" onclick="awss_device_char_read_list();">read multiple</button></span>
+        <span id="char_list_name">Device Characteristics</span>&nbsp;<span class="w3-badge w3-green w3-medium" id="char_list_nb" style="vertical-align: top;">0</span>        
         </h2>
-        <input type="hidden" id="char_list_id" value="aruba ">
 
         <h4 class="w3-center">
-          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_device_open(g_server['current_device_mac']);">Refresh</button>
-          &nbsp;&nbsp;  
           <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_discover" onclick="awss_api_device_discover(g_server['current_device_mac']);">Characteristics Discovery</button>
           &nbsp;&nbsp;  
           <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_cnx" onclick="awss_api_device_connect(g_server['current_device_mac'], 1);">BLE Connect</button>
@@ -2009,6 +2005,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
         </h4>
 
         <div class="table-responsive table-condensed" style="min-height:10px; max-height:400px;">
+        <h4><span class="w3-right"><button type="button" class="btn btn-xs" onclick="awss_device_char_read_list();">read multiple</button></span></h4>
+        <br>
           <table class="table table-hover">
             <tbody id="tbody_char_list">
               <!-- Filled by Javascript -->
@@ -2016,6 +2014,24 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
           </table>
         </div>
 
+      </div>
+      <!-- Block -->
+
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+
+        <h3>Nearest Reporter</h3>
+        <table class="table">
+            <tbody>
+              <tr>             
+        <td align="right" style="width:25%">Nearest AP MAC : </td><td><span id="device_nearest_ap_mac"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">RSSI : </td><td><span id="device_rssi"></span></td>
+              </tr>
+            </tbody>
+        </table>
+        
       </div>
       <!-- Block -->
 
@@ -2036,24 +2052,6 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
               </tr>
               <tr>             
         <td align="right">BLE Model : </td><td><span id="device_model"></span></td>
-              </tr>
-            </tbody>
-        </table>
-        
-      </div>
-      <!-- Block -->
-
-      <!-- Block -->
-      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
-
-        <h3>BLE Scaning</h3>
-        <table class="table">
-            <tbody>
-              <tr>             
-        <td align="right" style="width:25%">Nearest AP MAC : </td><td><span id="device_nearest_ap_mac"></span></td>
-              </tr>
-              <tr>             
-        <td align="right">RSSI : </td><td><span id="device_rssi"></span></td>
               </tr>
             </tbody>
         </table>
