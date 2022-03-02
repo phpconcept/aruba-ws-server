@@ -945,7 +945,8 @@ JSON_EOT;
       $v_item['aruba_ws_version'] = ARUBA_WSS_VERSION;
       $v_item['ip_address'] = $this->getIpAddress();
       $v_item['tcp_port'] = $this->getTcpPort();
-      $v_item['up_time'] = date("Y-m-d H:i:s", $this->up_time);
+      //$v_item['up_time'] = date("Y-m-d H:i:s", $this->up_time);
+      $v_item['up_time'] = $this->up_time;
       
       $v_item['presence_timeout'] = $this->presence_timeout;
       $v_item['presence_min_rssi'] = $this->presence_min_rssi;
@@ -2425,6 +2426,7 @@ JSON_EOT;
         $v_item['serial'] = $v_reporter->hasSerialCnx();
         $v_item['zigbee'] = $v_reporter->hasZigbeeCnx();
         $v_item['lastseen'] = $v_reporter->getLastSeen();
+        $v_item['uptime'] = $v_reporter->getUptime();
         $v_response['data']['reporters'][] = $v_item;
       }
 
@@ -7535,6 +7537,7 @@ enum NbTopic {
     
     // ----- Timestamps
     protected $date_created;
+    protected $uptime;
     protected $lastseen;
 
     // ----- Cnx id depending of the types, empty if no cnx    
@@ -7573,6 +7576,7 @@ enum NbTopic {
       $this->software_version = '';
       $this->software_build = '';
       $this->date_created = time();
+      $this->uptime = 0;
       $this->lastseen = 0;
 
       $this->stat_telemetry_payload_sum = 0;
@@ -7594,6 +7598,12 @@ enum NbTopic {
       
       if ($p_status != $this->status) {
         $this->status = $p_status;
+        if ($this->status == 'active') {
+          $this->uptime = time();
+        }
+        else {
+          $this->uptime = 0;
+        }
 
         ArubaWssTool::notification('reporter_status', ['mac_address'=>$this->mac_address, 
                                                        'status'=>$this->status]);      
@@ -7706,10 +7716,13 @@ enum NbTopic {
       return($this->lastseen);
     }
 
-    public function getUptime() {
+    public function getDateCreated() {
       return($this->date_created);
     }
 
+    public function getUptime() {
+      return($this->uptime);
+    }
 
     /**---------------------------------------------------------------------------
      * Method : isAvailableToConnectWith()

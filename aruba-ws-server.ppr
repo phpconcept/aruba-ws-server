@@ -66,7 +66,7 @@ aruba-ws-server
 13=doc\dev_notes.txt
 [Selected Project Files]
 Main=
-Selected=awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.char.php
+Selected=README.md
 [aruba-ws-server.php]
 TopLine=369
 Caret=5,389
@@ -108,8 +108,8 @@ Caret=20,7
 TopLine=37
 Caret=1,69
 [README.md]
-TopLine=345
-Caret=79,352
+TopLine=335
+Caret=1,363
 [awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php]
 TopLine=5
 Caret=11,47
