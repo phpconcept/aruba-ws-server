@@ -33,6 +33,7 @@ aruba-ws-server
 			doc\install\install_docker\Dockerfile
 			doc\Proto.md
 			doc\Dependencies.md
+			doc\dev_notes.txt
 		+Client-Test
 			awss\client\websocket_client.html
 		+Proto-class
@@ -65,9 +66,10 @@ aruba-ws-server
 13=awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php
 14=awss\data\devices\aruba_class.json
 15=awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.char.php
+16=doc\dev_notes.txt
 [Selected Project Files]
 Main=
-Selected=README.md
+Selected=doc\dev_notes.txt
 [aruba-ws-server.php]
 TopLine=4342
 Caret=34,4371
@@ -125,3 +127,6 @@ Caret=23,13
 [awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.char.php]
 TopLine=1
 Caret=1,5
+[doc\dev_notes.txt]
+TopLine=1
+Caret=56,10

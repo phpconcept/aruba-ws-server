@@ -1,0 +1,18 @@
+Notes For Development purpose - Please Ignore
+---------------------------------------------
+
+Todo before next release :
+--------------------------
+
+
+Todo medium/long term :
+-----------------------
+- Rework stats part, and display of stats in GUI client
+- Implement a GATT write feature
+
+Notes diverses :
+----------------
+
+
+
+
