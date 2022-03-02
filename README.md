@@ -348,7 +348,7 @@ The Websocket Server can be accessed by JSON API, description of the API is here
 
 ## Change Logs
 
-Release v1.4-beta :
+Release v1.4 :
 - Improve Web client, with improved display of datas.
 - Improve detection of dead websocket connection. If the websocket cnx is not sending at list a message or a ping during 60 seconds, the cnx is seen as dead and is closed.
 - Adding support for Aruba controller based deployment :
