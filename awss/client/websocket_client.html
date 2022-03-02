@@ -427,8 +427,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 {"websocket":{"aruba_ws_version":"1.4-beta","ip_address":"0.0.0.0","tcp_port":"8081","up_time":"2022-02-25 11:21:20",
 "presence_timeout":90,"presence_min_rssi":-90,"presence_rssi_hysteresis":5,"nearest_ap_hysteresis":5,"nearest_ap_timeout":90,
 "nearest_ap_min_rssi":-90,"reporters_allow_list":"","access_token":"","telemetry_max_timestamp":60,"reporters_nb":1,
-"devices_nb":0,"include_mode":1,"include_device_count":0,"device_type_allow_list":"enoceanSwitch,enoceanSensor,generic",
-"include_generic_with_local":0,"include_generic_with_mac":0,"include_generic_mac_prefix":"","include_generic_max_devices":"10",
+"devices_nb":0,"include_mode":1,"include_device_count":0,"device_type_allow_list":"enoceanSwitch,enoceanSensor,unclassified",
+"include_unclassified_with_local":0,"include_unclassified_with_mac":0,"include_unclassified_mac_prefix":"","include_unclassified_max_devices":"10",
 "stats":{"payload_data":12377,"raw_data":15792},"gatt_queue_nb":0,
 "connections_list":{"192.168.22.6:59057":{"id":"192.168.22.6:59057","type":"telemetry","remote_ip":"192.168.22.6"},"192.168.22.6:59058":{"id":"192.168.22.6:59058","type":"serial","remote_ip":"192.168.22.6"},"192.168.22.148:49558":{"id":"192.168.22.148:49558","type":"ws_api","remote_ip":"192.168.22.148"}},
 "extension":{"status":"no","name":""},
@@ -501,13 +501,13 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
   
   function awss_api_include_mode(p_include_mode) {
   
-    var generic_selected = 0;
+    var unclassified_selected = 0;
     var array_type = []
     var checkboxes = document.querySelectorAll('input[name=device_type]:checked')
     for (var i = 0; i < checkboxes.length; i++) {
       array_type.push(checkboxes[i].value);
-      if (checkboxes[i].value == 'generic') {
-        generic_selected = 1;
+      if (checkboxes[i].value == 'unclassified') {
+        unclassified_selected = 1;
       }
     }
     v_type = array_type.toString();
@@ -515,7 +515,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     v_with_local = 0;
     v_mac_prefix = '';
     v_max = 0;
-    if (generic_selected) {
+    if (unclassified_selected) {
       if ($('#include_with_local').is(":checked")) {
         v_with_local = 1;
       }
@@ -539,10 +539,10 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
           "data": {
             "state":p_include_mode,
             "type":v_type,
-            "generic_with_local":v_with_local,
-            "generic_with_mac":v_with_mac,
-            "generic_mac_prefix":v_mac_prefix,
-            "generic_max_devices":v_max
+            "unclassified_with_local":v_with_local,
+            "unclassified_with_mac":v_with_mac,
+            "unclassified_mac_prefix":v_mac_prefix,
+            "unclassified_max_devices":v_max
           }
       }
     };
@@ -555,11 +555,11 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
           "name":"include_mode",
           "data": {
             "state":p_include_mode,
-            "type":"generic,enoceanSensor,enoceanSwitch,arubaTag,arubaBeacon",
-            "generic_with_local":"",
-            "generic_with_mac":0,
-            "generic_mac_prefix":"",
-            "generic_max_devices":10
+            "type":"unclassified,enoceanSensor,enoceanSwitch,arubaTag,arubaBeacon",
+            "unclassified_with_local":"",
+            "unclassified_with_mac":0,
+            "unclassified_mac_prefix":"",
+            "unclassified_max_devices":10
           }
       }
     };
@@ -1603,19 +1603,19 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
               <tr>
                 <td colspan="5">
         
-          <input type="checkbox" name="device_type" value="generic" checked ><label >&nbsp; generic</label><br>          
+          <input type="checkbox" name="device_type" value="unclassified" checked ><label >&nbsp; unclassified</label><br>          
          
           <blockquote>
             <input type="checkbox" id="include_with_local" value="1">
-            <span > only generic devices with local info</span>   
+            <span > only unclassified devices with local info</span>   
             <br>
             <input type="checkbox" id="include_with_mac" value="1">
-            <span> only generic devices with this MAC prefix :&nbsp;&nbsp;</span>
+            <span> only unclassified devices with this MAC prefix :&nbsp;&nbsp;</span>
             <input class="w3-border w3-round-large" type="text" id="include_mac_prefix" value="">       
             <br>
             <span> Stop after &nbsp;</span>
             <input class="w3-border w3-round-large" type="text" id="include_max" value="10" style="width:50px;"> 
-            <span> generic devices included.</span>      
+            <span> unclassified devices included.</span>      
           </blockquote>                
 
                 </td>

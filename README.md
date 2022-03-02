@@ -349,6 +349,7 @@ The Websocket Server can be accessed by JSON API, description of the API is here
 ## Change Logs
 
 Release v1.5-beta :
+- Replace "generic" term to "unclassified" to be more aligned with Aruba term. 
 
 Release v1.4 :
 - Improve Web client, with improved display of datas.

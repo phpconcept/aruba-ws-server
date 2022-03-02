@@ -90,9 +90,9 @@
     "name": "MySphera",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
         "aruba_class": "mysphera", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -102,9 +102,9 @@
     "name": "Wiliot",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
         "aruba_class": "wiliot", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -114,9 +114,9 @@
     "name": "Onity",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
         "aruba_class": "onity", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -126,9 +126,9 @@
     "name": "Minew",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
         "aruba_class": "minew", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -138,9 +138,9 @@
     "name": "Google",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
         "aruba_class": "google", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -150,9 +150,9 @@
     "name": "Polestar",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
         "aruba_class": "polestar", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -162,9 +162,9 @@
     "name": "Blyott",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
         "aruba_class": "blyott", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -174,9 +174,9 @@
     "name": "Diract",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
         "aruba_class": "diract", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -186,9 +186,9 @@
     "name": "Gwahygiene",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
         "aruba_class": "gwahygiene", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }

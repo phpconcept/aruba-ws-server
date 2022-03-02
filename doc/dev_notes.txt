@@ -10,7 +10,6 @@ Todo/improvment medium/long term :
 - In Controller AOS detect a dead AP when websocket is still active with controller. (use apHealth)
 - Client : clean display of device/reporter when list is empty
 - Client : Add telemetry units
-- Replace "generic" term to "unclassified" to be more aligned with Aruba term.
 - Rework stats part, and display of stats in GUI client
 
 New features :

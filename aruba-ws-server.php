@@ -380,8 +380,8 @@
       }
 
       // ----- Not found      
-      $v_result['vendor_id'] = 'generic';
-      $v_result['model_id'] = 'generic';
+      $v_result['vendor_id'] = 'unclassified';
+      $v_result['model_id'] = 'unclassified';
 
       return($v_result);
     }
@@ -430,10 +430,10 @@
     protected $include_mode = false;
     protected $include_device_count = 0;
     protected $device_type_allow_list = array();
-    protected $include_generic_with_local = 0;
-    protected $include_generic_with_mac = 0;
-    protected $include_generic_mac_prefix = '';
-    protected $include_generic_max_devices = 3;
+    protected $include_unclassified_with_local = 0;
+    protected $include_unclassified_with_mac = 0;
+    protected $include_unclassified_mac_prefix = '';
+    protected $include_unclassified_max_devices = 3;
 
     // ----- Statistics data
     protected $payload_data = 0;
@@ -820,9 +820,9 @@
     "name": "MySphera",
     "description": "",
     "devices": {
-      "generic": {
+      "unclassified": {
         "aruba_class": "mysphera", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -832,9 +832,9 @@
     "name": "Wiliot",
     "description": "",
     "devices": {
-      "generic": {
+      "unclassified": {
         "aruba_class": "wiliot", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -844,9 +844,9 @@
     "name": "Onity",
     "description": "",
     "devices": {
-      "generic": {
+      "unclassified": {
         "aruba_class": "onity", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -856,9 +856,9 @@
     "name": "Minew",
     "description": "",
     "devices": {
-      "generic": {
+      "unclassified": {
         "aruba_class": "minew", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -868,9 +868,9 @@
     "name": "Google",
     "description": "",
     "devices": {
-      "generic": {
+      "unclassified": {
         "aruba_class": "google", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -880,9 +880,9 @@
     "name": "Polestar",
     "description": "",
     "devices": {
-      "generic": {
+      "unclassified": {
         "aruba_class": "polestar", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -892,9 +892,9 @@
     "name": "Blyott",
     "description": "",
     "devices": {
-      "generic": {
+      "unclassified": {
         "aruba_class": "blyott", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -904,9 +904,9 @@
     "name": "Diract",
     "description": "",
     "devices": {
-      "generic": {
+      "unclassified": {
         "aruba_class": "diract", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -916,9 +916,9 @@
     "name": "Gwahygiene",
     "description": "",
     "devices": {
-      "generic": {
+      "unclassified": {
         "aruba_class": "gwahygiene", 
-        "name": "generic",
+        "name": "unclassified",
         "description": ""
       }
     }
@@ -965,10 +965,10 @@ JSON_EOT;
       $v_item['include_mode'] = ($this->include_mode?1:0);
       $v_item['include_device_count'] = $this->include_device_count;
       $v_item['device_type_allow_list'] = implode(",", $this->device_type_allow_list);
-      $v_item['include_generic_with_local'] = $this->include_generic_with_local;
-      $v_item['include_generic_with_mac'] = $this->include_generic_with_mac;
-      $v_item['include_generic_mac_prefix'] = $this->include_generic_mac_prefix;
-      $v_item['include_generic_max_devices'] = $this->include_generic_max_devices;
+      $v_item['include_unclassified_with_local'] = $this->include_unclassified_with_local;
+      $v_item['include_unclassified_with_mac'] = $this->include_unclassified_with_mac;
+      $v_item['include_unclassified_mac_prefix'] = $this->include_unclassified_mac_prefix;
+      $v_item['include_unclassified_max_devices'] = $this->include_unclassified_max_devices;
 
       $v_item['stats']['payload_data'] = $this->payload_data;
       $v_item['stats']['raw_data'] = $this->raw_data;
@@ -2558,11 +2558,11 @@ JSON_EOT;
         "name":"include_mode",
         "data": {
           "state":1,
-          "type":"generic",
-          "generic_with_local":"",
-          "generic_with_mac":0,
-          "generic_mac_prefix":"",
-          "generic_max_devices":10
+          "type":"unclassified",
+          "unclassified_with_local":"",
+          "unclassified_with_mac":0,
+          "unclassified_mac_prefix":"",
+          "unclassified_max_devices":10
         }
     }
 }
@@ -2602,20 +2602,20 @@ JSON_EOT;
           ArubaWssTool::log('debug', "Missing classes to include ! ");
         }
 
-        if (in_array('generic', $this->device_type_allow_list)) {
-          $this->include_generic_with_local = (isset($p_data['generic_with_local']) ? $p_data['generic_with_local'] : 0);
-          $this->include_generic_with_mac = (isset($p_data['generic_with_mac']) ? $p_data['generic_with_mac'] : 0);
-          $this->include_generic_mac_prefix = strtoupper((isset($p_data['generic_mac_prefix']) ? $p_data['generic_mac_prefix'] : ''));
-          $this->include_generic_max_devices = (isset($p_data['generic_max_devices']) ? $p_data['generic_max_devices'] : 3);
+        if (in_array('unclassified', $this->device_type_allow_list)) {
+          $this->include_unclassified_with_local = (isset($p_data['unclassified_with_local']) ? $p_data['unclassified_with_local'] : 0);
+          $this->include_unclassified_with_mac = (isset($p_data['unclassified_with_mac']) ? $p_data['unclassified_with_mac'] : 0);
+          $this->include_unclassified_mac_prefix = strtoupper((isset($p_data['unclassified_mac_prefix']) ? $p_data['unclassified_mac_prefix'] : ''));
+          $this->include_unclassified_max_devices = (isset($p_data['unclassified_max_devices']) ? $p_data['unclassified_max_devices'] : 3);
         }
       }
 
       // ----- Stop include mode
       else {
-        $this->include_generic_with_local = 0;
-        $this->include_generic_with_mac = 0;
-        $this->include_generic_mac_prefix = '';
-        $this->include_generic_max_devices = 3;
+        $this->include_unclassified_with_local = 0;
+        $this->include_unclassified_with_mac = 0;
+        $this->include_unclassified_mac_prefix = '';
+        $this->include_unclassified_max_devices = 3;
       }
 
       // ----- Reset new device count
@@ -2878,36 +2878,36 @@ JSON_EOT;
       }
 
       /*
-          protected $include_generic_with_local;
-    protected $include_generic_with_mac;
-    protected $include_generic_mac_prefix;
-    protected $include_generic_max_devices;
+          protected $include_unclassified_with_local;
+    protected $include_unclassified_with_mac;
+    protected $include_unclassified_mac_prefix;
+    protected $include_unclassified_max_devices;
         */
 
-      if ($p_class_name == 'generic') {
+      if ($p_class_name == 'unclassified') {
 
         // ----- Look for device count
-        if ($this->include_generic_max_devices < 1) {
-          ArubaWssTool::log('debug',  "Max generic device inclusion reached. Do not include.");
+        if ($this->include_unclassified_max_devices < 1) {
+          ArubaWssTool::log('debug',  "Max unclassified device inclusion reached. Do not include.");
           return(false);
         }
 
-      ArubaWssTool::log('debug',  "Check include with mac@ mode : '".$this->include_generic_with_mac."'");
-      ArubaWssTool::log('debug',  "Check include mac@ with prefix : '".$this->include_generic_mac_prefix."'");
+      ArubaWssTool::log('debug',  "Check include with mac@ mode : '".$this->include_unclassified_with_mac."'");
+      ArubaWssTool::log('debug',  "Check include mac@ with prefix : '".$this->include_unclassified_mac_prefix."'");
 
         // ----- Look for mac prefix
-        if (($this->include_generic_with_mac) && ($this->include_generic_mac_prefix != '')) {
-          ArubaWssTool::log('debug',  "Check MAC prefix '".$this->include_generic_mac_prefix."' for MAC '".$p_device_mac."'");
-          if (strpos($p_device_mac, $this->include_generic_mac_prefix) !== 0) {
+        if (($this->include_unclassified_with_mac) && ($this->include_unclassified_mac_prefix != '')) {
+          ArubaWssTool::log('debug',  "Check MAC prefix '".$this->include_unclassified_mac_prefix."' for MAC '".$p_device_mac."'");
+          if (strpos($p_device_mac, $this->include_unclassified_mac_prefix) !== 0) {
             ArubaWssTool::log('debug',  "No valid prefix mac for device. Do not include.");
             return(false);
           }
         }
 
-      ArubaWssTool::log('debug',  "Check include with local name : '".$this->include_generic_with_local."'");
+      ArubaWssTool::log('debug',  "Check include with local name : '".$this->include_unclassified_with_local."'");
 
         // ----- Look for local name
-        if ($this->include_generic_with_local) {
+        if ($this->include_unclassified_with_local) {
 
           if (!$p_telemetry->hasVendorName() && !$p_telemetry->hasLocalName() && !$p_telemetry->hasModel()) {
             ArubaWssTool::log('debug',  "No local value for device. Do not include.");
@@ -3057,9 +3057,9 @@ JSON_EOT;
           // ----- Remove double names
           if ($v_class_name == 'arubaBeacon iBeacon')
             $v_class_name = 'arubaBeacon';
-          // ----- Change name to 'generic'
-          if ($v_class_name == 'unclassified')
-            $v_class_name = 'generic';
+          // ----- Change name to 'unclassified'
+          //if ($v_class_name == 'unclassified')
+          //  $v_class_name = 'unclassified';
 
           // ----- Debug display
           ArubaWssTool::log('debug', "+-------------------------------------------------------------------------------+");
@@ -3096,8 +3096,8 @@ JSON_EOT;
             $v_device = $this->createDevice($v_device_mac, $v_class_name, $v_object);
 
             $this->include_device_count++;
-            if ($v_class_name == 'generic') {
-              $this->include_generic_max_devices--;
+            if ($v_class_name == 'unclassified') {
+              $this->include_unclassified_max_devices--;
             }
 
           }
@@ -3191,9 +3191,9 @@ JSON_EOT;
           // ----- Remove double names
           if ($v_class_name == 'arubaBeacon iBeacon')
             $v_class_name = 'arubaBeacon';
-          // ----- Change name to 'generic'
-          if ($v_class_name == 'unclassified')
-            $v_class_name = 'generic';
+          // ----- Change name to 'unclassified'
+          //if ($v_class_name == 'unclassified')
+          //  $v_class_name = 'unclassified';
 
           // ----- Get device mac @
           $v_device_mac = ($v_object->hasMac() ? ArubaWssTool::macToString($v_object->getMac()) : '');
@@ -6570,8 +6570,8 @@ enum NbTopic {
       }
 
       // ----- Set default value          
-      $this->vendor_id = 'generic';
-      $this->model_id = 'generic';
+      $this->vendor_id = 'unclassified';
+      $this->model_id = 'unclassified';
       
       // ----- Look for external regex file
       $v_filename = __DIR__."/awss/data/devices/class_regex.json";
@@ -7402,7 +7402,7 @@ enum NbTopic {
       }
       
       if ($this->vendor_id == '') {
-        if ($this->classname == 'generic') {
+        if ($this->classname == 'unclassified') {
           // TBC
           $this->setDeviceClassFromRegex();
           /*
