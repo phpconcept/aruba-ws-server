@@ -844,12 +844,24 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
     document.getElementById("tbody_telemetry_list").innerHTML = '';
     v_count_top_1 = 0;
+    
+    if (p_data.device.battery) {
+      var v_html = '';
+      v_html += '<td>';
+      v_html += '<span class="bt_modal_doc" >';
+      v_html += '<label class="w3-text-black" style="cursor: pointer;">Battery : '+p_data.device.battery.value+' %</label>';
+      v_html += '</span>';
+      v_html += '</td>';
+      v_count_top_1++;
+      document.getElementById("tbody_telemetry_list").innerHTML += '<tr>'+v_html+'</tr>';
+    }
+    
     for (i in p_data.device.telemetry_values) {
       var v_html = '';
 
       v_html += '<td>';
       v_html += '<span class="bt_modal_doc" >';
-      v_html += '<label class="w3-text-black" style="cursor: pointer;">'+p_data.device.telemetry_values[i].name+' ('+p_data.device.telemetry_values[i].type+') : '+p_data.device.telemetry_values[i].value+'</label>';
+      v_html += '<label class="w3-text-black" style="cursor: pointer;">'+p_data.device.telemetry_values[i].name+' : '+p_data.device.telemetry_values[i].value+'</label>';
       v_html += '</span>';
       v_html += '</td>';
       v_count_top_1++;

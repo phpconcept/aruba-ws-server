@@ -6532,9 +6532,12 @@ enum NbTopic {
       
       $v_item['nearest_ap_mac'] = $this->getNearestApMac();
       $v_item['rssi'] = $this->getNearestApRssi();
+      $v_item['nearest_ap_last_seen'] = $this->nearest_ap_last_seen;
+
       $v_item['vendor_name'] = $this->getVendorName();
       $v_item['local_name'] = $this->getLocalName();
       $v_item['model'] = $this->getModel();
+      
       $v_item['presence'] = $this->presence;
       
       $v_item['connect_status'] = $this->getConnectStatus();
