@@ -37,10 +37,14 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     
     "current_device_mac":"",
     
+    "current_reporter_mac":"",
+    
     "current_service_uuid":"",
     "current_char_uuid":"",
     
-    "char_list" : null
+    "char_list" : null,
+    
+    "area_list" : ['server', 'server_disconnected', 'server_settings', 'device', 'reporter']
     };
   var g_socket = null;
   
@@ -48,6 +52,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
   // ----- Actions to do at page load
   $(document).ready(function(){
   
+    awss_debug_div_close();
+        
     awss_device_change_to_disconnected('');
     awss_banner_message('');
 
@@ -217,10 +223,10 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
           
           else if (obj.data.type == 'reporter_status') {
             if (obj.data.status == 'active') {
-              //awss_device_change_to_connected(obj.data.device_mac);
+              awss_reporter_change_to_actif('');
             }
             else if (obj.data.status == 'inactive') {
-              //awss_device_change_to_disconnected(obj.data.device_mac);
+              awss_reporter_change_to_inactif('');
             }
             else {
               awss_log('Received unexpected reporter status: '+obj.data.status+' for :'+obj.data.device_mac);
@@ -255,6 +261,26 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
   }
   
+  function awss_area_open(p_area) {
+    if (!g_server['cnx_status']) {
+      p_area='server_disconnected';
+    }
+    // ----- Close all and one the one 
+    if (g_server['area_list'].includes(p_area)) {
+      g_server['area_list'].forEach(function(p_item) {
+        if (p_item == p_area) $('#grid_'+p_item).show();
+        else $('#grid_'+p_item).hide();
+      });
+    }        
+  }
+  /*
+  function awss_area_close(p_area) {
+    if (g_server['area_list'].includes(p_area)) {
+      $('#grid_'+p_area).hide();
+    }        
+  }
+  */
+  
   function awss_server_disconnect() {
     if ((g_server['cnx_status']) || (g_socket != null)) {
       g_socket.close(1000, "Bye bye");
@@ -272,11 +298,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       $('#bt_cnx').hide();
       $('#bt_dcnx').show();
   
-    $('#grid_device').hide();
-    $('#grid_reporter').hide();
-    $('#grid_server').show();
-    $('#grid_server_disconnected').hide();
-  
+    awss_area_open('server');
+      
     $('#div_include_mode').show();
     $('#div_actions').show();
     
@@ -288,6 +311,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
   }
   
   function awss_server_change_to_disconnected() {
+      awss_area_open('server_disconnected');
+
       g_server['cnx_status'] = false;
       
       $('#server_cnx_ok').hide();
@@ -299,11 +324,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       $('#bt_cnx').show();
       $('#bt_dcnx').hide();
   
-    $('#grid_device').hide();
-    $('#grid_reporter').hide();
-    $('#grid_server').hide();
-    $('#grid_server_disconnected').show();
-  
+    
     $('#div_include_mode').hide();
     $('#div_actions').hide();
     
@@ -318,7 +339,102 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     document.getElementById("span_nb_devices").innerHTML = p_data.websocket.devices_nb;
     
     awss_server_change_include_mode(p_data.websocket.include_mode);
+
+    document.getElementById("debug_text").innerHTML = JSON.stringify(p_data);
+    
+    document.getElementById("server_sett_ip").innerHTML = p_data.websocket.ip_address;
+    document.getElementById("server_sett_tcp").innerHTML = p_data.websocket.tcp_port;
+    document.getElementById("server_version").innerHTML = p_data.websocket.aruba_ws_version;
   
+    /*var d = new Date(p_data.websocket.up_time);
+    var n = d.getHours()+':'+d.getMinutes()+':'+d.getSeconds();
+    document.getElementById("server_uptime").innerHTML = d.getDateString();
+    */
+    document.getElementById("server_uptime").innerHTML = p_data.websocket.up_time;
+
+
+    document.getElementById("server_presence_timeout").value = p_data.websocket.presence_timeout;
+    document.getElementById("server_presence_min_rssi").value = p_data.websocket.presence_min_rssi;
+    document.getElementById("server_presence_histeresis").value = p_data.websocket.presence_rssi_hysteresis;
+    document.getElementById("server_nearest_ap_timeout").value = p_data.websocket.nearest_ap_timeout;
+    document.getElementById("server_nearest_ap_min_rssi").value = p_data.websocket.nearest_ap_min_rssi;
+    document.getElementById("server_nearest_ap_histeresis").value = p_data.websocket.nearest_ap_hysteresis;
+    document.getElementById("server_telemetry_max_timestamp").value = p_data.websocket.telemetry_max_timestamp;
+    document.getElementById("server_access_token").value = p_data.websocket.access_token;
+    document.getElementById("server_allow_list").value = '';
+    
+  
+    // ----- Display websocket cnx list
+    document.getElementById("tbody_websocket_cnx_list").innerHTML = '<tr><td>No connection</td></tr>';
+    if (p_data.websocket.connections_list) {
+      document.getElementById("tbody_websocket_cnx_list").innerHTML = '<tr><td><b>Id</b></td><td><b>Type</b></td><td><b>Remote IP</b></td></tr>';
+      var v_list = p_data.websocket.connections_list;
+      var v_count = 0;
+      for (i in v_list) {
+        var v_html = '';
+        v_html += '<td>';
+        v_html += ''+v_list[i].id+'';
+        v_html += '</td>';
+        v_html += '<td>';
+        v_html += ''+v_list[i].type+'';
+        v_html += '</td>';
+        v_html += '<td>';
+        v_html += ''+v_list[i].remote_ip+'';
+        v_html += '</td>';
+        v_count++;
+  
+        document.getElementById("tbody_websocket_cnx_list").innerHTML += '<tr>'+v_html+'</tr>';
+      }
+    }
+    
+    
+    // ----- Display extension info
+    document.getElementById("server_extension").innerHTML = 'No';
+    if ((p_data.websocket.extension) && (p_data.websocket.extension.name)) {
+      document.getElementById("server_extension").innerHTML = p_data.websocket.extension.name;
+    }
+    
+    // ----- Display extension info
+    document.getElementById("tbody_srv_notifications").innerHTML = '<tr><td>No registered notification</td></tr>';
+    if (p_data.websocket.notification_queue) {
+      document.getElementById("tbody_srv_notifications").innerHTML = '<tr><td><b>Id</b></td><td><b>Type</b></td><td><b>Callback Type</b></td><td><b>Callback Id</b></td><td><b>Timestamp</b></td></tr>';
+      var v_list = p_data.websocket.notification_queue;
+      var v_count = 0;
+      for (i in v_list) {
+        var v_html = '';
+        v_html += '<td>';
+        v_html += ''+v_list[i].notification_id+'';
+        v_html += '</td>';
+        v_html += '<td>';
+        v_html += ''+v_list[i].notification_type+'';
+        v_html += '</td>';
+        v_html += '<td>';
+        v_html += ''+v_list[i].cb_type+'';
+        v_html += '</td>';
+        v_html += '<td>';
+        v_html += ''+v_list[i].cb_id+'';
+        v_html += '</td>';
+        v_html += '<td>';
+        v_html += ''+v_list[i].timestamp+'';
+        v_html += '</td>';
+        v_count++;
+  
+        document.getElementById("tbody_srv_notifications").innerHTML += '<tr>'+v_html+'</tr>';
+      }
+    }
+    
+  /*
+{"websocket":{"aruba_ws_version":"1.4-beta","ip_address":"0.0.0.0","tcp_port":"8081","up_time":"2022-02-25 11:21:20",
+"presence_timeout":90,"presence_min_rssi":-90,"presence_rssi_hysteresis":5,"nearest_ap_hysteresis":5,"nearest_ap_timeout":90,
+"nearest_ap_min_rssi":-90,"reporters_allow_list":"","access_token":"","telemetry_max_timestamp":60,"reporters_nb":1,
+"devices_nb":0,"include_mode":1,"include_device_count":0,"device_type_allow_list":"enoceanSwitch,enoceanSensor,generic",
+"include_generic_with_local":0,"include_generic_with_mac":0,"include_generic_mac_prefix":"","include_generic_max_devices":"10",
+"stats":{"payload_data":12377,"raw_data":15792},"gatt_queue_nb":0,
+"connections_list":{"192.168.22.6:59057":{"id":"192.168.22.6:59057","type":"telemetry","remote_ip":"192.168.22.6"},"192.168.22.6:59058":{"id":"192.168.22.6:59058","type":"serial","remote_ip":"192.168.22.6"},"192.168.22.148:49558":{"id":"192.168.22.148:49558","type":"ws_api","remote_ip":"192.168.22.148"}},
+"extension":{"status":"no","name":""},
+"notification_queue":{"6218bbe1a8218":{"notification_id":"6218bbe1a8218","notification_type":"reporter_status","cb_type":"ws_api","cb_id":"192.168.22.148:49558","timestamp":1645788129,"data":[]}}}}
+
+  */
   }
   
   function awss_api_server_info() {
@@ -329,7 +445,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       "event":{
         "name":"websocket_info",
         "data": {
-          "xx":"xx"
+          "level":"extended"
         }
       }
     };
@@ -339,11 +455,21 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     
   }
       
-  function awss_server_div_open() {
-    $('#grid_device').hide();
-    $('#grid_reporter').hide();
-    $('#grid_server').show();
+  function awss_debug_div_open() {
+    if (g_server['cnx_status']) {
+      $('#grid_debug').show();   
+      awss_api_debug_info();
+    }
+  }
   
+  function awss_debug_div_close() {
+    $('#grid_debug').hide();
+  
+  }
+  
+  function awss_server_div_open() {
+    awss_area_open('server');
+    
   }
   
   function awss_server_change_include_mode(p_mode) {
@@ -369,6 +495,9 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
   }
 
       
+  function awss_server_settings_apply() {
+    alert('Not yet implemented');
+  }      
   
   function awss_api_include_mode(p_include_mode) {
   
@@ -706,15 +835,33 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     document.getElementById("device_local_name").innerHTML = p_data.device.local_name;
     document.getElementById("device_model").innerHTML = p_data.device.model;
     document.getElementById("device_rssi").innerHTML = p_data.device.rssi;
+    if ((p_data.device.presence) && (p_data.device.presence ==1 )) {
+      document.getElementById("device_status").innerHTML = '<button type="button" class="btn btn-success btn-xs" >Present</button>';
+    }
+    else {
+      document.getElementById("device_status").innerHTML = '<button type="button" class="btn btn-danger btn-xs" >Missing</button>';
+    }
 
     document.getElementById("tbody_telemetry_list").innerHTML = '';
     v_count_top_1 = 0;
+    
+    if (p_data.device.battery) {
+      var v_html = '';
+      v_html += '<td>';
+      v_html += '<span class="bt_modal_doc" >';
+      v_html += '<label class="w3-text-black" style="cursor: pointer;">Battery : '+p_data.device.battery.value+' %</label>';
+      v_html += '</span>';
+      v_html += '</td>';
+      v_count_top_1++;
+      document.getElementById("tbody_telemetry_list").innerHTML += '<tr>'+v_html+'</tr>';
+    }
+    
     for (i in p_data.device.telemetry_values) {
       var v_html = '';
 
       v_html += '<td>';
       v_html += '<span class="bt_modal_doc" >';
-      v_html += '<label class="w3-text-black" style="cursor: pointer;">'+p_data.device.telemetry_values[i].name+' ('+p_data.device.telemetry_values[i].type+') : '+p_data.device.telemetry_values[i].value+'</label>';
+      v_html += '<label class="w3-text-black" style="cursor: pointer;">'+p_data.device.telemetry_values[i].name+' : '+p_data.device.telemetry_values[i].value+'</label>';
       v_html += '</span>';
       v_html += '</td>';
       v_count_top_1++;
@@ -789,10 +936,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
     awss_api_device_list();
     
-    $('#grid_device').show();
-    $('#grid_reporter').hide();
-    $('#grid_server').hide();
-
+    awss_area_open('device');
+    
     $('#div_device_list').show();
   }
   
@@ -820,7 +965,11 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
     document.getElementById("tbody_device_list").innerHTML = '';
     v_count_top_1 = 0;
+    v_mac_default = '';
     for (i in v_list) {
+      if (v_mac_default == '') {
+        v_mac_default = v_list[i].mac;
+      } 
       var v_html = '';
       
       var v_name = v_list[i].name;
@@ -829,6 +978,14 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       }
 
       v_html += '<td>';
+
+      if (v_list[i].presence == 1) {
+        v_html += '<span class="w3-badge w3-green w3-medium" style="vertical-align: top;">&nbsp;</span>&nbsp;&nbsp;';
+      }
+      else {
+        v_html += '<span class="w3-badge w3-red w3-medium" style="vertical-align: top;">&nbsp;</span>&nbsp;&nbsp;';
+      }
+
       v_html += '<span class="bt_modal_doc" onClick="awss_device_open(\''+v_list[i].mac+'\');" >';
       v_html += '<label class="w3-text-black" style="cursor: pointer;">'+v_name+'</label>';
       v_html += '</span>';
@@ -840,7 +997,9 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     document.getElementById("device_list_nb").innerHTML = v_count_top_1;
     document.getElementById("span_nb_devices").innerHTML = v_count_top_1;
 
-
+    if (v_mac_default != '') {
+      awss_device_open(v_mac_default);
+    }
 
     return;
   }
@@ -905,10 +1064,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       return;
     }
 
-    $('#grid_device').hide();
-    $('#grid_reporter').show();
-    $('#grid_server').hide();
-    
+    awss_area_open('reporter');
+        
     awss_api_reporter_list();
   }
   
@@ -925,6 +1082,13 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       var v_html = '';
     
       v_html += '<td>';
+      if (p_list[i].status == 'active') {
+        v_html += '<span class="w3-badge w3-green w3-medium" style="vertical-align: top;">&nbsp;</span>&nbsp;&nbsp;';
+      }
+      else {
+        v_html += '<span class="w3-badge w3-red w3-medium" style="vertical-align: top;">&nbsp;</span>&nbsp;&nbsp;';
+      }
+      
       v_html += '<span class="bt_modal_doc" onClick="awss_reporter_div_open(\''+p_list[i].mac+'\');" >';
       v_html += '<label class="w3-text-black" style="cursor: pointer;">'+p_list[i].name+'</label>';
       v_html += '</span>';
@@ -945,12 +1109,26 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     return;
   }
 
+  function awss_reporter_change_to_actif(p_mac) {
+    //if (p_mac != g_server['current_reporter_mac']) {
+    //  return;
+    //}    
+    // ----- Reload all the reporters
+    awss_api_reporter_list();
+  }
+
+  function awss_reporter_change_to_inactif(p_mac) {
+    //if (p_mac != g_server['current_reporter_mac']) {
+    //  return;
+    //}    
+    // ----- Reload all the reporters
+    awss_api_reporter_list();
+  }
+
   function awss_api_reporter_list() {
 
-    $('#grid_device').hide();
-    $('#grid_reporter').show();
-      $('#grid_server').hide();
-
+    awss_area_open('reporter');
+    
     var v_data = {
       "api_version":"1.0",
       "api_key":g_server['api_key'],
@@ -1027,15 +1205,50 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
         
   function awss_reporter_display(p_data) {
   
+    var v_html = '';
+    if (p_data.reporter.status == 'active') {
+      v_html = '<button type="button" class="btn btn-success btn-xs" >Active</button>';
+      document.getElementById("reporter_status").innerHTML = v_html;
+      document.getElementById("reporter_uptime").innerHTML = p_data.reporter.uptime;
+    }
+    else {
+      v_html = '<button type="button" class="btn btn-danger btn-xs" >Down</button>';
+      document.getElementById("reporter_status").innerHTML = v_html;
+      document.getElementById("reporter_uptime").innerHTML = '';
+    }
+
     document.getElementById("reporter_name").innerHTML = p_data.reporter.name;
     document.getElementById("reporter_mac").innerHTML = p_data.reporter.mac;
-    document.getElementById("reporter_status").innerHTML = p_data.reporter.status;
     document.getElementById("reporter_remote_ip").innerHTML = p_data.reporter.remote_ip;
     document.getElementById("reporter_local_ip").innerHTML = p_data.reporter.local_ip;
     document.getElementById("reporter_hardware_type").innerHTML = p_data.reporter.hardware_type;
     document.getElementById("reporter_software_version").innerHTML = p_data.reporter.software_version;
     document.getElementById("reporter_software_build").innerHTML = p_data.reporter.software_build;
-    document.getElementById("reporter_uptime").innerHTML = p_data.reporter.uptime;
+    
+    if ((p_data.reporter.cnx_ble) && (p_data.reporter.cnx_ble != '')) {
+      document.getElementById("ap_cnx_ble").innerHTML = '<button type="button" class="btn btn-success btn-xs" >Active</button> (id:'+p_data.reporter.cnx_ble+')';
+    }
+    else {
+      document.getElementById("ap_cnx_ble").innerHTML = '<button type="button" class="btn btn-xs" >Inactive</button>';
+    }
+    if ((p_data.reporter.cnx_zigbee) && (p_data.reporter.cnx_zigbee != '')) {
+      document.getElementById("ap_cnx_zigbee").innerHTML = '<button type="button" class="btn btn-success btn-xs" >Active</button> (id:'+p_data.reporter.cnx_zigbee+')';
+    }
+    else {
+      document.getElementById("ap_cnx_zigbee").innerHTML = '<button type="button" class="btn btn-xs" >Inactive</button>';
+    }
+    if ((p_data.reporter.cnx_serial) && (p_data.reporter.cnx_serial != '')) {
+      document.getElementById("ap_cnx_serial").innerHTML = '<button type="button" class="btn btn-success btn-xs" >Active</button> (id:'+p_data.reporter.cnx_serial+')';
+    }
+    else {
+      document.getElementById("ap_cnx_serial").innerHTML = '<button type="button" class="btn btn-xs" >Inactive</button>';
+    }
+    if ((p_data.reporter.cnx_rtls) && (p_data.reporter.cnx_rtls != '')) {
+      document.getElementById("ap_cnx_rtls").innerHTML = '<button type="button" class="btn btn-success btn-xs" >Active</button> (id:'+p_data.reporter.cnx_rtls+')';
+    }
+    else {
+      document.getElementById("ap_cnx_rtls").innerHTML = '<button type="button" class="btn btn-xs" >Inactive</button>';
+    }
 
     return;
   }
@@ -1089,6 +1302,26 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
   }
 
+
+  function awss_api_debug_info() {
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"websocket_info",
+        "data": {
+          "level":"extended"
+        }
+      }
+    };
+    
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+    
+  }
+  
+  
 </script>
 
 
@@ -1125,6 +1358,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     <div class="w3-dropdown-content w3-card-4 w3-bar-block" style="width:300px">
 
              <a href="#" class="w3-bar-item w3-button" onClick="awss_server_div_open();">Dashboard</a>
+             <a href="#" class="w3-bar-item w3-button" onClick="awss_debug_div_open();">Debug</a>
 			    
 	
     </div>
@@ -1133,7 +1367,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
   <div class="w3-dropdown-hover w3-button w3-hide-small w3-right w3-padding-large w3-hover-white"><span class="glyphicon glyphicon-cog"></span>&nbsp;&nbsp; Settings &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
     <div class="w3-dropdown-content w3-card-4 w3-bar-block" style="width:300px">
-      <a href="#" class="w3-bar-item w3-button">Settings</a>
+      <a href="#" class="w3-bar-item w3-button" onclick="awss_api_server_info(); awss_area_open('server_settings');">Settings</a>
 
       <a href="#" class="w3-bar-item w3-button" onClick="awss_server_disconnect();">Disconnect</a>
     </div>
@@ -1202,7 +1436,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
 
 
-  <!-- The Grid Server -->
+  <!-- The Grid Server Disconencted -->
   <div class="w3-row" id="grid_server_disconnected">
 
     <!-- Left Column -->
@@ -1267,13 +1501,22 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     <!-- End Right Column -->
 
   </div>
-  <!-- End Row The Grid Server -->
+  <!-- End Row The Grid Server Disconnected -->
 
 
 
 
 
-  <!-- The Grid Server -->
+
+
+
+
+
+
+
+
+
+  <!-- The Grid Server Details -->
   <div class="w3-row" id="grid_server">
 
     <!-- Left Column -->
@@ -1461,7 +1704,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     <!-- End Right Column -->
 
   </div>
-  <!-- End Row The Grid Server -->
+  <!-- End Row The Grid Server Dashboard -->
 
 
 
@@ -1471,6 +1714,196 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
 
 
+
+
+
+
+  <!-- The Grid Server Settings -->
+  <div class="w3-row" id="grid_server_settings">
+
+    <!-- Left Column -->
+    <!-- End Left Column -->
+
+    <!-- begin central Column -->
+    <div id="div_server_central_settings" class="w3-col m10">
+
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
+
+              <h2>Server Info</h2>
+
+              <table class="table">
+                  <tbody>
+                    <tr>
+                      <td align="right">Version :</td><td><span id="server_version"></span></td>
+                    </tr>
+                    <tr>
+                      <td align="right">IP Address :</td><td><span id="server_sett_ip"></span></td>
+                    </tr>
+                    <tr>
+                      <td align="right">TCP Port :</td><td><span id="server_sett_tcp"></span></td>
+                    </tr>
+                    <tr>
+                      <td align="right">Extension :</td><td><span id="server_extension"></span></td>
+                    </tr>
+                    <tr>
+                      <td align="right">Up Time :</td><td><span id="server_uptime"></span></td>
+                    </tr>
+                  </tbody>
+              </table>
+
+      </div>
+      <!-- Block -->
+
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
+
+              <h2>Server Settings</h2>
+
+              <table class="table">
+                  <tbody>
+                    <tr>
+                      <td align="right">Presence timeout :</td><td><input class="w3-border w3-round-large" type="text" id="server_presence_timeout" value=""> secondes</td>
+                    </tr>
+                    <tr>
+                      <td align="right">Presence minimum RSSI :</td><td><input class="w3-border w3-round-large" type="text" id="server_presence_min_rssi" value=""> dBm</td>
+                    </tr>
+                    <tr>
+                      <td align="right">Presence minimum Hysteresis :</td><td><input class="w3-border w3-round-large" type="text" id="server_presence_histeresis" value=""> dBm</td>
+                    </tr>
+                    <tr>
+                      <td align="right">Nearest AP timeout :</td><td><input class="w3-border w3-round-large" type="text" id="server_nearest_ap_timeout" value=""> secondes</td>
+                    </tr>
+                    <tr>
+                      <td align="right">Nearest AP minimum RSSI :</td><td><input class="w3-border w3-round-large" type="text" id="server_nearest_ap_min_rssi" value=""> dBm</td>
+                    </tr>
+                    <tr>
+                      <td align="right">Nearest AP Hysteresis :</td><td><input class="w3-border w3-round-large" type="text" id="server_nearest_ap_histeresis" value=""> dBm</td>
+                    </tr>
+                    <tr>
+                      <td align="right">Duplicate telemetry value max timestamp :</td><td><input class="w3-border w3-round-large" type="text" id="server_telemetry_max_timestamp" value=""> secondes</td>
+                    </tr>
+                    <tr>
+                      <td align="right">Reporters access token :</td><td><input class="w3-border w3-round-large" type="text" id="server_access_token" value=""> </td>
+                    </tr>
+                    <tr>
+                      <td align="right">Reporters allow list :</td><td><input class="w3-border w3-round-large" type="text" id="server_allow_list" value=""> </td>
+                    </tr>
+
+
+                    <tr>
+                      <td colspan="2">
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" id="start_include_bt" onclick="awss_server_settings_apply();">Apply</button>
+        </h4>              
+                      </td>
+                    </tr>
+                  </tbody>
+              </table>
+
+      </div>
+      <!-- Block -->
+
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
+
+              <h2>Websocket TCP Connections</h2>
+
+              <table class="table">
+                <tbody id="tbody_websocket_cnx_list">
+                  <!-- Filled by Javascript -->
+                </tbody>
+              </table>
+
+      </div>
+      <!-- Block -->
+
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
+              <h2>Notifications Queue</h2>
+              <table class="table">
+                <tbody id="tbody_srv_notifications">
+                  <!-- Filled by Javascript -->
+                  <tr><td>No registered notifications</td></tr>
+                </tbody>
+              </table>
+      </div>
+      <!-- Block -->
+
+
+    </div>
+    <!-- End central Column -->
+
+    <!-- begin Right Column -->
+    <div id="div_actions" class="w3-col m2">
+
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
+
+              <h2>Actions</h2>
+
+              <table class="table">
+                  <tbody>
+                    <tr>
+                      <td>
+              
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_device_list_div_open();">Device List</button>
+        </h4>
+
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_reporter_list_div_open();">Reporter List</button>
+        </h4>
+
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_modal_open(1);">Modal Test</button>
+        </h4>
+              
+              
+                      </td>
+                    </tr>
+                  </tbody>
+              </table>
+
+      </div>
+      <!-- Block -->
+
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
+
+              <h2>Server</h2>
+
+              <table class="table">
+                  <tbody>
+                    <tr>
+                      <td>
+              
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_server_disconnect();">Disconnect</button>
+        </h4>              
+              
+                      </td>
+                    </tr>
+                  </tbody>
+              </table>
+
+      </div>
+      <!-- Block -->
+
+    </div>
+    <!-- End Right Column -->
+
+  </div>
+  <!-- End Row The Grid Settings Details -->
+
+
+
+
+
+
+
+
+  
 
 
 
@@ -1519,47 +1952,31 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     <div class="w3-col m8">
 
       <!-- Block -->
-      <div id="div_docs_exact" class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
 
-              <h2>Device "<span id="device_name"></span>" 
-              <span class="w3-right">
-              <button type="button" class="btn btn-success btn-xs" id="device_cnx_ok">Connected</button>
-              <span class="glyphicon glyphicon-refresh" onclick="awss_device_open(g_server['current_device_mac']);" style="cursor: pointer;"></span>&nbsp;
-              </span>
-              </h2>
+        <h2>Device "<span id="device_name"></span>" 
+        <span class="w3-right">
+        <button type="button" class="btn btn-success btn-xs" id="device_cnx_ok">Connected</button>
+        <span class="glyphicon glyphicon-refresh" onclick="awss_device_open(g_server['current_device_mac']);" style="cursor: pointer;"></span>&nbsp;
+        </span>
+        </h2>
 
-              <table class="table">
-                  <tbody>
-                    <tr>             
-              <td><h4><b>Device MAC</b> : <span id="device_mac"></span></h4></td>
-                    </tr>
-                    <tr><td>
-              <h4><i>Aruba Classname : </i><span id="device_classname"></span></h4>
-              <h4><i>BLE Vendor Name : </i><span id="device_vendor_name"></span></h4>
-              <h4><i>BLE Local Name : </i><span id="device_local_name"></span></h4>
-              <h4><i>BLE Model : </i><span id="device_model"></span></h4>
-                    </td></tr>
-                    <tr><td>
-              <h4><i>Vendor : </i><span id="device_vendor_id"></span></h4>
-              <h4><i>Model : </i><span id="device_model_id"></span></h4>
-                    </td></tr>
-                    <tr><td>
-              <h4><i>Nearest AP MAC : </i><span id="device_nearest_ap_mac"></span></h4>
-              <h4><i>RSSI : </i><span id="device_rssi"></span></h4>
-                    </td></tr>
-                  </tbody>
-              </table>
-
-        <h4 class="w3-center">
-          <button class="w3-btn w3-blue  w3-round-large" onclick="awss_device_open(g_server['current_device_mac']);">Refresh</button>
-          &nbsp;&nbsp;  
-          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_discover" onclick="awss_api_device_discover(g_server['current_device_mac']);">Characteristics Discovery</button>
-          &nbsp;&nbsp;  
-          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_cnx" onclick="awss_api_device_connect(g_server['current_device_mac'], 1);">BLE Connect</button>
-          &nbsp;&nbsp;  
-          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_dcnx" onclick="awss_api_device_connect(g_server['current_device_mac'], 0);">BLE Disconnect</button>
-        </h4>
-
+        <table class="table">
+            <tbody>
+              <tr>             
+        <td align="right" style="width:25%">MAC Address : </td><td><span id="device_mac"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">Vendor, Model : </td><td><span id="device_vendor_id"></span>, <span id="device_model_id"></span></td>
+              </tr>
+              <tr>             
+        <td align="right" style="width:25%">Status : </td><td><span id="device_status"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">Active uptime : </td><td><span id="device_uptime"></span></td>
+              </tr>
+            </tbody>
+        </table>
 
       </div>
       <!-- Block -->
@@ -1583,16 +2000,25 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       </div>
       <!-- Block -->
 
+
       <!-- Block -->
       <div id="div_char_list" class="w3-container w3-card-2 w3-white w3-round w3-margin">
 
         <h2><span class="glyphicon glyphicon-tag"></span>
-        <span id="char_list_name">Device Characteristics</span>&nbsp;<span class="w3-badge w3-green w3-medium" id="char_list_nb" style="vertical-align: top;">0</span>
-        <span class="w3-right"><button type="button" class="btn btn-xs" onclick="awss_device_char_read_list();">read multiple</button></span>
+        <span id="char_list_name">Device Characteristics</span>&nbsp;<span class="w3-badge w3-green w3-medium" id="char_list_nb" style="vertical-align: top;">0</span>        
         </h2>
-        <input type="hidden" id="char_list_id" value="aruba ">
+
+        <h4 class="w3-center">
+          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_discover" onclick="awss_api_device_discover(g_server['current_device_mac']);">Characteristics Discovery</button>
+          &nbsp;&nbsp;  
+          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_cnx" onclick="awss_api_device_connect(g_server['current_device_mac'], 1);">BLE Connect</button>
+          &nbsp;&nbsp;  
+          <button class="w3-btn w3-blue  w3-round-large" id="bt_ble_dcnx" onclick="awss_api_device_connect(g_server['current_device_mac'], 0);">BLE Disconnect</button>
+        </h4>
 
         <div class="table-responsive table-condensed" style="min-height:10px; max-height:400px;">
+        <h4><span class="w3-right"><button type="button" class="btn btn-xs" onclick="awss_device_char_read_list();">read multiple</button></span></h4>
+        <br>
           <table class="table table-hover">
             <tbody id="tbody_char_list">
               <!-- Filled by Javascript -->
@@ -1603,12 +2029,47 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       </div>
       <!-- Block -->
 
-      <!-- Empty Block pour garder l'espace-->
-      <div class="">
-        &nbsp;
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+
+        <h3>Nearest Reporter</h3>
+        <table class="table">
+            <tbody>
+              <tr>             
+        <td align="right" style="width:25%">Nearest AP MAC : </td><td><span id="device_nearest_ap_mac"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">RSSI : </td><td><span id="device_rssi"></span></td>
+              </tr>
+            </tbody>
+        </table>
+        
       </div>
       <!-- Block -->
 
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+
+        <h3>Properties</h3>
+        <table class="table">
+            <tbody>
+              <tr>             
+        <td align="right" style="width:25%">Aruba Classname : </td><td><span id="device_classname"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">BLE Vendor Name : </td><td><span id="device_vendor_name"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">BLE Local Name : </td><td><span id="device_local_name"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">BLE Model : </td><td><span id="device_model"></span></td>
+              </tr>
+            </tbody>
+        </table>
+        
+      </div>
+      <!-- Block -->
 
 
     <!-- End Central Column -->
@@ -1619,6 +2080,14 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
   <!-- End Grid -->
   </div>
   <!-- End Row The Grid Device -->
+
+
+
+
+
+
+
+
 
 
   <!-- The Grid -->
@@ -1662,41 +2131,76 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     <div class="w3-col m8">
 
       <!-- Block -->
-      <div id="div_docs_exact" class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
 
-              <h2>Reporter "<span id="reporter_name"></span>"</h2>
+        <h2>Reporter "<span id="reporter_name"></span>"</h2>
 
-              <table class="table">
-                  <tbody>
-                    <tr>
-                      <td>
-              
-              <table class="table">
-                  <tbody>
-                    <tr>             
-              <td><h4><b>Reporter MAC</b> : <span id="reporter_mac"></span></h4></td>
-              <h4><i>status : </i><span id="reporter_status"></span></h4>
-                    </tr>
-                    <tr><td>
-              <h4><i>Remote IP : </i><span id="reporter_remote_ip"></span></h4>
-              <h4><i>Local IP : </i><span id="reporter_local_ip"></span></h4>
-                    </td></tr>
-                    <tr><td>
-              <h4><i>Hardware Type : </i><span id="reporter_hardware_type"></span></h4>
-              <h4><i>Software Version : </i><span id="reporter_software_version"></span></h4>
-              <h4><i>Software Build : </i><span id="reporter_software_build"></span></h4>
-                    </td></tr>
-                    <tr><td>
-              <h4><i>Uptime : </i><span id="reporter_uptime"></span></h4>
-                    </td></tr>
-                  </tbody>
-              </table>
-              
-                      </td>
-                    </tr>
-                  </tbody>
-              </table>
+        <table class="table">
+            <tbody>
+              <tr>             
+        <td align="right" style="width:25%">Status : </td><td><span id="reporter_status"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">Active uptime : </td><td><span id="reporter_uptime"></span></td>
+              </tr>
+            </tbody>
+        </table>
 
+      </div>
+      <!-- Block -->
+
+        
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+
+        <h3>Properties</h3>
+        <table class="table">
+            <tbody>
+              <tr>             
+        <td align="right" style="width:25%">MAC Address : </td><td><span id="reporter_mac"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">Remote IP : </td><td><span id="reporter_remote_ip"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">Local IP : </td><td><span id="reporter_local_ip"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">Hardware Type : </td><td><span id="reporter_hardware_type"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">Software Version : </td><td><span id="reporter_software_version"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">Software Build : </td><td><span id="reporter_software_build"></span></td>
+              </tr>
+            </tbody>
+        </table>
+        
+      </div>
+      <!-- Block -->
+
+      <!-- Block -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+
+        <h3>Websocket Connections</h3>
+        <table class="table">
+            <tbody>
+              <tr>             
+        <td align="right" style="width:25%">BLE Connection : </td><td><span id="ap_cnx_ble"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">Zigbee Connection : </td><td><span id="ap_cnx_zigbee"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">Serial Connection : </td><td><span id="ap_cnx_serial"></span></td>
+              </tr>
+              <tr>             
+        <td align="right">WiFi RTLS Connection : </td><td><span id="ap_cnx_rtls"></span></td>
+              </tr>
+            </tbody>
+        </table>
+        
       </div>
       <!-- Block -->
 
@@ -1715,6 +2219,41 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
   <!-- End Grid -->
   </div>
+
+
+
+
+  
+  <!-- The Grid Debug -->
+  <div class="w3-row" id="grid_debug">
+
+    <!-- Left Column -->
+    <div class="w3-col m12">
+
+      <!-- Block --><!-- AWSS Banner -->
+      <div class="w3-container w3-card-2 w3-white w3-round w3-margin" >
+ 
+               <h2>Debug
+               <span class="w3-right">
+              <button type="button" class="btn btn-warning btn-xs" id="server_cnx_nok" onclick="awss_debug_div_close();">
+              Close</button>            
+              &nbsp;
+              </span></h2>
+               <hr>
+
+        <pre id="debug_text">
+        </pre>
+
+      </div>
+      <!-- Block -->
+
+    </div>
+    <!-- End Left Column -->
+
+  </div>
+  <!-- End Row The Grid Debug -->
+
+
 
 
 </form>

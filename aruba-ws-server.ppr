@@ -21,6 +21,7 @@ aruba-ws-server
 				awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.json
 				awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.adv.php
 				awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php
+				awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.char.php
 			awss\data\devices\class_regex.json
 			awss\data\devices\telemetry_global.json
 			awss\data\devices\aruba_class.json
@@ -32,6 +33,7 @@ aruba-ws-server
 			doc\install\install_docker\Dockerfile
 			doc\Proto.md
 			doc\Dependencies.md
+			doc\dev_notes.txt
 		+Client-Test
 			awss\client\websocket_client.html
 		+Proto-class
@@ -63,17 +65,27 @@ aruba-ws-server
 12=README.md
 13=awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php
 14=awss\data\devices\aruba_class.json
+15=awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.char.php
+16=doc\dev_notes.txt
 [Selected Project Files]
 Main=
-Selected=README.md
+Selected=aruba-ws-server.php
 [aruba-ws-server.php]
 TopLine=1
 Caret=35,17
-Mark1=55,6676
+Mark1=55,6552
+Mark2=95,3375
+Mark3=76,1372
+Mark4=35,978
+Mark5=1,996
+Mark6=125,8275
+Mark7=36,6535
 [awss\client\websocket_client.html]
-TopLine=506
-Caret=21,541
-Mark1=1,500
+TopLine=1
+Caret=1,25
+Mark1=70,344
+Mark2=1,1834
+Mark3=51,386
 [doc\API.md]
 TopLine=1
 Caret=1,1
@@ -88,10 +100,10 @@ TopLine=1
 Caret=1,24
 [composer.json]
 TopLine=1
-Caret=33,20
+Caret=34,21
 [doc\Dependencies.md]
 TopLine=1
-Caret=70,18
+Caret=59,33
 [awss\data\devices\class_regex.json]
 TopLine=1
 Caret=9,14
@@ -102,14 +114,20 @@ Caret=1,3
 TopLine=1
 Caret=20,7
 [awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.adv.php]
-TopLine=31
+TopLine=23
 Caret=1,69
 [README.md]
-TopLine=289
-Caret=13,311
+TopLine=345
+Caret=13,351
 [awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php]
-TopLine=48
-Caret=19,69
+TopLine=45
+Caret=11,47
 [awss\data\devices\aruba_class.json]
 TopLine=1
 Caret=23,13
+[awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.char.php]
+TopLine=1
+Caret=1,5
+[doc\dev_notes.txt]
+TopLine=1
+Caret=1,23
