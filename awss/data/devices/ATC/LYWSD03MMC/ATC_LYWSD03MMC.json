@@ -1,0 +1,26 @@
+{
+  "vendor_id": "ATC",
+  "model_id": "LYWSD03MMC",
+  "aruba_class": "unclassified", 
+  "name": "ATC Sensor",
+  "description": "",
+  "gatt_supported": 1,
+  "telemetry_auto" : 1,
+  "telemetry_allowed": ["any"],
+  "telemetry_expected": ["temperatureC", "humidity", "battery"],
+  "telemetry_denied": ["occupancy"],
+  "telemetry_custom": {
+    "sample": {
+      "name": "Sample",
+      "description": "Sample (Kg)",
+      "type" : "numeric",
+      "allow_type" : "expected",
+      "unit" : "Kg",
+      "min_value" : 0,
+      "max_value" : 10000,
+      "default_value" : 0
+    }
+  },
+  "command": {
+  }
+}

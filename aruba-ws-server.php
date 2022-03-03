@@ -346,13 +346,13 @@
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
-     * Method : getDeviceClassList()
+     * Method : getVendorDeviceList()
      * Description :
      * ---------------------------------------------------------------------------
      */
-    static function getDeviceClassList() {
+    static function getVendorDeviceList() {
       global $aruba_iot_websocket;
-      return($aruba_iot_websocket->getDeviceClassList());
+      return($aruba_iot_websocket->getVendorDeviceList());
     }
     /* -------------------------------------------------------------------------*/
 
@@ -365,15 +365,15 @@
       $v_result = array();
       
       // ----- Get known device class list
-      $v_list = ArubaWssTool::getDeviceClassList();
+      $v_list = ArubaWssTool::getVendorDeviceList();
       
       // ----- Extract vendor_id:device_id from Aruba classname
       foreach ($v_list as $v_key => $v_vendor) {
         foreach ($v_vendor['devices'] as $v_device) {
-          ArubaWssTool::log('debug', "Look for : ".$v_vendor['name'].':'.$v_device['name']);
+          ArubaWssTool::log('debug', "Look for : ".$v_vendor['vendor_id'].':'.$v_device['model_id']);
           if ($v_device['aruba_class'] == $p_classname) {
-            $v_result['vendor_id'] = $v_vendor['name'];
-            $v_result['model_id'] = $v_device['name'];
+            $v_result['vendor_id'] = $v_vendor['vendor_id'];
+            $v_result['model_id'] = $v_device['model_id'];
             return($v_result);
           }
         }
@@ -672,11 +672,11 @@
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
-     * Method : getDeviceClassList()
+     * Method : getVendorDeviceList()
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function getDeviceClassList() {
+    public function getVendorDeviceList() {
       return($this->device_class_list);
     }
     /* -------------------------------------------------------------------------*/
@@ -714,8 +714,69 @@
         $this->device_class_list[$v_key]['type'] = 'classified';  
       }
       
-      //ArubaWssTool::log('debug', "device_class_list : ".print_r($this->device_class_list, true));
+      // ----- Load custom vendor/device classes
+      $v_dirname = __DIR__."/awss/data/devices";
+      $v_vendor_dir_list = array_diff(scandir($v_dirname), array('..', '.'));
+      foreach ($v_vendor_dir_list as $v_vendor_dir) {
+        if (is_dir($v_dirname.'/'.$v_vendor_dir)) {
+          // ----- Array for this vendor to store all the devices
+          // TBC : In the future need to read this dynammically in a json file
+          $v_vendor = array();     
+          $v_vendor['vendor_id'] = $v_vendor_dir;
+          $v_vendor['name'] = $v_vendor_dir;
+          $v_vendor['description'] = '';
+          $v_vendor['type'] = 'unclassified';         
+          $v_vendor['devices'] = array();    
+
+          $v_device_dir_list = array_diff(scandir($v_dirname.'/'.$v_vendor_dir), array('..', '.'));
+          foreach ($v_device_dir_list as $v_device_dir) {
+            if (is_dir($v_dirname.'/'.$v_vendor_dir.'/'.$v_device_dir)) {
+              $v_filename = $v_dirname.'/'.$v_vendor_dir.'/'.$v_device_dir.'/'.$v_vendor_dir.'_'.$v_device_dir.'.json';
     
+              if (!file_exists($v_filename)) {
+                ArubaWssTool::log('error', "Missing Aruba Class JSON file '".$v_filename."'");
+                continue;
+              }
+              
+              // ----- Read file
+              if (($v_handle = @fopen($v_filename, "r")) === null) {
+                ArubaWssTool::log('error', "Fail to open Aruba Class JSON file '".$v_filename."'");
+                continue;
+              }
+              $v_list_json = @fread($v_handle, filesize($v_filename));
+              @fclose($v_handle);
+    
+              if (($v_device = json_decode($v_list_json, true)) === null) {
+                ArubaWssTool::log('error', "Badly formatted JSON content in file '".$v_filename."'");
+                continue;
+              }
+              
+              // ----- Some sanity checks
+              if ($v_device['model_id'] != $v_device_dir) {
+                ArubaWssTool::log('error', "Device model_id inconsistency in json file '".$v_filename."'. Device ignored.");
+                continue;
+              }
+              if (isset($v_device['vendor_id']) && ($v_device['vendor_id'] != $v_vendor_dir)) {
+                ArubaWssTool::log('error', "Device vendor_id inconsistency in json file '".$v_filename."'. Device ignored.");
+                continue;
+              }
+              
+              // ---- Some forced values
+              $v_device['aruba_class'] = 'unclassified';
+              
+              // ----- Add the device to the vendor list
+              $v_vendor['devices'][$v_device_dir] = $v_device;
+            }
+          }
+
+          // ----- Add the vendor to the list
+          $this->device_class_list[$v_vendor_dir] = $v_vendor;
+
+        }
+      }
+      
+      ArubaWssTool::log('debug', "device_class_list : ".print_r($this->device_class_list, true));
+            
       return($this->device_class_list);
     }
     /* -------------------------------------------------------------------------*/
@@ -2568,7 +2629,7 @@ JSON_EOT;
       //  return($v_response);
       //}
 
-      $v_response['data']['vendor_list'] = $this->getDeviceClassList();
+      $v_response['data']['vendor_list'] = $this->getVendorDeviceList();
       
       $v_response['status'] = 'success';
               

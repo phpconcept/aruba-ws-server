@@ -22,6 +22,7 @@ aruba-ws-server
 				awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.adv.php
 				awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php
 				awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.char.php
+				awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.json
 			awss\data\devices\class_regex.json
 			awss\data\devices\telemetry_global.json
 			awss\data\devices\aruba_class.json
@@ -36,7 +37,7 @@ aruba-ws-server
 			doc\dev_notes.txt
 		+Client-Test
 			awss\client\websocket_client.html
-		+Proto-class
+		-Proto-class
 			src\aruba_telemetry\IotSbMessage.php
 			src\aruba_telemetry\Meta.php
 			src\aruba_telemetry\NbTopic.php
@@ -64,19 +65,21 @@ aruba-ws-server
 11=awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php
 12=awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.char.php
 13=doc\dev_notes.txt
+14=awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.json
+15=awss\data\devices\aruba_class.json
 [Selected Project Files]
 Main=
-Selected=README.md
+Selected=aruba-ws-server.php
 [aruba-ws-server.php]
-TopLine=369
-Caret=5,389
-Mark1=55,6552
-Mark2=95,3375
-Mark3=76,1372
-Mark4=35,978
-Mark5=1,996
-Mark6=125,8275
-Mark7=36,6535
+TopLine=749
+Caret=7,779
+Mark1=55,6639
+Mark2=95,3462
+Mark3=76,1433
+Mark4=35,1039
+Mark5=1,1057
+Mark6=125,8362
+Mark7=36,6622
 [awss\client\websocket_client.html]
 TopLine=430
 Caret=5,452
@@ -103,7 +106,7 @@ TopLine=1
 Caret=59,33
 [awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.json]
 TopLine=1
-Caret=20,7
+Caret=25,5
 [awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.adv.php]
 TopLine=37
 Caret=1,69
@@ -111,11 +114,17 @@ Caret=1,69
 TopLine=335
 Caret=1,363
 [awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.adv.php]
-TopLine=5
-Caret=11,47
+TopLine=10
+Caret=5,27
 [awss\data\devices\Jinou\Sensor_HumiTemp\Jinou_Sensor_HumiTemp.char.php]
 TopLine=1
 Caret=1,5
 [doc\dev_notes.txt]
 TopLine=1
 Caret=31,12
+[awss\data\devices\ATC\LYWSD03MMC\ATC_LYWSD03MMC.json]
+TopLine=1
+Caret=1,27
+[awss\data\devices\aruba_class.json]
+TopLine=203
+Caret=21,223
