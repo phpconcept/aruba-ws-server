@@ -775,7 +775,7 @@
         }
       }
       
-      ArubaWssTool::log('debug', "device_class_list : ".print_r($this->device_class_list, true));
+      //ArubaWssTool::log('debug', "device_class_list : ".print_r($this->device_class_list, true));
             
       return($this->device_class_list);
     }
@@ -6974,29 +6974,6 @@ enum NbTopic {
       }
     }
     /* -------------------------------------------------------------------------*/
-
-    /**---------------------------------------------------------------------------
-     * Method : setTelemetryBatteryValue()
-     * Description :
-     * Return Value :
-     * ---------------------------------------------------------------------------
-     */
-    public function setTelemetryBatteryValue_DEPRECATED($p_value) {
-    
-      if (($p_value < 0) || ($p_value > 101)) {
-        $p_value = 101; // means unknown
-      }
-      
-      // ----- Flag only if new value
-      if ($this->battery_value != $p_value) {
-        $this->battery_value = $p_value;
-        $this->setChangedFlag('battery');
-      }
-
-      $this->battery_timestamp = time();
-    }
-    /* -------------------------------------------------------------------------*/
-
 
     /**---------------------------------------------------------------------------
      * Method : updateNearestAP()
