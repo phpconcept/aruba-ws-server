@@ -2551,6 +2551,32 @@ JSON_EOT;
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : apiEvent_vendor_list()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    protected function apiEvent_vendor_list($p_data, $p_cnx_id='', $p_external_id='') {
+      $v_response = array();
+      $v_response['status'] = 'fail';
+      $v_response['status_msg'] = '';
+      $v_response['from_event'] = 'vendor_list';
+      $v_response['event_id'] = $p_external_id;
+      $v_response['data'] = array();
+
+      // ----- Check mandatory fields are present
+      //if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
+      //  return($v_response);
+      //}
+
+      $v_response['data']['vendor_list'] = $this->getDeviceClassList();
+      
+      $v_response['status'] = 'success';
+              
+      return($v_response);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : apiEvent_include_mode()
      * Description :
      * {
