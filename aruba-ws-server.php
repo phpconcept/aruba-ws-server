@@ -361,8 +361,21 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    static function arubaClassToVendor($p_classname) {
+    static function arubaClassToVendor($p_classname, $p_as_string=false) {
       $v_result = array();
+      
+      // ----- Check for unclassified one
+      if ($p_classname == 'unclassified') {
+        $v_result['vendor_id'] = 'unclassified';
+        $v_result['model_id'] = 'unclassified';
+  
+        if ($p_as_string) {
+          return($v_result['vendor_id'].':'.$v_result['model_id']);
+        }
+        else {
+          return($v_result);
+        }
+      }
       
       // ----- Get known device class list
       $v_list = ArubaWssTool::getVendorDeviceList();
@@ -374,16 +387,28 @@
           if ($v_device['aruba_class'] == $p_classname) {
             $v_result['vendor_id'] = $v_vendor['vendor_id'];
             $v_result['model_id'] = $v_device['model_id'];
-            return($v_result);
+            if ($p_as_string) {
+              return($v_result['vendor_id'].':'.$v_result['model_id']);
+            }
+            else {
+              return($v_result);
+            }
           }
         }
       }
 
       // ----- Not found      
+      ArubaWssTool::log('debug', "Unknown Aruba Classname '".$p_classname."', please check aruba_class.json file.");
+
       $v_result['vendor_id'] = 'unclassified';
       $v_result['model_id'] = 'unclassified';
 
-      return($v_result);
+      if ($p_as_string) {
+        return($v_result['vendor_id'].':'.$v_result['model_id']);
+      }
+      else {
+        return($v_result);
+      }
     }
     /* -------------------------------------------------------------------------*/
     
@@ -711,7 +736,9 @@
       // ----- Add a type field to identify 'known' BLE vendor Aruba class
       // will be used later to add 'unclassified' BLE vendors.
       foreach ($this->device_class_list as $v_key => $v_vendor) {
-        $this->device_class_list[$v_key]['type'] = 'classified';  
+        if (!isset($this->device_class_list[$v_key]['type'])) {
+          $this->device_class_list[$v_key]['type'] = 'classified';  
+        }
       }
       
       // ----- Load custom vendor/device classes
@@ -2691,7 +2718,7 @@ JSON_EOT;
           ArubaWssTool::log('debug', "Missing classes to include ! ");
         }
 
-        if (in_array('unclassified', $this->device_type_allow_list)) {
+        if (in_array('unclassified:unclassified', $this->device_type_allow_list)) {
           $this->include_unclassified_with_local = (isset($p_data['unclassified_with_local']) ? $p_data['unclassified_with_local'] : 0);
           $this->include_unclassified_with_mac = (isset($p_data['unclassified_with_mac']) ? $p_data['unclassified_with_mac'] : 0);
           $this->include_unclassified_mac_prefix = strtoupper((isset($p_data['unclassified_mac_prefix']) ? $p_data['unclassified_mac_prefix'] : ''));
@@ -2959,12 +2986,17 @@ JSON_EOT;
 
       $v_result = true;
 
+      //$p_class_name = $this->getAwssTypeFromArubaType($p_class_name);
+      $p_class_name = ArubaWssTool::arubaClassToVendor($p_class_name, true);
+      
       if (!$this->include_mode) {
         return(false);
       }
+      /*
       if (!in_array($p_class_name, $this->device_type_allow_list)) {
         return(false);
       }
+      */
 
       /*
           protected $include_unclassified_with_local;
@@ -2973,7 +3005,7 @@ JSON_EOT;
     protected $include_unclassified_max_devices;
         */
 
-      if ($p_class_name == 'unclassified') {
+      if ($p_class_name == 'unclassified:unclassified') {
 
         // ----- Look for device count
         if ($this->include_unclassified_max_devices < 1) {

@@ -225,6 +225,21 @@
         "description": ""
       }
     }
+  },
+  
+  "unclassified" : {
+    "vendor_id": "unclassified",
+    "type": "unclassified",
+    "name": "UnClassified",
+    "description": "",
+    "devices": {
+      "unclassified" : {
+        "model_id": "unclassified",
+        "aruba_class": "unclassified", 
+        "name": "UnClassified",
+        "description": ""
+      }
+    }
   }
    
 }
