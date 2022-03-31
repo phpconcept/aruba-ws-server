@@ -357,6 +357,33 @@
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : isValidDeviceClassname()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    static function isValidDeviceClassname($v_classname) {
+      global $aruba_iot_websocket;
+      
+      $v_vendor_list = $aruba_iot_websocket->getVendorDeviceList();
+      
+      $v_item = explode(':', $v_classname);
+      if (sizeof($v_item) != 2) {
+        return(false);
+      }
+      
+      if (!isset($v_vendor_list[$v_item[0]])) {
+        return(false);
+      }
+      
+      if (!isset($v_vendor_list[$v_item[0]]['devices'][$v_item[1]])) {
+        return(false);
+      }
+      
+      return(true);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : arubaClassToVendor()
      * Description :
      * ---------------------------------------------------------------------------
@@ -383,7 +410,7 @@
       // ----- Extract vendor_id:device_id from Aruba classname
       foreach ($v_list as $v_key => $v_vendor) {
         foreach ($v_vendor['devices'] as $v_device) {
-          ArubaWssTool::log('debug', "Look for : ".$v_vendor['vendor_id'].':'.$v_device['model_id']);
+          //ArubaWssTool::log('debug', "Look for : ".$v_vendor['vendor_id'].':'.$v_device['model_id']);
           if ($v_device['aruba_class'] == $p_classname) {
             $v_result['vendor_id'] = $v_vendor['vendor_id'];
             $v_result['model_id'] = $v_device['model_id'];
@@ -2496,11 +2523,26 @@
 
       ArubaWssTool::log('info', "Changing include mode to ".($this->include_mode ? 'true' : 'false'));
       if ($this->include_mode) {
+        // ----- Reset class to include
+        $this->device_type_allow_list = array();
+        
+        // ----- Extract and check class to include
         if (isset($p_data['type'])) {
-          ArubaWssTool::log('debug', "Classes to include : ".$p_data['type']);
-          $this->device_type_allow_list = explode(',', $p_data['type']);
+          $v_list = explode(',', $p_data['type']);
+          
+          foreach ($v_list as $v_classname) {
+            if (ArubaWssTool::isValidDeviceClassname($v_classname)) {
+              $this->device_type_allow_list[] = $v_classname;
+            }
+            else {
+              ArubaWssTool::log('debug', "'".$v_classname."' is not a valid classname");
+            }
+          }
+          ArubaWssTool::log('debug', "Classes to include : ".implode(',', $this->device_type_allow_list));
         }
-        else {
+        
+        // ----- Check at least one
+        if (sizeof($this->device_type_allow_list) < 1) {
           ArubaWssTool::log('debug', "Missing classes to include ! ");
         }
 
@@ -2768,12 +2810,12 @@
      */
     public function deviceIncludeValidation($p_device_mac, $p_class_name, $p_telemetry) {
 
-      ArubaWssTool::log('debug',  "Check include mode for device ".$p_device_mac);
+      ArubaWssTool::log('debug',  "Check include mode for device '".$p_device_mac."', with new classname :'".$p_class_name."'");
 
       $v_result = true;
 
       //$p_class_name = $this->getAwssTypeFromArubaType($p_class_name);
-      $p_class_name = ArubaWssTool::arubaClassToVendor($p_class_name, true);
+      //$p_class_name = ArubaWssTool::arubaClassToVendor($p_class_name, true);
       
       // ----- Check if include mode is on
       if (!$this->include_mode) {
@@ -2819,7 +2861,6 @@
         }
 
       }
-
 
       return(true);
     }
@@ -2944,13 +2985,13 @@
         ArubaWssTool::log('debug', "| MAC@ Address      | Class List          | Model      | RSSI     |");
 
         // ----- Look at each reported device
-        foreach ($v_col as $v_object) {
+        foreach ($v_col as $v_telemetry_object) {
 
           // ----- Extract the class of the object
           // The object can have several class, so concatene in a single string
           $v_class_list = array();
-          if ($v_object->hasDeviceClassList()) {
-            foreach ($v_object->getDeviceClassList() as $v_class) {
+          if ($v_telemetry_object->hasDeviceClassList()) {
+            foreach ($v_telemetry_object->getDeviceClassList() as $v_class) {
               $v_class_list[] = $v_class->name();
             }
           }
@@ -2961,21 +3002,23 @@
           if ($v_class_name == 'arubaBeacon iBeacon') {
             $v_class_name = 'arubaBeacon';
           }
-          //$v_class_name = ArubaWssTool::arubaClassToVendor($v_class_name, true);
+          
+          // ----- Translate aruba classnaem in vendor/model classname
+          $v_class_name = ArubaWssTool::arubaClassToVendor($v_class_name, true);
 
           // ----- Debug display
           ArubaWssTool::log('debug', "+-------------------------------------------------------------------------------+");
           $v_msglog = "|";
-          $v_msglog .= sprintf(" %17s ", ($v_object->hasMac() ? ArubaWssTool::macToString($v_object->getMac()) : ' '));
+          $v_msglog .= sprintf(" %17s ", ($v_telemetry_object->hasMac() ? ArubaWssTool::macToString($v_telemetry_object->getMac()) : ' '));
           $v_msglog .= "|";
           $v_msglog .= sprintf("%20s ", $v_class_name);
           $v_msglog .= "|";
-          $v_msglog .= sprintf(" %10s ", ($v_object->hasModel() ? $v_object->getModel() : ' '));
+          $v_msglog .= sprintf(" %10s ", ($v_telemetry_object->hasModel() ? $v_telemetry_object->getModel() : ' '));
           $v_msglog .= "|";
-          $v_msglog .= sprintf(" %8s ", ($v_object->hasRSSI() ? trim($v_object->getRSSI()) : ' '));
+          $v_msglog .= sprintf(" %8s ", ($v_telemetry_object->hasRSSI() ? trim($v_telemetry_object->getRSSI()) : ' '));
 
           // ----- Get device mac @
-          $v_device_mac = ($v_object->hasMac() ? ArubaWssTool::macToString($v_object->getMac()) : '');
+          $v_device_mac = ($v_telemetry_object->hasMac() ? ArubaWssTool::macToString($v_telemetry_object->getMac()) : '');
 
           if ($v_device_mac == '') {
             ArubaWssTool::log('debug', $v_msglog."|");
@@ -2987,7 +3030,7 @@
           $v_device = $this->getDeviceByMac($v_device_mac);
 
           // ----- Create new device if allowed class and inclusion mode on
-          if (($v_device == null) && $this->deviceIncludeValidation($v_device_mac, $v_class_name, $v_object)) {
+          if (($v_device == null) && $this->deviceIncludeValidation($v_device_mac, $v_class_name, $v_telemetry_object)) {
 
             ArubaWssTool::log('info', "Inclusion of a new device '".$v_device_mac."'.");
             ArubaWssTool::log('debug', "Create a new device.");
@@ -2995,10 +3038,10 @@
 
             // ----- Create the local device cache image
             //$v_device = new ArubaWssDevice($v_device_mac);
-            $v_device = $this->createDevice($v_device_mac, $v_class_name, $v_object);
+            $v_device = $this->createDevice($v_device_mac, $v_class_name, $v_telemetry_object);
 
             $this->include_device_count++;
-            if ($v_class_name == 'unclassified') {
+            if ($v_class_name == 'unclassified:unclassified') {
               $this->include_unclassified_max_devices--;
             }
 
@@ -3009,7 +3052,7 @@
             $v_device->resetChangedFlag();
 
              // ----- Update object class and BLE vendor infos
-            if ($v_device->updateObjectClass($v_object, $v_class_name) != 1) {
+            if ($v_device->updateObjectClass($v_telemetry_object, $v_class_name) != 1) {
               ArubaWssTool::log('debug', "Device '".$v_device->getMac()."' has invalid classname. Skip telemetry data.");
               continue;
             }
@@ -3021,12 +3064,12 @@
             }
 
             // ----- If same nearest AP or better one, update telemetry data.
-            if ($v_device->updateNearestAP($p_reporter, $v_object)) {
-              $v_device->updateTelemetryData($p_reporter, $v_object, $v_class_name);
+            if ($v_device->updateNearestAP($p_reporter, $v_telemetry_object)) {
+              $v_device->updateTelemetryData($p_reporter, $v_telemetry_object);
             }
 
             // ----- If object supporting triangulation, update triangulation
-            $v_device->updateTriangulation($p_reporter, $v_object);
+            $v_device->updateTriangulation($p_reporter, $v_telemetry_object);
 
             // ----- Debuf msg
             $v_msglog .= "|      active ";
@@ -3041,8 +3084,8 @@
           }
 
           // TBC : should be looked at beginning and skip if too old ?
-          if ($v_object->hasLastSeen()) {
-            $v_val = $v_object->getLastSeen();
+          if ($v_telemetry_object->hasLastSeen()) {
+            $v_val = $v_telemetry_object->getLastSeen();
             $v_msglog .= "| ".date("Y-m-d H:i:s", $v_val);
           }
           ArubaWssTool::log('debug', $v_msglog."|");
@@ -6076,6 +6119,7 @@ enum NbTopic {
     
     // ----- Aruba Telemetry Classname
     protected $classname = 'auto';
+    protected $classname_autolearn = true;
     
     // ----- Device identification
     // ArubaWss internal specification
@@ -6428,6 +6472,7 @@ enum NbTopic {
       $v_item['mac'] = $this->getMac();
       $v_item['name'] = $this->getName();
       $v_item['classname'] = $this->getClassname();
+      $v_item['classname_autolearn'] = $this->classname_autolearn;
       
       $v_item['vendor_id'] = $this->vendor_id;
       $v_item['model_id'] = $this->model_id;
@@ -7252,18 +7297,9 @@ enum NbTopic {
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function updateObjectClass($p_telemetry, $p_class_name) {
-        
-      if ($this->classname == 'auto') {
-        $this->classname = $p_class_name;
-        $this->setChangedFlag('classname');
-        ArubaWssTool::log('debug', "Change classname to '".$this->classname."' for device '".$this->getMac()."' ");
-      }
-      else if ($this->classname != $p_class_name) {
-        ArubaWssTool::log('debug', "Device '".$this->getMac()."' is announcing type '".$p_class_name."', when type '".$this->classname."' is expected. Skip telemetry data.");
-        return(0);
-      }
-     
+    public function updateObjectClass($p_telemetry, $p_new_classname) {
+
+      // ----- Need to update the BLE values first to have the setDeviceClassFromRegex() working.
       if (($this->vendor_name == '') && ($p_telemetry->hasVendorName())) {
         $this->vendor_name = $p_telemetry->getVendorName();
         $this->setChangedFlag('vendor_name');
@@ -7280,30 +7316,26 @@ enum NbTopic {
         ArubaWssTool::log('debug', "Change model to '".$this->model."' for device '".$this->getMac()."' ");
       }
       
-      if ($this->vendor_id == '') {
-        if ($this->classname == 'unclassified') {
-          // TBC
+      // ----- Look for classname auto learn
+      if (   ($this->classname_autolearn) 
+          && (($p_new_classname != $this->vendor_id.':'.$this->model_id) || ($this->vendor_id.':'.$this->model_id == 'unclassified:unclassified')) ) {
+        if ($p_new_classname == 'unclassified:unclassified') {
+          // ----- Run regex to find device class
           $this->setDeviceClassFromRegex();
-          /*
-          if ($this->local_name == 'Jinou_Sensor_HumiTemp') {
-            $this->vendor_id = 'Jinou';
-            $this->model_id = 'Sensor_HumiTemp';
-          }
-          else if (preg_match('/ATC_[0-9,A-F]{6}$/', $this->local_name) === 1) {
-            $this->vendor_id = 'ATC';
-            $this->model_id = 'LYWSD03MMC';
-          }
-          */
+          
+          // ----- In case of not anymore unclassified, stop the autolearn, if not will rerun at each telemetry msg
+          $this->classname_autolearn = false;
         }
         else {
-          // ----- Look to find exact vendor and device model
-          // ----- First look from Aruba classname
-          $v_value = ArubaWssTool::arubaClassToVendor($p_class_name);
-          $this->vendor_id = $v_value['vendor_id'];
-          $this->model_id = $v_value['model_id'];
+          ArubaWssTool::log('debug', "Change classname to '".$p_new_classname."' for device '".$this->getMac()."' ");
+          $v_item = explode(':', $p_new_classname);
+          $this->vendor_id = $v_item[0];
+          $this->model_id = $v_item[1];
         }
+        $this->classname = $this->vendor_id.':'.$this->model_id;
+        $this->setChangedFlag('classname');
       }
-
+      
       return(1);
     }
     /* -------------------------------------------------------------------------*/
@@ -7313,7 +7345,7 @@ enum NbTopic {
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function updateTelemetryData(&$p_reporter, $p_telemetry, $p_class_name) {
+    public function updateTelemetryData(&$p_reporter, $p_telemetry) {
 
       $v_changed_flag = false;
 
