@@ -809,220 +809,6 @@
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
-     * Method : loadDeviceClassList()
-     * Description :
-     * ---------------------------------------------------------------------------
-     */
-    private function loadDeviceClassList_BACK() {
-
-      $v_class_json = <<<JSON_EOT
-{
-  "Aruba": {
-    "name": "Aruba",
-    "description": "",
-    "devices": {
-      "Beacon": {
-        "aruba_class": "arubaBeacon", 
-        "name": "Beacon",
-        "description": ""
-      },
-      "Tag": {
-        "aruba_class": "arubaTag", 
-        "name": "Tag",
-        "description": ""
-      },
-      "Sensor": {
-        "aruba_class": "arubaSensor", 
-        "name": "Sensor",
-        "description": ""
-      }
-    }
-  },
-  
-  "ZF": {
-    "name": "ZF",
-    "description": "",
-    "devices": {
-      "Tag": {
-        "aruba_class": "zfTag", 
-        "name": "Tag",
-        "description": ""
-      }
-    }
-  },
-  
-  "Stanley": {
-    "name": "Stanley",
-    "description": "",
-    "devices": {
-      "Tag": {
-        "aruba_class": "stanleyTag", 
-        "name": "Tag",
-        "description": ""
-      }
-    }
-  },
-  
-  "Virgin": {
-    "name": "Virgin",
-    "description": "",
-    "devices": {
-      "Beacon": {
-        "aruba_class": "virginBeacon", 
-        "name": "Beacon",
-        "description": ""
-      }
-    }
-  },
-  
-  "Enocean": {
-    "name": "EnOcean",
-    "description": "",
-    "devices": {
-      "Sensor": {
-        "aruba_class": "enoceanSensor", 
-        "name": "Sensor",
-        "description": ""
-      },
-      "Switch": {
-        "aruba_class": "enoceanSwitch", 
-        "name": "Switch",
-        "description": ""
-      }
-    }
-  },
-  
-  "ABB": {
-    "name": "ABB",
-    "description": "",
-    "devices": {
-      "Sensor": {
-        "aruba_class": "abbSensor", 
-        "name": "Sensor",
-        "description": ""
-      }
-    }
-  },
-  
-  "MySphera": {
-    "name": "MySphera",
-    "description": "",
-    "devices": {
-      "unclassified": {
-        "aruba_class": "mysphera", 
-        "name": "unclassified",
-        "description": ""
-      }
-    }
-  },
-  
-  "Wiliot": {
-    "name": "Wiliot",
-    "description": "",
-    "devices": {
-      "unclassified": {
-        "aruba_class": "wiliot", 
-        "name": "unclassified",
-        "description": ""
-      }
-    }
-  },
-  
-  "Onity": {
-    "name": "Onity",
-    "description": "",
-    "devices": {
-      "unclassified": {
-        "aruba_class": "onity", 
-        "name": "unclassified",
-        "description": ""
-      }
-    }
-  },
-  
-  "Minew": {
-    "name": "Minew",
-    "description": "",
-    "devices": {
-      "unclassified": {
-        "aruba_class": "minew", 
-        "name": "unclassified",
-        "description": ""
-      }
-    }
-  },
-  
-  "Google": {
-    "name": "Google",
-    "description": "",
-    "devices": {
-      "unclassified": {
-        "aruba_class": "google", 
-        "name": "unclassified",
-        "description": ""
-      }
-    }
-  },
-  
-  "Polestar": {
-    "name": "Polestar",
-    "description": "",
-    "devices": {
-      "unclassified": {
-        "aruba_class": "polestar", 
-        "name": "unclassified",
-        "description": ""
-      }
-    }
-  },
-  
-  "Blyott": {
-    "name": "Blyott",
-    "description": "",
-    "devices": {
-      "unclassified": {
-        "aruba_class": "blyott", 
-        "name": "unclassified",
-        "description": ""
-      }
-    }
-  },
-  
-  "Diract": {
-    "name": "Diract",
-    "description": "",
-    "devices": {
-      "unclassified": {
-        "aruba_class": "diract", 
-        "name": "unclassified",
-        "description": ""
-      }
-    }
-  },
-  
-  "Gwahygiene": {
-    "name": "Gwahygiene",
-    "description": "",
-    "devices": {
-      "unclassified": {
-        "aruba_class": "gwahygiene", 
-        "name": "unclassified",
-        "description": ""
-      }
-    }
-  }
-  
-  
-}
-JSON_EOT;
-
-      $this->device_class_list = json_decode($v_class_json, true);
-
-      return($this->device_class_list);
-    }
-    /* -------------------------------------------------------------------------*/
-
-    /**---------------------------------------------------------------------------
      * Method : toArray()
      * Description :
      * ---------------------------------------------------------------------------
@@ -2674,7 +2460,7 @@ JSON_EOT;
         "name":"include_mode",
         "data": {
           "state":1,
-          "type":"unclassified",
+          "type":"unclassified:unclassified",
           "unclassified_with_local":"",
           "unclassified_with_mac":0,
           "unclassified_mac_prefix":"",
@@ -2989,22 +2775,17 @@ JSON_EOT;
       //$p_class_name = $this->getAwssTypeFromArubaType($p_class_name);
       $p_class_name = ArubaWssTool::arubaClassToVendor($p_class_name, true);
       
+      // ----- Check if include mode is on
       if (!$this->include_mode) {
         return(false);
       }
-      /*
+      
+      // ----- Check that class_name is a type allowed in the include mode
       if (!in_array($p_class_name, $this->device_type_allow_list)) {
         return(false);
       }
-      */
 
-      /*
-          protected $include_unclassified_with_local;
-    protected $include_unclassified_with_mac;
-    protected $include_unclassified_mac_prefix;
-    protected $include_unclassified_max_devices;
-        */
-
+      // ----- Look for additional filtering while adding unclassified devices
       if ($p_class_name == 'unclassified:unclassified') {
 
         // ----- Look for device count
@@ -3013,8 +2794,8 @@ JSON_EOT;
           return(false);
         }
 
-      ArubaWssTool::log('debug',  "Check include with mac@ mode : '".$this->include_unclassified_with_mac."'");
-      ArubaWssTool::log('debug',  "Check include mac@ with prefix : '".$this->include_unclassified_mac_prefix."'");
+        ArubaWssTool::log('debug',  "Check include with mac@ mode : '".$this->include_unclassified_with_mac."'");
+        ArubaWssTool::log('debug',  "Check include mac@ with prefix : '".$this->include_unclassified_mac_prefix."'");
 
         // ----- Look for mac prefix
         if (($this->include_unclassified_with_mac) && ($this->include_unclassified_mac_prefix != '')) {
@@ -3025,7 +2806,7 @@ JSON_EOT;
           }
         }
 
-      ArubaWssTool::log('debug',  "Check include with local name : '".$this->include_unclassified_with_local."'");
+        ArubaWssTool::log('debug',  "Check include with local name : '".$this->include_unclassified_with_local."'");
 
         // ----- Look for local name
         if ($this->include_unclassified_with_local) {
@@ -3176,11 +2957,11 @@ JSON_EOT;
           sort($v_class_list);
           $v_class_name = trim(implode(' ', $v_class_list));
           // ----- Remove double names
-          if ($v_class_name == 'arubaBeacon iBeacon')
+          // TBC : double classname is not well managed in AWSS ....
+          if ($v_class_name == 'arubaBeacon iBeacon') {
             $v_class_name = 'arubaBeacon';
-          // ----- Change name to 'unclassified'
-          //if ($v_class_name == 'unclassified')
-          //  $v_class_name = 'unclassified';
+          }
+          //$v_class_name = ArubaWssTool::arubaClassToVendor($v_class_name, true);
 
           // ----- Debug display
           ArubaWssTool::log('debug', "+-------------------------------------------------------------------------------+");

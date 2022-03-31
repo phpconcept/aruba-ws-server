@@ -396,6 +396,7 @@ As of today, some known caveats are :
 - In case of controller based deployment, resiliency (swap to the backup controller) was never tested and may show unexpected behaviour.
 - AWSS was not tested in environment using Aruba Central IOT Connector.
 - In some situation BLE connection is rejected by IAP, but AWSS keep the "connected" status for the AP. Thus no more BLE connect can be initiated. Workaround is to restart AWSS.
+- BLE devices with multiple aruba classname are not well managed and may finish as classified as "unclassified". 
 
 ## WARNING :
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
