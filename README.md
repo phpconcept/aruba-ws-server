@@ -349,6 +349,7 @@ The Websocket Server can be accessed by JSON API, description of the API is here
 ## Change Logs
 
 Release v1.5-beta :
+- Change the classname names for include_mode API. Need to use now the internal format of AWSS 'vendor_id:model_id' rather than the Aruba classname
 - Replace "generic" term to "unclassified" to be more aligned with Aruba term. 
 - Add an API to get the list of supported vendors/devices.
 
