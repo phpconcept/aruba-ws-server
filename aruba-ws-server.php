@@ -2640,6 +2640,15 @@
             }
           }
         break;
+        case 'device_add' :
+          if (($v_value = $this->notificationAdd('device_add', 'ws_api', $p_cnx_id, [] )) < 1) {
+            $v_response['status'] = 'fail';
+            if ($v_value == -1) {
+              $v_response['status_msg'] = "Duplicate registration of notification device_add.";
+              ArubaWssTool::log('debug', $v_response['status_msg']);
+            }
+          }
+        break;
         case 'reporter_status' :
           if (($v_value = $this->notificationAdd('reporter_status', 'ws_api', $p_cnx_id, [] )) < 1) {
             $v_response['status'] = 'fail';
@@ -2648,10 +2657,6 @@
               ArubaWssTool::log('debug', $v_response['status_msg']);
             }
           }
-        break;
-        case 'new_reporter' :
-        break;
-        case 'new_device' :
         break;
         default :
           $v_response['status'] = 'fail';
@@ -3044,7 +3049,9 @@
             if ($v_class_name == 'unclassified:unclassified') {
               $this->include_unclassified_max_devices--;
             }
-
+            
+            // ----- Trigger notification
+            ArubaWssTool::notification('device_add', ['mac_address'=>$v_device->getMac()]);                  
           }
 
           // ----- Look for existing device and enabled
@@ -5979,7 +5986,26 @@ enum NbTopic {
       
       ArubaWssTool::log('debug', 'args='.print_r($p_args, true));
       
-      if ($p_notification == 'device_status') {
+      if ($p_notification == 'device_add') {
+      
+        $v_device = $this->getDeviceByMac($p_args['mac_address']);
+      
+        foreach ($this->notification_queue as $v_item) {
+          if (   ($v_item['notification_type'] == 'device_add') ) {
+            // ----- API Notify response
+            if ($v_item['cb_type'] == 'ws_api') {
+              $v_data = array();
+              $v_data['type'] = 'device_add';
+              $v_data['device_mac'] = $v_device->getMac();
+              ArubaWssTool::log('debug', 'Trigger device add notification for :'.$v_device->getMac());       
+              $this->apiNotify_notification($v_item['cb_id'], $v_data, $v_item['cb_id']);
+            }
+          }
+        }
+      
+      }
+      
+      else if ($p_notification == 'device_status') {
       
         $v_device = $this->getDeviceByMac($p_args['mac_address']);
       

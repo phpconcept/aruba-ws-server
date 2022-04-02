@@ -109,7 +109,7 @@
       "unclassified" : {
         "model_id": "unclassified",
         "aruba_class": "mysphera", 
-        "name": "unclassified",
+        "name": "Default",
         "description": ""
       }
     }
@@ -123,7 +123,7 @@
       "unclassified" : {
         "model_id": "unclassified",
         "aruba_class": "wiliot", 
-        "name": "unclassified",
+        "name": "Default",
         "description": ""
       }
     }
@@ -137,7 +137,7 @@
       "unclassified" : {
         "model_id": "unclassified",
         "aruba_class": "onity", 
-        "name": "unclassified",
+        "name": "Default",
         "description": ""
       }
     }
@@ -151,7 +151,7 @@
       "unclassified" : {
         "model_id": "unclassified",
         "aruba_class": "minew", 
-        "name": "unclassified",
+        "name": "Default",
         "description": ""
       }
     }
@@ -165,7 +165,7 @@
       "unclassified" : {
         "model_id": "unclassified",
         "aruba_class": "google", 
-        "name": "unclassified",
+        "name": "Default",
         "description": ""
       }
     }
@@ -173,13 +173,13 @@
   
   "polestar" : {
     "vendor_id": "polestar",
-    "name": "polestar",
+    "name": "Polestar",
     "description": "",
     "devices": {
       "unclassified" : {
         "model_id": "unclassified",
         "aruba_class": "polestar", 
-        "name": "unclassified",
+        "name": "Default",
         "description": ""
       }
     }
@@ -193,7 +193,7 @@
       "unclassified" : {
         "model_id": "unclassified",
         "aruba_class": "blyott", 
-        "name": "unclassified",
+        "name": "Default",
         "description": ""
       }
     }
@@ -207,7 +207,7 @@
       "unclassified" : {
         "model_id": "unclassified",
         "aruba_class": "diract", 
-        "name": "unclassified",
+        "name": "Default",
         "description": ""
       }
     }
@@ -221,7 +221,7 @@
       "unclassified" : {
         "model_id": "unclassified",
         "aruba_class": "gwahygiene", 
-        "name": "unclassified",
+        "name": "Default",
         "description": ""
       }
     }

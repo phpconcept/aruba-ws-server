@@ -44,6 +44,9 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     
     "char_list" : null,
     
+    "vendor_list" : null,
+    "device_mac_list" : null,
+    
     "area_list" : ['server', 'server_disconnected', 'server_settings', 'device', 'reporter']
     };
   var g_socket = null;
@@ -98,6 +101,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     g_server['ws_url'] = "ws://"+g_server['ip_address']+":"+g_server['tcp_port']+"/api";
     
     g_server['char_list'] = new Array();
+    g_server['vendor_list'] = new Array();
+    g_server['device_mac_list'] = new Array();
     
     g_socket = new WebSocket(g_server['ws_url']);
 
@@ -154,19 +159,24 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
           }
         }
         else if ((obj.from_event) && (obj.from_event == 'device_list') && (obj.data.devices)) {
+          awss_device_list_update(obj.data.devices);
           awss_device_list_display(obj.data.devices);
         }
         else if ((obj.from_event) && (obj.from_event == 'reporter_list') && (obj.data.reporters)) {
           awss_reporter_list_display(obj.data.reporters);
         }
-        else if ((obj.from_event) && (obj.from_event == 'device_info') && (obj.data)) {
-          awss_device_display(obj.data);
+        else if ((obj.from_event) && (obj.from_event == 'device_info') && (obj.data.device)) {
+          awss_device_display(obj.data.device);
         }
         else if ((obj.from_event) && (obj.from_event == 'websocket_info') && (obj.data)) {
           awss_server_info_update(obj.data);
         }
         else if ((obj.from_event) && (obj.from_event == 'reporter_info') && (obj.data)) {
           awss_reporter_display(obj.data);
+        }
+        else if ((obj.from_event) && (obj.from_event == 'vendor_list') && (obj.data.vendor_list)) {
+          awss_vendor_list_update(obj.data.vendor_list);
+          awss_vendor_list_display();
         }
         else if ((obj.from_event) && (obj.from_event == 'include_mode') && (obj.status == 'success') ) {
           // Nothing to do ... may be log message
@@ -209,9 +219,25 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
           else {
           }
         }
+        else if ((obj.from_event) && (obj.from_event == 'notification_remove')) {
+          if (obj.status == 'success') {
+          }
+          else {
+          }
+        }
         else if ((obj.from_event) && (obj.from_event == 'notification') && (obj.status == 'success') ) {
-          if (obj.data.type == 'device_status') {
-            if (obj.data.status == 'connected')
+          if (obj.data.type == 'device_add') {         
+              // ----- Add device in list if 
+              awss_device_mac_list_add(obj.data.device_mac);
+          }
+          
+          else if (obj.data.type == 'device_status') {
+          
+            if (obj.data.status == 'added') {
+              // ----- Add device in list if 
+              awss_device_mac_list_add(obj.data.device_mac);
+            }
+            else if (obj.data.status == 'connected')
               awss_device_change_to_connected(obj.data.device_mac);
             else if (obj.data.status == 'disconnected') {
               awss_device_change_to_disconnected(obj.data.device_mac);
@@ -306,8 +332,16 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     // ----- Load websocket infos
     awss_api_server_info();
     
-    // ----- Register to reporter_status
+    // ----- Load vendor list
+    awss_api_vendor_list();
+    
+    // ----- Load existing AP and reporters
+    awss_api_device_list();
+    awss_api_reporter_list();
+    
+    // ----- Register fro notifications
     awss_api_reporter_status_notify('');
+    awss_api_device_add_notify();
   }
   
   function awss_server_change_to_disconnected() {
@@ -506,30 +540,29 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     var checkboxes = document.querySelectorAll('input[name=device_type]:checked')
     for (var i = 0; i < checkboxes.length; i++) {
       array_type.push(checkboxes[i].value);
-      if (checkboxes[i].value == 'unclassified') {
+      if (checkboxes[i].value == 'unclassified:unclassified') {
         unclassified_selected = 1;
       }
     }
     v_type = array_type.toString();
     
+    // ----- Look for unclassifed devices filtering
     v_with_local = 0;
+    v_with_mac = 0;
     v_mac_prefix = '';
     v_max = 0;
     if (unclassified_selected) {
       if ($('#include_with_local').is(":checked")) {
         v_with_local = 1;
       }
+
+      if ($('#include_with_mac').is(":checked")) {
+        v_mac_prefix = document.getElementById("include_mac_prefix").value;
+        v_with_mac = 1;
+      }
+      
+      v_max = document.getElementById("include_max").value;
     }
-
-
-    v_mac_prefix = document.getElementById("include_mac_prefix").value;
-    v_with_mac = 0;
-    if (v_mac_prefix != '') {
-      v_with_mac = 1;
-    }
-    v_max = document.getElementById("include_max").value;
-
-
 
     var v_data = {
       "api_version":"1.0",
@@ -546,24 +579,6 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
           }
       }
     };
-
-/*
-    var v_data = {
-      "api_version":"1.0",
-      "api_key":g_server['api_key'],
-      "event":{
-          "name":"include_mode",
-          "data": {
-            "state":p_include_mode,
-            "type":"unclassified,enoceanSensor,enoceanSwitch,arubaTag,arubaBeacon",
-            "unclassified_with_local":"",
-            "unclassified_with_mac":0,
-            "unclassified_mac_prefix":"",
-            "unclassified_max_devices":10
-          }
-      }
-    };
-    */
 
     // ----- Send request in websocket connection
     g_socket.send(JSON.stringify(v_data));
@@ -796,6 +811,42 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     
   }
     
+  function awss_api_device_add_notify() {
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"notification_add",
+        "data": {
+          "type":"device_add"
+        }
+      }
+    };
+    
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+    
+  }
+    
+  function awss_api_device_add_notify_stop() {
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"notification_remove",
+        "data": {
+          "type":"device_add"
+        }
+      }
+    };
+    
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+    
+  }
+    
   function awss_device_open(p_mac) {
   
     // ----- Look for changing device
@@ -814,28 +865,33 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     return;
   }
     
-  function awss_device_display(p_data) {
+  function awss_device_display(p_device) {
   
-    if (p_data.device.connect_status == 'connected') {
-      awss_device_change_to_connected(p_data.device.mac);
+    if (p_device.connect_status == 'connected') {
+      awss_device_change_to_connected(p_device.mac);
     }
     else {
-      awss_device_change_to_disconnected(p_data.device.mac);
+      awss_device_change_to_disconnected(p_device.mac);
     }
     
     g_server['char_list'] = new Array();
         
-    document.getElementById("device_name").innerHTML = p_data.device.name;
-    document.getElementById("device_mac").innerHTML = p_data.device.mac;
-    document.getElementById("device_classname").innerHTML = p_data.device.classname;
-    document.getElementById("device_vendor_id").innerHTML = p_data.device.vendor_id;
-    document.getElementById("device_model_id").innerHTML = p_data.device.model_id;
-    document.getElementById("device_nearest_ap_mac").innerHTML = p_data.device.nearest_ap_mac;
-    document.getElementById("device_vendor_name").innerHTML = p_data.device.vendor_name;
-    document.getElementById("device_local_name").innerHTML = p_data.device.local_name;
-    document.getElementById("device_model").innerHTML = p_data.device.model;
-    document.getElementById("device_rssi").innerHTML = p_data.device.rssi;
-    if ((p_data.device.presence) && (p_data.device.presence ==1 )) {
+    var v_vendor_name = g_server['vendor_list'][p_device.vendor_id]['name'];
+    var v_model_name = g_server['vendor_list'][p_device.vendor_id]['devices'][p_device.model_id]['name'];
+
+    document.getElementById("device_name").innerHTML = p_device.name;
+    document.getElementById("device_mac").innerHTML = p_device.mac;
+    document.getElementById("device_classname").innerHTML = p_device.classname;
+    //document.getElementById("device_vendor_id").innerHTML = p_device.vendor_id;
+    //document.getElementById("device_model_id").innerHTML = p_device.model_id;
+    document.getElementById("device_vendor_id").innerHTML = v_vendor_name;
+    document.getElementById("device_model_id").innerHTML = v_model_name;
+    document.getElementById("device_nearest_ap_mac").innerHTML = p_device.nearest_ap_mac;
+    document.getElementById("device_vendor_name").innerHTML = p_device.vendor_name;
+    document.getElementById("device_local_name").innerHTML = p_device.local_name;
+    document.getElementById("device_model").innerHTML = p_device.model;
+    document.getElementById("device_rssi").innerHTML = p_device.rssi;
+    if ((p_device.presence) && (p_device.presence ==1 )) {
       document.getElementById("device_status").innerHTML = '<button type="button" class="btn btn-success btn-xs" >Present</button>';
     }
     else {
@@ -845,23 +901,23 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     document.getElementById("tbody_telemetry_list").innerHTML = '';
     v_count_top_1 = 0;
     
-    if (p_data.device.battery) {
+    if (p_device.battery) {
       var v_html = '';
       v_html += '<td>';
       v_html += '<span class="bt_modal_doc" >';
-      v_html += '<label class="w3-text-black" style="cursor: pointer;">Battery : '+p_data.device.battery.value+' %</label>';
+      v_html += '<label class="w3-text-black" style="cursor: pointer;">Battery : '+p_device.battery.value+' %</label>';
       v_html += '</span>';
       v_html += '</td>';
       v_count_top_1++;
       document.getElementById("tbody_telemetry_list").innerHTML += '<tr>'+v_html+'</tr>';
     }
     
-    for (i in p_data.device.telemetry_values) {
+    for (i in p_device.telemetry_values) {
       var v_html = '';
 
       v_html += '<td>';
       v_html += '<span class="bt_modal_doc" >';
-      v_html += '<label class="w3-text-black" style="cursor: pointer;">'+p_data.device.telemetry_values[i].name+' : '+p_data.device.telemetry_values[i].value+'</label>';
+      v_html += '<label class="w3-text-black" style="cursor: pointer;">'+p_device.telemetry_values[i].name+' : '+p_device.telemetry_values[i].value+'</label>';
       v_html += '</span>';
       v_html += '</td>';
       v_count_top_1++;
@@ -874,41 +930,41 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
     document.getElementById("tbody_char_list").innerHTML = '';
     v_count_top_1 = 0;
-    for (i in p_data.device.services) {
+    for (i in p_device.services) {
       var v_html = '';
 
       v_html += '<td>';
       v_html += '<span class="bt_modal_doc" >';
-      v_html += '<label class="w3-text-black" style="cursor: pointer;">Service '+p_data.device.services[i].uuid+'</label>';
+      v_html += '<label class="w3-text-black" style="cursor: pointer;">Service '+p_device.services[i].uuid+'</label>';
       v_html += '</span>';
       v_html += '</td>';
       v_count_top_1++;
 
       document.getElementById("tbody_char_list").innerHTML += '<tr>'+v_html+'</tr>';
 
-      for (j in p_data.device.services[i].char_list) {
+      for (j in p_device.services[i].char_list) {
         var v_html = '';
         
         var v_str = '';
-        if (p_data.device.services[i].char_list[j].value_string != '') {
-          v_str = ' ('+p_data.device.services[i].char_list[j].value_string+')';
+        if (p_device.services[i].char_list[j].value_string != '') {
+          v_str = ' ('+p_device.services[i].char_list[j].value_string+')';
         }
         
-        var v_types = p_data.device.services[i].char_list[j].types.split(",");
+        var v_types = p_device.services[i].char_list[j].types.split(",");
   
         v_html += '<td>';
         v_html += '<span class="bt_modal_doc" >';
-        v_html += '<label class="w3-text-black" style="cursor: pointer;">&nbsp;&nbsp; '+p_data.device.services[i].char_list[j].uuid+' ('+p_data.device.services[i].char_list[j].types+') : '+p_data.device.services[i].char_list[j].value+v_str+'</label>';
-        //v_html += '<span class="w3-right"><label class="w3-text-black" style="cursor: pointer;" onclick="awss_device_char_read(\''+p_data.device.mac+'\', \''+p_data.device.services[i].uuid+'\', \''+p_data.device.services[i].char_list[j].uuid+'\');">&nbsp;&nbsp; read</label></span>';
+        v_html += '<label class="w3-text-black" style="cursor: pointer;">&nbsp;&nbsp; '+p_device.services[i].char_list[j].uuid+' ('+p_device.services[i].char_list[j].types+') : '+p_device.services[i].char_list[j].value+v_str+'</label>';
+        //v_html += '<span class="w3-right"><label class="w3-text-black" style="cursor: pointer;" onclick="awss_device_char_read(\''+p_device.mac+'\', \''+p_device.services[i].uuid+'\', \''+p_device.services[i].char_list[j].uuid+'\');">&nbsp;&nbsp; read</label></span>';
         v_html += '<span class="w3-right">';
         if (v_types.includes('read')) {
-          v_html += '<input type="checkbox" onchange="awss_device_char_read_select(\''+p_data.device.mac+'\', \''+p_data.device.services[i].uuid+'\', \''+p_data.device.services[i].char_list[j].uuid+'\', this.checked);"> ';
-          v_html += '<button type="button" class="btn btn-xs" onclick="awss_device_char_read(\''+p_data.device.mac+'\', \''+p_data.device.services[i].uuid+'\', \''+p_data.device.services[i].char_list[j].uuid+'\');">read</button>';
+          v_html += '<input type="checkbox" onchange="awss_device_char_read_select(\''+p_device.mac+'\', \''+p_device.services[i].uuid+'\', \''+p_device.services[i].char_list[j].uuid+'\', this.checked);"> ';
+          v_html += '<button type="button" class="btn btn-xs" onclick="awss_device_char_read(\''+p_device.mac+'\', \''+p_device.services[i].uuid+'\', \''+p_device.services[i].char_list[j].uuid+'\');">read</button>';
         } 
         /*
         Removed : this API is not anymore available until further analysis
         if (v_types.includes('notify')) {
-          v_html += '&nbsp;<button type="button" class="btn btn-xs" onclick="awss_device_char_notify(\''+p_data.device.mac+'\', \''+p_data.device.services[i].uuid+'\', \''+p_data.device.services[i].char_list[j].uuid+'\', 1);">notify</button>';
+          v_html += '&nbsp;<button type="button" class="btn btn-xs" onclick="awss_device_char_notify(\''+p_device.mac+'\', \''+p_device.services[i].uuid+'\', \''+p_device.services[i].char_list[j].uuid+'\', 1);">notify</button>';
         } 
         */
         v_html += '</span>';
@@ -958,6 +1014,48 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     // ----- Send request in websocket connection
     g_socket.send(JSON.stringify(v_data));
     
+    return;
+  }
+
+  function awss_device_mac_list_update(v_list) {
+  
+    // ----- Reset list
+    g_server['device_mac_list'] = new Array();        
+
+    v_count = 0;
+    for (i in v_list) {
+      g_server['device_mac_list'][v_list[i].mac] = v_list[i].mac;
+      v_count++;
+    } 
+
+    document.getElementById("device_list_nb").innerHTML = v_count;
+    document.getElementById("span_nb_devices").innerHTML = v_count;
+
+    return;
+  }
+
+  function awss_device_mac_list_add(v_device_mac) {
+    if (!g_server['device_mac_list'][v_device_mac]) {
+      g_server['device_mac_list'][v_device_mac] = v_device_mac;
+      
+      v_count = 0;
+      for (i in g_server['device_mac_list']) {
+        v_count++;
+      } 
+
+      document.getElementById("device_list_nb").innerHTML = v_count;
+      document.getElementById("span_nb_devices").innerHTML = v_count;
+    }
+  
+    return;
+  }
+
+  function awss_device_list_update(v_list) {
+
+    for (i in v_list) {
+      awss_device_mac_list_add(v_list[i].mac);
+    }
+
     return;
   }
 
@@ -1053,6 +1151,76 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     return;
   }
 
+  function awss_api_vendor_list() {
+  
+    var v_data = {
+      "api_version":"1.0",
+      "api_key":g_server['api_key'],
+      "event":{
+        "name":"vendor_list",
+        "data": {
+          "device_mac":''
+        }
+      }
+    };
+    
+    // ----- Send request in websocket connection
+    g_socket.send(JSON.stringify(v_data));
+    
+  }
+    
+
+  function awss_vendor_list_update(p_vendor_list) {
+  
+    // ----- Store the vendor list 
+    g_server['vendor_list'] = p_vendor_list;
+  
+  }
+    
+
+  function awss_vendor_list_display() {
+  
+    var v_new_row = 0;
+    var v_html = '';
+    
+    for (i in g_server['vendor_list']) {
+      var v_vendor = g_server['vendor_list'][i]['vendor_id'];
+      for (j in g_server['vendor_list'][i]['devices']) {
+        if (g_server['vendor_list'][i]['devices'][j]['aruba_class'] != 'unclassified') {
+          var v_model = g_server['vendor_list'][i]['devices'][j]['model_id'];
+          
+          var v_val = v_vendor+':'+v_model;
+          var v_name = g_server['vendor_list'][i]['name']+' - '+g_server['vendor_list'][i]['devices'][j]['name'];
+          
+          if (v_new_row == 0) {
+            v_html += '<tr>';
+          }
+          v_new_row += 1;
+          v_html += '<td><input type="checkbox"  name="device_type" value="'+v_val+'"><label >&nbsp;'+v_name+'</label></td>';
+          if (v_new_row == 4) {
+            v_html += '</tr>';
+            v_new_row=0;
+          }
+        }        
+      }
+    }
+    if (v_new_row != 0) {
+      if (v_new_row == 1) v_html +=  '<td></td><td></td><td></td>';
+      if (v_new_row == 2) v_html +=  '<td></td><td></td>';
+      if (v_new_row == 3) v_html +=  '<td></td>';
+      v_html +=  '</tr>';
+    }
+    
+    // ----- Include the end
+    var v_source = document.getElementById("include_mode_table_end").innerHTML;
+    //document.getElementById("include_mode_table").innerHTML += v_source;
+    //alert(v_source);
+    v_html = v_html + '<tr><td colspan="5">'+v_source+'</td></tr>';
+
+    document.getElementById("include_mode_table").innerHTML = '<table class="table">'+v_html+'</table>';
+    
+  }
+
   function awss_reporter_div_open(p_mac) {
     awss_api_reporter_info(p_mac);
   }
@@ -1127,7 +1295,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
 
   function awss_api_reporter_list() {
 
-    awss_area_open('reporter');
+    //awss_area_open('reporter');
     
     var v_data = {
       "api_version":"1.0",
@@ -1202,7 +1370,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     g_socket.send(JSON.stringify(v_data));
     
   }
-        
+  
   function awss_reporter_display(p_data) {
   
     var v_html = '';
@@ -1534,94 +1702,40 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
       <!-- Block --><!-- AWSS Include Mode -->
       <div class="w3-container w3-card-2 w3-white w3-round w3-margin" style="min-height:180px;">
 
-              <h2>Include Mode</h2>
-
-              <table class="table">
-                  <tbody>
-                    <tr>
-                      <td>
+        <h2>Include Mode</h2>
               
         <div id="awss_include_params">
+        <br>
 
         <h4>Device Types to include :&nbsp;&nbsp;</h4>
-          
-        <table class="table">
-            <tbody>
-              <tr>
-                <td>
-          <input type="checkbox"  name="device_type" value="arubaBeacon"><label >&nbsp;arubaBeacon</label><br>          
-                </td><td>
-          <input type="checkbox" name="device_type" value="arubaTag"><label >&nbsp; arubaTag</label><br>          
-                </td><td>
-          <input type="checkbox"  name="device_type" value="enoceanSwitch" checked ><label >&nbsp; enoceanSwitch</label><br>          
-                </td><td>
-          <input type="checkbox" name="device_type" value="enoceanSensor" checked ><label>&nbsp; enoceanSensor</label><br>                
-                </td>
-              </tr>
-              <tr>
-                <td>
-          <input type="checkbox" name="device_type" value="zfTag"><label>&nbsp; zfTag</label><br>                 
-                </td><td>
-          <input type="checkbox" name="device_type" value="stanleyTag"><label>&nbsp; stanleyTag</label><br>                 
-                </td><td>
-          <input type="checkbox" name="device_type" value="virginBeacon"><label>&nbsp; virginBeacon</label><br>       
-                </td><td>
-          <input type="checkbox" name="device_type" value="abbSensor"><label>&nbsp; abbSensor</label><br>       
-                </td>
-              </tr>
-              <tr>
-                <td>
-          <input type="checkbox" name="device_type" value="mysphera"><label>&nbsp; mysphera</label><br>       
-                </td><td>
-          <input type="checkbox" name="device_type" value="wiliot"><label>&nbsp; wiliot</label><br>       
-                </td><td>
-          <input type="checkbox" name="device_type" value="ZSD"><label>&nbsp; ZSD</label><br>       
-                </td><td>
-          <input type="checkbox" name="device_type" value="onity"><label>&nbsp; onity</label><br>       
-                </td>
-              </tr>
-              <tr>
-                <td>
-          <input type="checkbox" name="device_type" value="minew"><label>&nbsp; minew</label><br>       
-                </td><td>
-          <input type="checkbox" name="device_type" value="google"><label>&nbsp; google</label><br>       
-                </td><td>
-          <input type="checkbox" name="device_type" value="polestar"><label>&nbsp; polestar</label><br>       
-                </td><td>
-          <input type="checkbox" name="device_type" value="blyott"><label>&nbsp; blyott</label><br>       
-                </td>
-              </tr>
-              <tr>
-                <td>
-          <input type="checkbox" name="device_type" value="diract"><label>&nbsp; diract</label><br>       
-                </td><td>
-          <input type="checkbox" name="device_type" value="gwahygiene"><label>&nbsp; gwahygiene</label><br>                        
-                </td><td>
-                </td><td>
-                </td>
-              </tr>
-              <tr>
-                <td colspan="5">
         
-          <input type="checkbox" name="device_type" value="unclassified" checked ><label >&nbsp; unclassified</label><br>          
-         
+        <div id='include_mode_table'>  
+        <table class="table">
+            <tbody id='include_mode_table2'>
+              <tr>
+                <td>To be displayed by javascript</td>
+              </tr>       
+            </tbody>
+        </table>
+        </div>
+               
+        <!-- This a trick to include this at the end of the table above by javascript -->
+        <div id="include_mode_table_end" style="display:none;">
+          <input type="checkbox" name="device_type" value="unclassified:unclassified" checked ><label >&nbsp; Unclassified</label><br>         
           <blockquote>
             <input type="checkbox" id="include_with_local" value="1">
             <span > only unclassified devices with local info</span>   
             <br>
             <input type="checkbox" id="include_with_mac" value="1">
             <span> only unclassified devices with this MAC prefix :&nbsp;&nbsp;</span>
-            <input class="w3-border w3-round-large" type="text" id="include_mac_prefix" value="">       
+            <input class="w3-border w3-round-large" type="text" id="include_mac_prefix" value="xx:xx:xx">       
             <br>
             <span> Stop after &nbsp;</span>
-            <input class="w3-border w3-round-large" type="text" id="include_max" value="10" style="width:50px;"> 
+            <input class="w3-border w3-round-large" type="text" id="include_max" value="5" style="width:50px;"> 
             <span> unclassified devices included.</span>      
           </blockquote>                
+        </div>
 
-                </td>
-              </tr>
-            </tbody>
-        </table>
                   
         </div>
         
@@ -1633,11 +1747,6 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
           <button class="w3-btn w3-blue  w3-round-large" id="stop_include_bt" onclick="awss_api_include_mode(0);">Stop Include Mode</button>
         </h4>
               
-                      </td>
-                    </tr>
-                  </tbody>
-              </table>
-
       </div>
       <!-- Block -->
 
