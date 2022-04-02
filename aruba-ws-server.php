@@ -1130,10 +1130,19 @@
       if (($v_name = $v_device->getLocalName()) != '') {
         $v_device->setName($v_name);
       }
-      if (($v_name = $v_device->getVendorName()) != '') {
+      else if (($v_name = $v_device->getVendorName()) != '') {
         if (($v_name2 = $v_device->getModel()) != '') {
           $v_name .= ' '.$v_name2;
         }
+        $v_device->setName($v_name);
+      }
+      else if ($v_class_name != 'unclassified:unclassified') {
+        $v_name = $v_device->getDeviceModelFullName();
+        $v_mac_suffixe = substr($v_device_mac, -8); 
+        $v_device->setName($v_name.' ('.$v_mac_suffixe.')');
+      }
+      else {
+        $v_name = 'Unclassified ('.$v_device_mac.')';
         $v_device->setName($v_name);
       }
       
@@ -6398,6 +6407,27 @@ enum NbTopic {
     public function getConnectStatus() {
       return($this->connect_status);
     }
+
+
+    /**---------------------------------------------------------------------------
+     * Method : getDeviceModelFullName()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function getDeviceModelFullName() {
+      $v_name = '';
+      
+      $v_list = ArubaWssTool::getVendorDeviceList();
+      if (isset($v_list[$this->vendor_id]['devices'][$this->model_id])) {
+        $v_name = $v_list[$this->vendor_id]['name'].'-'.$v_list[$this->vendor_id]['devices'][$this->model_id]['name'];
+      }
+      else {
+        $v_name = $this->name;
+      }
+      
+      return($v_name);
+    }
+    /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
      * Method : getClassname()
