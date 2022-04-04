@@ -134,6 +134,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
             awss_device_change_to_connected(obj.data.device_mac);
           }
           else {
+            v_msg = "ble_connect fail with code '"+obj.status+"' for device '"+obj.data.device_mac+"'";
+            awss_log(v_msg);
             awss_device_change_to_disconnected(obj.data.device_mac);
           }
           // Nothing to do yet ?

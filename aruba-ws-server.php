@@ -3247,6 +3247,30 @@
     /**---------------------------------------------------------------------------
      * Method : onMsgActionResults()
      * Description :
+     * Response example :
+     * 
+        meta {
+          version: 1
+          access_token: "1234"
+          nbTopic: actionResults
+        }
+        reporter {
+          name: "AP-515"
+          mac:
+          ipv4: "192.168.30.14"
+          hwType: "AP-515"
+          swVersion: "8.9.0.3-8.9.0.3"
+          swBuild: "83448"
+          time: 1649067139
+        }
+        results {
+          actionId: "624ac48267dac"
+          type: bleConnect
+          deviceMac:
+          status: success
+          statusString: "Connection Successful!"
+        }
+     * 
      * ---------------------------------------------------------------------------
      */
     public function onMsgActionResults(&$p_reporter, $p_aresult) {
@@ -3337,14 +3361,47 @@
         /*
         Seen cases :
         Response received when triggering a connect/read on a characteristic
-results {
-  deviceMac:
-  status: invalidRequest
-  statusString: "Device does not match configured device class filter in iot transport profile"
-}        
+          results {
+            deviceMac:
+            status: invalidRequest
+            statusString: "Device does not match configured device class filter in iot transport profile"
+          }
+        Seen when device is discovered by BLE Telemetry (unclassified device) but not in the localname or OUI MAC filtering.
+        It seems to be able to do GATT the device must be in the filtering.         
+
         */
         
         if ($v_device !== null) {
+        
+          if (($v_status == 'invalidRequest') && ($v_status_string == 'Device does not match configured device class filter in iot transport profile')) {
+            // ----- Get oldest queued action for device
+            // We don't have any action_id nor action_type, so we thought this error 
+            // is from the oldest gatt request for the device
+            $v_action_item = $this->gattQueueGetActionOldest($v_device->getMac());
+            if ($v_action_item !== null) {
+              ArubaWssTool::log('debug', "Found an oldest action in gatt queue for this device.");
+              ArubaWssTool::log('debug', "value : ".print_r($v_action_item, true));
+              
+              // ----- Remove the action from the queue
+              $this->gattQueueRemoveAction($v_action_item['action_id']);
+              
+              // ----- Do callback
+              if ($v_action_item['action_type'] == 'bleConnect') {
+                $this->apiResponse_ble_connect($v_action_item['cnx_id'], 
+                                               $v_status, 
+                                               $v_device->getMac(),
+                                               $v_action_item['external_id']);
+              }
+              else if ($v_action_item['action_type'] == 'bleDisconnect') {
+                $this->apiResponse_ble_disconnect($v_action_item['cnx_id'], 
+                                                  $v_status, 
+                                                  $v_device->getMac(),
+                                                  $v_action_item['external_id']);
+              }
+            }
+          }
+        
+        
           // ----- The device might be in connecting phase ... the errors means a connect fail
           if ($v_device->getConnectStatus() == AWSS_STATUS_CONNECTED) {
             // ----- Change status to disconnected
@@ -5055,6 +5112,24 @@ enum NbTopic {
       }
       
       return(null);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : gattQueueGetActionOldest()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    private function gattQueueGetActionOldest($p_device_mac='') {    
+      $v_result = null;
+      
+      foreach ($this->gatt_queue as $v_item) {
+        if ($v_item['device_mac'] == $p_device_mac) {
+          return($v_item);
+        }
+      }
+      
+      return($v_result);
     }
     /* -------------------------------------------------------------------------*/
 

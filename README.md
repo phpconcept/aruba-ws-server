@@ -320,6 +320,9 @@ When available, a click on the "read" button will read the characteristic value.
 Buttons "Connect" and "Disconnect" will allow for starting a manual BLE GATT connect/disconnect to the device. This is mainly to test the BLE connection to the device.
 In normal case, discovery is a more efficient solution.
 
+Note that the Aruba AP will initiate a GATT connection to a BLE device only if this device is a known one, or, if unclassified, only if the device is in the filter list (local name, MAC OUI, ...). So a BLE device can be in the list of included device but with no GATT access if the device is not in the filtering list of the Aruba AP/Controller configuration.
+
+
 #### Device Telemetry
 
 Depending on device nature, multiple telemetry types and values may be available. These values can be received from Aruba Telemetry payload (for known device classes), or from BLE scaning results (bleData configuration). The telemetry payloads are received automatically at the frequency configured in the Access Point configuration, BLE advertissements are received in real time by the AP and forwarded to the server.
