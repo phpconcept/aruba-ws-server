@@ -351,7 +351,7 @@ The Websocket Server can be accessed by JSON API, description of the API is here
 
 ## Change Logs
 
-Release v1.5-beta :
+Release v1.5 :
 - Add AWSS version in API response messages.
 - Improve client updates on new clients ou new reporters.
 - Add a notification 'device_add' for the API.
