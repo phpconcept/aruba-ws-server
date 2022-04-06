@@ -70,14 +70,14 @@ aruba-ws-server
 16=awss\data\devices\class_regex.json
 [Selected Project Files]
 Main=
-Selected=README.md
+Selected=doc\API.md
 [aruba-ws-server.php]
-TopLine=2224
-Caret=8,2251
-Mark1=95,3535
+TopLine=1542
+Caret=18,1566
+Mark1=95,3636
 Mark2=35,1039
 Mark3=1,1057
-Mark4=56,3403
+Mark4=56,3504
 [awss\client\websocket_client.html]
 TopLine=121
 Caret=40,133
@@ -90,8 +90,8 @@ Mark6=30,1185
 Mark7=48,884
 Mark8=5,1064
 [doc\API.md]
-TopLine=1
-Caret=1,1
+TopLine=126
+Caret=29,150
 [src\aruba_telemetry\BleData.php]
 TopLine=86
 Caret=1,111

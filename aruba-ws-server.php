@@ -1553,21 +1553,36 @@
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : apiResponseHeader()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    protected function apiResponseHeader(&$v_response, $p_status='fail', $p_from_event='', $p_external_id='') {
+      $v_response = array();
+      $v_response['status'] = $p_status;
+      $v_response['status_msg'] = '';
+      $v_response['from_event'] = $p_from_event;
+      $v_response['event_id'] = $p_external_id;
+      $v_response['aruba_ws_version'] = ARUBA_WSS_VERSION;
+      $v_response['data'] = array();
+
+      return($v_response);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : apiEvent_exeeemple()
      * Description :
      * ---------------------------------------------------------------------------
      */
     protected function apiEvent_exeeemple($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_exeeemple', $p_external_id);
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('state'))) {
         return($v_response);
       }
-
-      $v_response['status'] = 'fail';
-      $v_response['status_msg'] = '';
-      $v_response['data'] = array();
 
       if (!isset($p_data['state'])) {
         $v_response['data'] = "Missing event data";
@@ -1576,7 +1591,6 @@
       }
 
       $v_response['status'] = 'success';
-      $v_response['data'] = array();
 
       return($v_response);
     }
@@ -1589,11 +1603,14 @@
      */
     protected function apiEvent_ble_connect($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_connect', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_connect';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
       
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac'))) {
         return($v_response);
@@ -1626,13 +1643,17 @@
      */
     public function apiResponse_ble_connect($p_cnx_id, $p_status, $p_device_mac, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, $p_status, 'ble_connect', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_connect';
-      $v_response['event_id'] = $p_external_id;
+      $v_response['event_id'] = 'ble_connect';
       $v_response['data'] = array();
 
       $v_response['status'] = $p_status;      
+      */
+      
       $v_response['data']['device_mac'] = $p_device_mac;
 
       // ----- Search cnx
@@ -1657,11 +1678,14 @@
      */
     protected function apiEvent_ble_disconnect($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_disconnect', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_disconnect';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+*/
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac'))) {
@@ -1697,6 +1721,8 @@
      */
     public function apiResponse_ble_disconnect($p_cnx_id, $p_status, $p_device_mac, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, $p_status, 'ble_disconnect', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_disconnect';
@@ -1704,6 +1730,7 @@
       $v_response['data'] = array();
 
       $v_response['status'] = $p_status;
+      */
       $v_response['data']['device_mac'] = $p_device_mac;
 
       // ----- Search cnx
@@ -1728,11 +1755,14 @@
      */
     protected function apiEvent_ble_discover($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_discover', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_discover';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
       
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac'))) {
         return($v_response);
@@ -1765,6 +1795,8 @@
      */
     public function apiResponse_ble_discover($p_cnx_id, $p_status, $p_device_mac, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, $p_status, 'ble_discover', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_discover';
@@ -1772,6 +1804,7 @@
       $v_response['data'] = array();
 
       $v_response['status'] = $p_status;      
+      */
       $v_response['data']['device_mac'] = $p_device_mac;
 
       // ----- Search cnx
@@ -1796,11 +1829,14 @@
      */
     protected function apiEvent_ble_read_multiple($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_read_multiple', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_read_multiple';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac','char_list'))) {
@@ -1844,11 +1880,14 @@
      */
     protected function apiEvent_ble_read($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_read', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_read';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac','service_uuid','char_uuid'))) {
@@ -1892,6 +1931,8 @@
      */
     public function apiResponse_ble_read($p_cnx_id, $p_status, $p_device_mac, $p_service_uuid, $p_char_uuid, $p_value, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, $p_status, 'ble_read', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_read';
@@ -1900,6 +1941,7 @@
 
 
       $v_response['status'] = $p_status;
+      */
       $v_response['data']['device_mac'] = $p_device_mac;
       $v_response['data']['service_uuid'] = $p_service_uuid;
       $v_response['data']['char_uuid'] = $p_char_uuid;
@@ -1947,11 +1989,14 @@
      */
     protected function apiEvent_ble_read_repeat($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_read_repeat', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_read_repeat';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac','service_uuid','char_uuid','repeat_time','repeat_count'))) {
@@ -2005,11 +2050,14 @@
      */
     protected function apiEvent_ble_notify($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_notify', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_notify';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
       
       // ----- ***** DISCONNECT THIS API
       /**
@@ -2075,6 +2123,8 @@
      */
     public function apiResponse_ble_notify($p_cnx_id, $p_status, $p_status_msg, $p_device_mac, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, $p_status, 'ble_notify', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_notify';
@@ -2082,6 +2132,7 @@
       $v_response['data'] = array();
 
       $v_response['status'] = $p_status;
+      */
       $v_response['status_msg'] = $p_status_msg;      
       $v_response['data']['device_mac'] = $p_device_mac;
 
@@ -2107,6 +2158,8 @@
      */
     public function apiNotify_ble_notify($p_cnx_id, $p_status, $p_device_mac, $p_service_uuid, $p_char_uuid, $p_value, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, $p_status, 'ble_notify', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_notify';
@@ -2114,6 +2167,7 @@
       $v_response['data'] = array();
 
       $v_response['status'] = $p_status;
+      */
       $v_response['status_msg'] = '';
       $v_response['data']['device_mac'] = $p_device_mac;
       $v_response['data']['service_uuid'] = $p_service_uuid;
@@ -2146,11 +2200,14 @@
      */
     protected function apiEvent_get_stats($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_stats', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_stats';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
 
       $v_response['status'] = 'success';
@@ -2167,11 +2224,14 @@
      */
     protected function apiEvent_device_remove($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'device_remove', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'device_remove';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
@@ -2208,11 +2268,14 @@
      */
     protected function apiEvent_device_update($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'device_update', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'device_update';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
@@ -2274,11 +2337,14 @@
      */
     protected function apiEvent_websocket_info($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'websocket_info', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'websocket_info';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       //if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
@@ -2305,11 +2371,14 @@
      */
     protected function apiEvent_reporter_list($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'reporter_list', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'reporter_list';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       //if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
@@ -2353,11 +2422,14 @@
      */
     protected function apiEvent_reporter_info($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'reporter_info', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'reporter_info';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('reporter_mac'))) {
@@ -2392,11 +2464,14 @@
      */
     protected function apiEvent_device_list($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'device_list', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'device_list';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       //if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
@@ -2427,11 +2502,14 @@
      */
     protected function apiEvent_device_info($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'device_info', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'device_info';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac'))) {
@@ -2467,11 +2545,14 @@
      */
     protected function apiEvent_vendor_list($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'vendor_list', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'vendor_list';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       //if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
@@ -2508,11 +2589,14 @@
      */
     protected function apiEvent_include_mode($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'include_mode', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'include_mode';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('state'))) {
@@ -2588,11 +2672,14 @@
      */
     protected function apiEvent_include_device_count($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'include_device_count', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'include_device_count';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       //if (!$this->apiCheckMandatoryData($v_response, $p_data, array('state'))) {
@@ -2613,11 +2700,14 @@
      */
     protected function apiEvent_notification_add($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'notification_add', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'notification_add';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('type'))) {
@@ -2682,11 +2772,14 @@
      */
     protected function apiEvent_notification_remove($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'notification_remove', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'notification_remove';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('type'))) {
@@ -2740,11 +2833,16 @@
      */
     public function apiNotify_notification($p_cnx_id, $p_data, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'success', 'notification', $p_external_id);
+      /*
       $v_response['status'] = 'success';
       $v_response['status_msg'] = '';
       $v_response['data'] = $p_data;
       $v_response['from_event'] = 'notification';
       $v_response['event_id'] = $p_external_id;
+      */
+
+      $v_response['data'] = $p_data;
 
       // ----- Search cnx
       if (($v_cnx = $this->getConnectionById($p_cnx_id)) === null) {
@@ -2768,11 +2866,14 @@
      */
     protected function apiEvent_debug($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'debug', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'debug';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('target'))) {
