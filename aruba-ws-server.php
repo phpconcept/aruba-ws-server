@@ -14,7 +14,7 @@
  */
 
   ini_set('display_errors', '1');
-  define('ARUBA_WSS_VERSION', '1.4');
+  define('ARUBA_WSS_VERSION', '1.5');
 
   /**
    * Look for specific arguments to manage extensions and console log
@@ -346,13 +346,40 @@
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
-     * Method : getDeviceClassList()
+     * Method : getVendorDeviceList()
      * Description :
      * ---------------------------------------------------------------------------
      */
-    static function getDeviceClassList() {
+    static function getVendorDeviceList() {
       global $aruba_iot_websocket;
-      return($aruba_iot_websocket->getDeviceClassList());
+      return($aruba_iot_websocket->getVendorDeviceList());
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
+     * Method : isValidDeviceClassname()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    static function isValidDeviceClassname($v_classname) {
+      global $aruba_iot_websocket;
+      
+      $v_vendor_list = $aruba_iot_websocket->getVendorDeviceList();
+      
+      $v_item = explode(':', $v_classname);
+      if (sizeof($v_item) != 2) {
+        return(false);
+      }
+      
+      if (!isset($v_vendor_list[$v_item[0]])) {
+        return(false);
+      }
+      
+      if (!isset($v_vendor_list[$v_item[0]]['devices'][$v_item[1]])) {
+        return(false);
+      }
+      
+      return(true);
     }
     /* -------------------------------------------------------------------------*/
 
@@ -361,29 +388,54 @@
      * Description :
      * ---------------------------------------------------------------------------
      */
-    static function arubaClassToVendor($p_classname) {
+    static function arubaClassToVendor($p_classname, $p_as_string=false) {
       $v_result = array();
       
+      // ----- Check for unclassified one
+      if ($p_classname == 'unclassified') {
+        $v_result['vendor_id'] = 'unclassified';
+        $v_result['model_id'] = 'unclassified';
+  
+        if ($p_as_string) {
+          return($v_result['vendor_id'].':'.$v_result['model_id']);
+        }
+        else {
+          return($v_result);
+        }
+      }
+      
       // ----- Get known device class list
-      $v_list = ArubaWssTool::getDeviceClassList();
+      $v_list = ArubaWssTool::getVendorDeviceList();
       
       // ----- Extract vendor_id:device_id from Aruba classname
       foreach ($v_list as $v_key => $v_vendor) {
         foreach ($v_vendor['devices'] as $v_device) {
-          ArubaWssTool::log('debug', "Look for : ".$v_vendor['name'].':'.$v_device['name']);
+          //ArubaWssTool::log('debug', "Look for : ".$v_vendor['vendor_id'].':'.$v_device['model_id']);
           if ($v_device['aruba_class'] == $p_classname) {
-            $v_result['vendor_id'] = $v_vendor['name'];
-            $v_result['model_id'] = $v_device['name'];
-            return($v_result);
+            $v_result['vendor_id'] = $v_vendor['vendor_id'];
+            $v_result['model_id'] = $v_device['model_id'];
+            if ($p_as_string) {
+              return($v_result['vendor_id'].':'.$v_result['model_id']);
+            }
+            else {
+              return($v_result);
+            }
           }
         }
       }
 
       // ----- Not found      
-      $v_result['vendor_id'] = 'generic';
-      $v_result['model_id'] = 'generic';
+      ArubaWssTool::log('debug', "Unknown Aruba Classname '".$p_classname."', please check aruba_class.json file.");
 
-      return($v_result);
+      $v_result['vendor_id'] = 'unclassified';
+      $v_result['model_id'] = 'unclassified';
+
+      if ($p_as_string) {
+        return($v_result['vendor_id'].':'.$v_result['model_id']);
+      }
+      else {
+        return($v_result);
+      }
     }
     /* -------------------------------------------------------------------------*/
     
@@ -430,10 +482,10 @@
     protected $include_mode = false;
     protected $include_device_count = 0;
     protected $device_type_allow_list = array();
-    protected $include_generic_with_local = 0;
-    protected $include_generic_with_mac = 0;
-    protected $include_generic_mac_prefix = '';
-    protected $include_generic_max_devices = 3;
+    protected $include_unclassified_with_local = 0;
+    protected $include_unclassified_with_mac = 0;
+    protected $include_unclassified_mac_prefix = '';
+    protected $include_unclassified_max_devices = 3;
 
     // ----- Statistics data
     protected $payload_data = 0;
@@ -672,11 +724,11 @@
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
-     * Method : getDeviceClassList()
+     * Method : getVendorDeviceList()
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function getDeviceClassList() {
+    public function getVendorDeviceList() {
       return($this->device_class_list);
     }
     /* -------------------------------------------------------------------------*/
@@ -711,225 +763,74 @@
       // ----- Add a type field to identify 'known' BLE vendor Aruba class
       // will be used later to add 'unclassified' BLE vendors.
       foreach ($this->device_class_list as $v_key => $v_vendor) {
-        $this->device_class_list[$v_key]['type'] = 'classified';  
+        if (!isset($this->device_class_list[$v_key]['type'])) {
+          $this->device_class_list[$v_key]['type'] = 'classified';  
+        }
+      }
+      
+      // ----- Load custom vendor/device classes
+      $v_dirname = __DIR__."/awss/data/devices";
+      $v_vendor_dir_list = array_diff(scandir($v_dirname), array('..', '.'));
+      foreach ($v_vendor_dir_list as $v_vendor_dir) {
+        if (is_dir($v_dirname.'/'.$v_vendor_dir)) {
+          // ----- Array for this vendor to store all the devices
+          // TBC : In the future need to read this dynammically in a json file
+          $v_vendor = array();     
+          $v_vendor['vendor_id'] = $v_vendor_dir;
+          $v_vendor['name'] = $v_vendor_dir;
+          $v_vendor['description'] = '';
+          $v_vendor['type'] = 'unclassified';         
+          $v_vendor['devices'] = array();    
+
+          $v_device_dir_list = array_diff(scandir($v_dirname.'/'.$v_vendor_dir), array('..', '.'));
+          foreach ($v_device_dir_list as $v_device_dir) {
+            if (is_dir($v_dirname.'/'.$v_vendor_dir.'/'.$v_device_dir)) {
+              $v_filename = $v_dirname.'/'.$v_vendor_dir.'/'.$v_device_dir.'/'.$v_vendor_dir.'_'.$v_device_dir.'.json';
+    
+              if (!file_exists($v_filename)) {
+                ArubaWssTool::log('error', "Missing Aruba Class JSON file '".$v_filename."'");
+                continue;
+              }
+              
+              // ----- Read file
+              if (($v_handle = @fopen($v_filename, "r")) === null) {
+                ArubaWssTool::log('error', "Fail to open Aruba Class JSON file '".$v_filename."'");
+                continue;
+              }
+              $v_list_json = @fread($v_handle, filesize($v_filename));
+              @fclose($v_handle);
+    
+              if (($v_device = json_decode($v_list_json, true)) === null) {
+                ArubaWssTool::log('error', "Badly formatted JSON content in file '".$v_filename."'");
+                continue;
+              }
+              
+              // ----- Some sanity checks
+              if ($v_device['model_id'] != $v_device_dir) {
+                ArubaWssTool::log('error', "Device model_id inconsistency in json file '".$v_filename."'. Device ignored.");
+                continue;
+              }
+              if (isset($v_device['vendor_id']) && ($v_device['vendor_id'] != $v_vendor_dir)) {
+                ArubaWssTool::log('error', "Device vendor_id inconsistency in json file '".$v_filename."'. Device ignored.");
+                continue;
+              }
+              
+              // ---- Some forced values
+              $v_device['aruba_class'] = 'unclassified';
+              
+              // ----- Add the device to the vendor list
+              $v_vendor['devices'][$v_device_dir] = $v_device;
+            }
+          }
+
+          // ----- Add the vendor to the list
+          $this->device_class_list[$v_vendor_dir] = $v_vendor;
+
+        }
       }
       
       //ArubaWssTool::log('debug', "device_class_list : ".print_r($this->device_class_list, true));
-    
-      return($this->device_class_list);
-    }
-    /* -------------------------------------------------------------------------*/
-
-    /**---------------------------------------------------------------------------
-     * Method : loadDeviceClassList()
-     * Description :
-     * ---------------------------------------------------------------------------
-     */
-    private function loadDeviceClassList_BACK() {
-
-      $v_class_json = <<<JSON_EOT
-{
-  "Aruba": {
-    "name": "Aruba",
-    "description": "",
-    "devices": {
-      "Beacon": {
-        "aruba_class": "arubaBeacon", 
-        "name": "Beacon",
-        "description": ""
-      },
-      "Tag": {
-        "aruba_class": "arubaTag", 
-        "name": "Tag",
-        "description": ""
-      },
-      "Sensor": {
-        "aruba_class": "arubaSensor", 
-        "name": "Sensor",
-        "description": ""
-      }
-    }
-  },
-  
-  "ZF": {
-    "name": "ZF",
-    "description": "",
-    "devices": {
-      "Tag": {
-        "aruba_class": "zfTag", 
-        "name": "Tag",
-        "description": ""
-      }
-    }
-  },
-  
-  "Stanley": {
-    "name": "Stanley",
-    "description": "",
-    "devices": {
-      "Tag": {
-        "aruba_class": "stanleyTag", 
-        "name": "Tag",
-        "description": ""
-      }
-    }
-  },
-  
-  "Virgin": {
-    "name": "Virgin",
-    "description": "",
-    "devices": {
-      "Beacon": {
-        "aruba_class": "virginBeacon", 
-        "name": "Beacon",
-        "description": ""
-      }
-    }
-  },
-  
-  "Enocean": {
-    "name": "EnOcean",
-    "description": "",
-    "devices": {
-      "Sensor": {
-        "aruba_class": "enoceanSensor", 
-        "name": "Sensor",
-        "description": ""
-      },
-      "Switch": {
-        "aruba_class": "enoceanSwitch", 
-        "name": "Switch",
-        "description": ""
-      }
-    }
-  },
-  
-  "ABB": {
-    "name": "ABB",
-    "description": "",
-    "devices": {
-      "Sensor": {
-        "aruba_class": "abbSensor", 
-        "name": "Sensor",
-        "description": ""
-      }
-    }
-  },
-  
-  "MySphera": {
-    "name": "MySphera",
-    "description": "",
-    "devices": {
-      "generic": {
-        "aruba_class": "mysphera", 
-        "name": "generic",
-        "description": ""
-      }
-    }
-  },
-  
-  "Wiliot": {
-    "name": "Wiliot",
-    "description": "",
-    "devices": {
-      "generic": {
-        "aruba_class": "wiliot", 
-        "name": "generic",
-        "description": ""
-      }
-    }
-  },
-  
-  "Onity": {
-    "name": "Onity",
-    "description": "",
-    "devices": {
-      "generic": {
-        "aruba_class": "onity", 
-        "name": "generic",
-        "description": ""
-      }
-    }
-  },
-  
-  "Minew": {
-    "name": "Minew",
-    "description": "",
-    "devices": {
-      "generic": {
-        "aruba_class": "minew", 
-        "name": "generic",
-        "description": ""
-      }
-    }
-  },
-  
-  "Google": {
-    "name": "Google",
-    "description": "",
-    "devices": {
-      "generic": {
-        "aruba_class": "google", 
-        "name": "generic",
-        "description": ""
-      }
-    }
-  },
-  
-  "Polestar": {
-    "name": "Polestar",
-    "description": "",
-    "devices": {
-      "generic": {
-        "aruba_class": "polestar", 
-        "name": "generic",
-        "description": ""
-      }
-    }
-  },
-  
-  "Blyott": {
-    "name": "Blyott",
-    "description": "",
-    "devices": {
-      "generic": {
-        "aruba_class": "blyott", 
-        "name": "generic",
-        "description": ""
-      }
-    }
-  },
-  
-  "Diract": {
-    "name": "Diract",
-    "description": "",
-    "devices": {
-      "generic": {
-        "aruba_class": "diract", 
-        "name": "generic",
-        "description": ""
-      }
-    }
-  },
-  
-  "Gwahygiene": {
-    "name": "Gwahygiene",
-    "description": "",
-    "devices": {
-      "generic": {
-        "aruba_class": "gwahygiene", 
-        "name": "generic",
-        "description": ""
-      }
-    }
-  }
-  
-  
-}
-JSON_EOT;
-
-      $this->device_class_list = json_decode($v_class_json, true);
-
+            
       return($this->device_class_list);
     }
     /* -------------------------------------------------------------------------*/
@@ -945,7 +846,8 @@ JSON_EOT;
       $v_item['aruba_ws_version'] = ARUBA_WSS_VERSION;
       $v_item['ip_address'] = $this->getIpAddress();
       $v_item['tcp_port'] = $this->getTcpPort();
-      $v_item['up_time'] = date("Y-m-d H:i:s", $this->up_time);
+      //$v_item['up_time'] = date("Y-m-d H:i:s", $this->up_time);
+      $v_item['up_time'] = $this->up_time;
       
       $v_item['presence_timeout'] = $this->presence_timeout;
       $v_item['presence_min_rssi'] = $this->presence_min_rssi;
@@ -965,10 +867,10 @@ JSON_EOT;
       $v_item['include_mode'] = ($this->include_mode?1:0);
       $v_item['include_device_count'] = $this->include_device_count;
       $v_item['device_type_allow_list'] = implode(",", $this->device_type_allow_list);
-      $v_item['include_generic_with_local'] = $this->include_generic_with_local;
-      $v_item['include_generic_with_mac'] = $this->include_generic_with_mac;
-      $v_item['include_generic_mac_prefix'] = $this->include_generic_mac_prefix;
-      $v_item['include_generic_max_devices'] = $this->include_generic_max_devices;
+      $v_item['include_unclassified_with_local'] = $this->include_unclassified_with_local;
+      $v_item['include_unclassified_with_mac'] = $this->include_unclassified_with_mac;
+      $v_item['include_unclassified_mac_prefix'] = $this->include_unclassified_mac_prefix;
+      $v_item['include_unclassified_max_devices'] = $this->include_unclassified_max_devices;
 
       $v_item['stats']['payload_data'] = $this->payload_data;
       $v_item['stats']['raw_data'] = $this->raw_data;
@@ -1228,10 +1130,19 @@ JSON_EOT;
       if (($v_name = $v_device->getLocalName()) != '') {
         $v_device->setName($v_name);
       }
-      if (($v_name = $v_device->getVendorName()) != '') {
+      else if (($v_name = $v_device->getVendorName()) != '') {
         if (($v_name2 = $v_device->getModel()) != '') {
           $v_name .= ' '.$v_name2;
         }
+        $v_device->setName($v_name);
+      }
+      else if ($v_class_name != 'unclassified:unclassified') {
+        $v_name = $v_device->getDeviceModelFullName();
+        $v_mac_suffixe = substr($v_device_mac, -8); 
+        $v_device->setName($v_name.' ('.$v_mac_suffixe.')');
+      }
+      else {
+        $v_name = 'Unclassified ('.$v_device_mac.')';
         $v_device->setName($v_name);
       }
       
@@ -1642,21 +1553,36 @@ JSON_EOT;
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : apiResponseHeader()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    protected function apiResponseHeader(&$v_response, $p_status='fail', $p_from_event='', $p_external_id='') {
+      $v_response = array();
+      $v_response['status'] = $p_status;
+      $v_response['status_msg'] = '';
+      $v_response['from_event'] = $p_from_event;
+      $v_response['event_id'] = $p_external_id;
+      $v_response['aruba_ws_version'] = ARUBA_WSS_VERSION;
+      $v_response['data'] = array();
+
+      return($v_response);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : apiEvent_exeeemple()
      * Description :
      * ---------------------------------------------------------------------------
      */
     protected function apiEvent_exeeemple($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_exeeemple', $p_external_id);
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('state'))) {
         return($v_response);
       }
-
-      $v_response['status'] = 'fail';
-      $v_response['status_msg'] = '';
-      $v_response['data'] = array();
 
       if (!isset($p_data['state'])) {
         $v_response['data'] = "Missing event data";
@@ -1665,7 +1591,6 @@ JSON_EOT;
       }
 
       $v_response['status'] = 'success';
-      $v_response['data'] = array();
 
       return($v_response);
     }
@@ -1678,11 +1603,14 @@ JSON_EOT;
      */
     protected function apiEvent_ble_connect($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_connect', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_connect';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
       
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac'))) {
         return($v_response);
@@ -1715,13 +1643,17 @@ JSON_EOT;
      */
     public function apiResponse_ble_connect($p_cnx_id, $p_status, $p_device_mac, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, $p_status, 'ble_connect', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_connect';
-      $v_response['event_id'] = $p_external_id;
+      $v_response['event_id'] = 'ble_connect';
       $v_response['data'] = array();
 
       $v_response['status'] = $p_status;      
+      */
+      
       $v_response['data']['device_mac'] = $p_device_mac;
 
       // ----- Search cnx
@@ -1746,11 +1678,14 @@ JSON_EOT;
      */
     protected function apiEvent_ble_disconnect($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_disconnect', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_disconnect';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+*/
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac'))) {
@@ -1786,6 +1721,8 @@ JSON_EOT;
      */
     public function apiResponse_ble_disconnect($p_cnx_id, $p_status, $p_device_mac, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, $p_status, 'ble_disconnect', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_disconnect';
@@ -1793,6 +1730,7 @@ JSON_EOT;
       $v_response['data'] = array();
 
       $v_response['status'] = $p_status;
+      */
       $v_response['data']['device_mac'] = $p_device_mac;
 
       // ----- Search cnx
@@ -1817,11 +1755,14 @@ JSON_EOT;
      */
     protected function apiEvent_ble_discover($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_discover', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_discover';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
       
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac'))) {
         return($v_response);
@@ -1854,6 +1795,8 @@ JSON_EOT;
      */
     public function apiResponse_ble_discover($p_cnx_id, $p_status, $p_device_mac, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, $p_status, 'ble_discover', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_discover';
@@ -1861,6 +1804,7 @@ JSON_EOT;
       $v_response['data'] = array();
 
       $v_response['status'] = $p_status;      
+      */
       $v_response['data']['device_mac'] = $p_device_mac;
 
       // ----- Search cnx
@@ -1885,11 +1829,14 @@ JSON_EOT;
      */
     protected function apiEvent_ble_read_multiple($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_read_multiple', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_read_multiple';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac','char_list'))) {
@@ -1933,11 +1880,14 @@ JSON_EOT;
      */
     protected function apiEvent_ble_read($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_read', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_read';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac','service_uuid','char_uuid'))) {
@@ -1981,6 +1931,8 @@ JSON_EOT;
      */
     public function apiResponse_ble_read($p_cnx_id, $p_status, $p_device_mac, $p_service_uuid, $p_char_uuid, $p_value, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, $p_status, 'ble_read', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_read';
@@ -1989,6 +1941,7 @@ JSON_EOT;
 
 
       $v_response['status'] = $p_status;
+      */
       $v_response['data']['device_mac'] = $p_device_mac;
       $v_response['data']['service_uuid'] = $p_service_uuid;
       $v_response['data']['char_uuid'] = $p_char_uuid;
@@ -2036,11 +1989,14 @@ JSON_EOT;
      */
     protected function apiEvent_ble_read_repeat($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_read_repeat', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_read_repeat';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac','service_uuid','char_uuid','repeat_time','repeat_count'))) {
@@ -2094,11 +2050,14 @@ JSON_EOT;
      */
     protected function apiEvent_ble_notify($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_notify', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_notify';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
       
       // ----- ***** DISCONNECT THIS API
       /**
@@ -2164,6 +2123,8 @@ JSON_EOT;
      */
     public function apiResponse_ble_notify($p_cnx_id, $p_status, $p_status_msg, $p_device_mac, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, $p_status, 'ble_notify', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_notify';
@@ -2171,6 +2132,7 @@ JSON_EOT;
       $v_response['data'] = array();
 
       $v_response['status'] = $p_status;
+      */
       $v_response['status_msg'] = $p_status_msg;      
       $v_response['data']['device_mac'] = $p_device_mac;
 
@@ -2196,6 +2158,8 @@ JSON_EOT;
      */
     public function apiNotify_ble_notify($p_cnx_id, $p_status, $p_device_mac, $p_service_uuid, $p_char_uuid, $p_value, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, $p_status, 'ble_notify', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_notify';
@@ -2203,6 +2167,7 @@ JSON_EOT;
       $v_response['data'] = array();
 
       $v_response['status'] = $p_status;
+      */
       $v_response['status_msg'] = '';
       $v_response['data']['device_mac'] = $p_device_mac;
       $v_response['data']['service_uuid'] = $p_service_uuid;
@@ -2235,11 +2200,14 @@ JSON_EOT;
      */
     protected function apiEvent_get_stats($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'ble_stats', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'ble_stats';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
 
       $v_response['status'] = 'success';
@@ -2256,11 +2224,14 @@ JSON_EOT;
      */
     protected function apiEvent_device_remove($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'device_remove', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'device_remove';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
@@ -2297,11 +2268,14 @@ JSON_EOT;
      */
     protected function apiEvent_device_update($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'device_update', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'device_update';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
@@ -2363,11 +2337,14 @@ JSON_EOT;
      */
     protected function apiEvent_websocket_info($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'websocket_info', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'websocket_info';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       //if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
@@ -2394,11 +2371,14 @@ JSON_EOT;
      */
     protected function apiEvent_reporter_list($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'reporter_list', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'reporter_list';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       //if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
@@ -2425,6 +2405,7 @@ JSON_EOT;
         $v_item['serial'] = $v_reporter->hasSerialCnx();
         $v_item['zigbee'] = $v_reporter->hasZigbeeCnx();
         $v_item['lastseen'] = $v_reporter->getLastSeen();
+        $v_item['uptime'] = $v_reporter->getUptime();
         $v_response['data']['reporters'][] = $v_item;
       }
 
@@ -2441,11 +2422,14 @@ JSON_EOT;
      */
     protected function apiEvent_reporter_info($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'reporter_info', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'reporter_info';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('reporter_mac'))) {
@@ -2480,11 +2464,14 @@ JSON_EOT;
      */
     protected function apiEvent_device_list($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'device_list', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'device_list';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       //if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
@@ -2515,11 +2502,14 @@ JSON_EOT;
      */
     protected function apiEvent_device_info($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'device_info', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'device_info';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('device_mac'))) {
@@ -2549,6 +2539,35 @@ JSON_EOT;
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : apiEvent_vendor_list()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    protected function apiEvent_vendor_list($p_data, $p_cnx_id='', $p_external_id='') {
+      $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'vendor_list', $p_external_id);
+      /*
+      $v_response['status'] = 'fail';
+      $v_response['status_msg'] = '';
+      $v_response['from_event'] = 'vendor_list';
+      $v_response['event_id'] = $p_external_id;
+      $v_response['data'] = array();
+      */
+
+      // ----- Check mandatory fields are present
+      //if (!$this->apiCheckMandatoryData($v_response, $p_data, array('mac_address'))) {
+      //  return($v_response);
+      //}
+
+      $v_response['data']['vendor_list'] = $this->getVendorDeviceList();
+      
+      $v_response['status'] = 'success';
+              
+      return($v_response);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : apiEvent_include_mode()
      * Description :
      * {
@@ -2558,11 +2577,11 @@ JSON_EOT;
         "name":"include_mode",
         "data": {
           "state":1,
-          "type":"generic",
-          "generic_with_local":"",
-          "generic_with_mac":0,
-          "generic_mac_prefix":"",
-          "generic_max_devices":10
+          "type":"unclassified:unclassified",
+          "unclassified_with_local":"",
+          "unclassified_with_mac":0,
+          "unclassified_mac_prefix":"",
+          "unclassified_max_devices":10
         }
     }
 }
@@ -2570,11 +2589,14 @@ JSON_EOT;
      */
     protected function apiEvent_include_mode($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'include_mode', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'include_mode';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('state'))) {
@@ -2594,28 +2616,43 @@ JSON_EOT;
 
       ArubaWssTool::log('info', "Changing include mode to ".($this->include_mode ? 'true' : 'false'));
       if ($this->include_mode) {
+        // ----- Reset class to include
+        $this->device_type_allow_list = array();
+        
+        // ----- Extract and check class to include
         if (isset($p_data['type'])) {
-          ArubaWssTool::log('debug', "Classes to include : ".$p_data['type']);
-          $this->device_type_allow_list = explode(',', $p_data['type']);
+          $v_list = explode(',', $p_data['type']);
+          
+          foreach ($v_list as $v_classname) {
+            if (ArubaWssTool::isValidDeviceClassname($v_classname)) {
+              $this->device_type_allow_list[] = $v_classname;
+            }
+            else {
+              ArubaWssTool::log('debug', "'".$v_classname."' is not a valid classname");
+            }
+          }
+          ArubaWssTool::log('debug', "Classes to include : ".implode(',', $this->device_type_allow_list));
         }
-        else {
+        
+        // ----- Check at least one
+        if (sizeof($this->device_type_allow_list) < 1) {
           ArubaWssTool::log('debug', "Missing classes to include ! ");
         }
 
-        if (in_array('generic', $this->device_type_allow_list)) {
-          $this->include_generic_with_local = (isset($p_data['generic_with_local']) ? $p_data['generic_with_local'] : 0);
-          $this->include_generic_with_mac = (isset($p_data['generic_with_mac']) ? $p_data['generic_with_mac'] : 0);
-          $this->include_generic_mac_prefix = strtoupper((isset($p_data['generic_mac_prefix']) ? $p_data['generic_mac_prefix'] : ''));
-          $this->include_generic_max_devices = (isset($p_data['generic_max_devices']) ? $p_data['generic_max_devices'] : 3);
+        if (in_array('unclassified:unclassified', $this->device_type_allow_list)) {
+          $this->include_unclassified_with_local = (isset($p_data['unclassified_with_local']) ? $p_data['unclassified_with_local'] : 0);
+          $this->include_unclassified_with_mac = (isset($p_data['unclassified_with_mac']) ? $p_data['unclassified_with_mac'] : 0);
+          $this->include_unclassified_mac_prefix = strtoupper((isset($p_data['unclassified_mac_prefix']) ? $p_data['unclassified_mac_prefix'] : ''));
+          $this->include_unclassified_max_devices = (isset($p_data['unclassified_max_devices']) ? $p_data['unclassified_max_devices'] : 3);
         }
       }
 
       // ----- Stop include mode
       else {
-        $this->include_generic_with_local = 0;
-        $this->include_generic_with_mac = 0;
-        $this->include_generic_mac_prefix = '';
-        $this->include_generic_max_devices = 3;
+        $this->include_unclassified_with_local = 0;
+        $this->include_unclassified_with_mac = 0;
+        $this->include_unclassified_mac_prefix = '';
+        $this->include_unclassified_max_devices = 3;
       }
 
       // ----- Reset new device count
@@ -2635,11 +2672,14 @@ JSON_EOT;
      */
     protected function apiEvent_include_device_count($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'include_device_count', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'include_device_count';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       //if (!$this->apiCheckMandatoryData($v_response, $p_data, array('state'))) {
@@ -2660,11 +2700,14 @@ JSON_EOT;
      */
     protected function apiEvent_notification_add($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'notification_add', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'notification_add';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('type'))) {
@@ -2696,6 +2739,15 @@ JSON_EOT;
             }
           }
         break;
+        case 'device_add' :
+          if (($v_value = $this->notificationAdd('device_add', 'ws_api', $p_cnx_id, [] )) < 1) {
+            $v_response['status'] = 'fail';
+            if ($v_value == -1) {
+              $v_response['status_msg'] = "Duplicate registration of notification device_add.";
+              ArubaWssTool::log('debug', $v_response['status_msg']);
+            }
+          }
+        break;
         case 'reporter_status' :
           if (($v_value = $this->notificationAdd('reporter_status', 'ws_api', $p_cnx_id, [] )) < 1) {
             $v_response['status'] = 'fail';
@@ -2704,10 +2756,6 @@ JSON_EOT;
               ArubaWssTool::log('debug', $v_response['status_msg']);
             }
           }
-        break;
-        case 'new_reporter' :
-        break;
-        case 'new_device' :
         break;
         default :
           $v_response['status'] = 'fail';
@@ -2724,11 +2772,14 @@ JSON_EOT;
      */
     protected function apiEvent_notification_remove($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'notification_remove', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'notification_remove';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('type'))) {
@@ -2782,11 +2833,16 @@ JSON_EOT;
      */
     public function apiNotify_notification($p_cnx_id, $p_data, $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'success', 'notification', $p_external_id);
+      /*
       $v_response['status'] = 'success';
       $v_response['status_msg'] = '';
       $v_response['data'] = $p_data;
       $v_response['from_event'] = 'notification';
       $v_response['event_id'] = $p_external_id;
+      */
+
+      $v_response['data'] = $p_data;
 
       // ----- Search cnx
       if (($v_cnx = $this->getConnectionById($p_cnx_id)) === null) {
@@ -2810,11 +2866,14 @@ JSON_EOT;
      */
     protected function apiEvent_debug($p_data, $p_cnx_id='', $p_external_id='') {
       $v_response = array();
+      $this->apiResponseHeader($v_response, 'fail', 'debug', $p_external_id);
+      /*
       $v_response['status'] = 'fail';
       $v_response['status_msg'] = '';
       $v_response['from_event'] = 'debug';
       $v_response['event_id'] = $p_external_id;
       $v_response['data'] = array();
+      */
 
       // ----- Check mandatory fields are present
       if (!$this->apiCheckMandatoryData($v_response, $p_data, array('target'))) {
@@ -2866,48 +2925,48 @@ JSON_EOT;
      */
     public function deviceIncludeValidation($p_device_mac, $p_class_name, $p_telemetry) {
 
-      ArubaWssTool::log('debug',  "Check include mode for device ".$p_device_mac);
+      ArubaWssTool::log('debug',  "Check include mode for device '".$p_device_mac."', with new classname :'".$p_class_name."'");
 
       $v_result = true;
 
+      //$p_class_name = $this->getAwssTypeFromArubaType($p_class_name);
+      //$p_class_name = ArubaWssTool::arubaClassToVendor($p_class_name, true);
+      
+      // ----- Check if include mode is on
       if (!$this->include_mode) {
         return(false);
       }
+      
+      // ----- Check that class_name is a type allowed in the include mode
       if (!in_array($p_class_name, $this->device_type_allow_list)) {
         return(false);
       }
 
-      /*
-          protected $include_generic_with_local;
-    protected $include_generic_with_mac;
-    protected $include_generic_mac_prefix;
-    protected $include_generic_max_devices;
-        */
-
-      if ($p_class_name == 'generic') {
+      // ----- Look for additional filtering while adding unclassified devices
+      if ($p_class_name == 'unclassified:unclassified') {
 
         // ----- Look for device count
-        if ($this->include_generic_max_devices < 1) {
-          ArubaWssTool::log('debug',  "Max generic device inclusion reached. Do not include.");
+        if ($this->include_unclassified_max_devices < 1) {
+          ArubaWssTool::log('debug',  "Max unclassified device inclusion reached. Do not include.");
           return(false);
         }
 
-      ArubaWssTool::log('debug',  "Check include with mac@ mode : '".$this->include_generic_with_mac."'");
-      ArubaWssTool::log('debug',  "Check include mac@ with prefix : '".$this->include_generic_mac_prefix."'");
+        ArubaWssTool::log('debug',  "Check include with mac@ mode : '".$this->include_unclassified_with_mac."'");
+        ArubaWssTool::log('debug',  "Check include mac@ with prefix : '".$this->include_unclassified_mac_prefix."'");
 
         // ----- Look for mac prefix
-        if (($this->include_generic_with_mac) && ($this->include_generic_mac_prefix != '')) {
-          ArubaWssTool::log('debug',  "Check MAC prefix '".$this->include_generic_mac_prefix."' for MAC '".$p_device_mac."'");
-          if (strpos($p_device_mac, $this->include_generic_mac_prefix) !== 0) {
+        if (($this->include_unclassified_with_mac) && ($this->include_unclassified_mac_prefix != '')) {
+          ArubaWssTool::log('debug',  "Check MAC prefix '".$this->include_unclassified_mac_prefix."' for MAC '".$p_device_mac."'");
+          if (strpos($p_device_mac, $this->include_unclassified_mac_prefix) !== 0) {
             ArubaWssTool::log('debug',  "No valid prefix mac for device. Do not include.");
             return(false);
           }
         }
 
-      ArubaWssTool::log('debug',  "Check include with local name : '".$this->include_generic_with_local."'");
+        ArubaWssTool::log('debug',  "Check include with local name : '".$this->include_unclassified_with_local."'");
 
         // ----- Look for local name
-        if ($this->include_generic_with_local) {
+        if ($this->include_unclassified_with_local) {
 
           if (!$p_telemetry->hasVendorName() && !$p_telemetry->hasLocalName() && !$p_telemetry->hasModel()) {
             ArubaWssTool::log('debug',  "No local value for device. Do not include.");
@@ -2917,7 +2976,6 @@ JSON_EOT;
         }
 
       }
-
 
       return(true);
     }
@@ -3042,38 +3100,40 @@ JSON_EOT;
         ArubaWssTool::log('debug', "| MAC@ Address      | Class List          | Model      | RSSI     |");
 
         // ----- Look at each reported device
-        foreach ($v_col as $v_object) {
+        foreach ($v_col as $v_telemetry_object) {
 
           // ----- Extract the class of the object
           // The object can have several class, so concatene in a single string
           $v_class_list = array();
-          if ($v_object->hasDeviceClassList()) {
-            foreach ($v_object->getDeviceClassList() as $v_class) {
+          if ($v_telemetry_object->hasDeviceClassList()) {
+            foreach ($v_telemetry_object->getDeviceClassList() as $v_class) {
               $v_class_list[] = $v_class->name();
             }
           }
           sort($v_class_list);
           $v_class_name = trim(implode(' ', $v_class_list));
           // ----- Remove double names
-          if ($v_class_name == 'arubaBeacon iBeacon')
+          // TBC : double classname is not well managed in AWSS ....
+          if ($v_class_name == 'arubaBeacon iBeacon') {
             $v_class_name = 'arubaBeacon';
-          // ----- Change name to 'generic'
-          if ($v_class_name == 'unclassified')
-            $v_class_name = 'generic';
+          }
+          
+          // ----- Translate aruba classnaem in vendor/model classname
+          $v_class_name = ArubaWssTool::arubaClassToVendor($v_class_name, true);
 
           // ----- Debug display
           ArubaWssTool::log('debug', "+-------------------------------------------------------------------------------+");
           $v_msglog = "|";
-          $v_msglog .= sprintf(" %17s ", ($v_object->hasMac() ? ArubaWssTool::macToString($v_object->getMac()) : ' '));
+          $v_msglog .= sprintf(" %17s ", ($v_telemetry_object->hasMac() ? ArubaWssTool::macToString($v_telemetry_object->getMac()) : ' '));
           $v_msglog .= "|";
           $v_msglog .= sprintf("%20s ", $v_class_name);
           $v_msglog .= "|";
-          $v_msglog .= sprintf(" %10s ", ($v_object->hasModel() ? $v_object->getModel() : ' '));
+          $v_msglog .= sprintf(" %10s ", ($v_telemetry_object->hasModel() ? $v_telemetry_object->getModel() : ' '));
           $v_msglog .= "|";
-          $v_msglog .= sprintf(" %8s ", ($v_object->hasRSSI() ? trim($v_object->getRSSI()) : ' '));
+          $v_msglog .= sprintf(" %8s ", ($v_telemetry_object->hasRSSI() ? trim($v_telemetry_object->getRSSI()) : ' '));
 
           // ----- Get device mac @
-          $v_device_mac = ($v_object->hasMac() ? ArubaWssTool::macToString($v_object->getMac()) : '');
+          $v_device_mac = ($v_telemetry_object->hasMac() ? ArubaWssTool::macToString($v_telemetry_object->getMac()) : '');
 
           if ($v_device_mac == '') {
             ArubaWssTool::log('debug', $v_msglog."|");
@@ -3085,7 +3145,7 @@ JSON_EOT;
           $v_device = $this->getDeviceByMac($v_device_mac);
 
           // ----- Create new device if allowed class and inclusion mode on
-          if (($v_device == null) && $this->deviceIncludeValidation($v_device_mac, $v_class_name, $v_object)) {
+          if (($v_device == null) && $this->deviceIncludeValidation($v_device_mac, $v_class_name, $v_telemetry_object)) {
 
             ArubaWssTool::log('info', "Inclusion of a new device '".$v_device_mac."'.");
             ArubaWssTool::log('debug', "Create a new device.");
@@ -3093,13 +3153,15 @@ JSON_EOT;
 
             // ----- Create the local device cache image
             //$v_device = new ArubaWssDevice($v_device_mac);
-            $v_device = $this->createDevice($v_device_mac, $v_class_name, $v_object);
+            $v_device = $this->createDevice($v_device_mac, $v_class_name, $v_telemetry_object);
 
             $this->include_device_count++;
-            if ($v_class_name == 'generic') {
-              $this->include_generic_max_devices--;
+            if ($v_class_name == 'unclassified:unclassified') {
+              $this->include_unclassified_max_devices--;
             }
-
+            
+            // ----- Trigger notification
+            ArubaWssTool::notification('device_add', ['mac_address'=>$v_device->getMac()]);                  
           }
 
           // ----- Look for existing device and enabled
@@ -3107,7 +3169,7 @@ JSON_EOT;
             $v_device->resetChangedFlag();
 
              // ----- Update object class and BLE vendor infos
-            if ($v_device->updateObjectClass($v_object, $v_class_name) != 1) {
+            if ($v_device->updateObjectClass($v_telemetry_object, $v_class_name) != 1) {
               ArubaWssTool::log('debug', "Device '".$v_device->getMac()."' has invalid classname. Skip telemetry data.");
               continue;
             }
@@ -3119,12 +3181,12 @@ JSON_EOT;
             }
 
             // ----- If same nearest AP or better one, update telemetry data.
-            if ($v_device->updateNearestAP($p_reporter, $v_object)) {
-              $v_device->updateTelemetryData($p_reporter, $v_object, $v_class_name);
+            if ($v_device->updateNearestAP($p_reporter, $v_telemetry_object)) {
+              $v_device->updateTelemetryData($p_reporter, $v_telemetry_object);
             }
 
             // ----- If object supporting triangulation, update triangulation
-            $v_device->updateTriangulation($p_reporter, $v_object);
+            $v_device->updateTriangulation($p_reporter, $v_telemetry_object);
 
             // ----- Debuf msg
             $v_msglog .= "|      active ";
@@ -3139,8 +3201,8 @@ JSON_EOT;
           }
 
           // TBC : should be looked at beginning and skip if too old ?
-          if ($v_object->hasLastSeen()) {
-            $v_val = $v_object->getLastSeen();
+          if ($v_telemetry_object->hasLastSeen()) {
+            $v_val = $v_telemetry_object->getLastSeen();
             $v_msglog .= "| ".date("Y-m-d H:i:s", $v_val);
           }
           ArubaWssTool::log('debug', $v_msglog."|");
@@ -3191,9 +3253,9 @@ JSON_EOT;
           // ----- Remove double names
           if ($v_class_name == 'arubaBeacon iBeacon')
             $v_class_name = 'arubaBeacon';
-          // ----- Change name to 'generic'
-          if ($v_class_name == 'unclassified')
-            $v_class_name = 'generic';
+          // ----- Change name to 'unclassified'
+          //if ($v_class_name == 'unclassified')
+          //  $v_class_name = 'unclassified';
 
           // ----- Get device mac @
           $v_device_mac = ($v_object->hasMac() ? ArubaWssTool::macToString($v_object->getMac()) : '');
@@ -3286,6 +3348,30 @@ JSON_EOT;
     /**---------------------------------------------------------------------------
      * Method : onMsgActionResults()
      * Description :
+     * Response example :
+     * 
+        meta {
+          version: 1
+          access_token: "1234"
+          nbTopic: actionResults
+        }
+        reporter {
+          name: "AP-515"
+          mac:
+          ipv4: "192.168.30.14"
+          hwType: "AP-515"
+          swVersion: "8.9.0.3-8.9.0.3"
+          swBuild: "83448"
+          time: 1649067139
+        }
+        results {
+          actionId: "624ac48267dac"
+          type: bleConnect
+          deviceMac:
+          status: success
+          statusString: "Connection Successful!"
+        }
+     * 
      * ---------------------------------------------------------------------------
      */
     public function onMsgActionResults(&$p_reporter, $p_aresult) {
@@ -3376,14 +3462,47 @@ JSON_EOT;
         /*
         Seen cases :
         Response received when triggering a connect/read on a characteristic
-results {
-  deviceMac:
-  status: invalidRequest
-  statusString: "Device does not match configured device class filter in iot transport profile"
-}        
+          results {
+            deviceMac:
+            status: invalidRequest
+            statusString: "Device does not match configured device class filter in iot transport profile"
+          }
+        Seen when device is discovered by BLE Telemetry (unclassified device) but not in the localname or OUI MAC filtering.
+        It seems to be able to do GATT the device must be in the filtering.         
+
         */
         
         if ($v_device !== null) {
+        
+          if (($v_status == 'invalidRequest') && ($v_status_string == 'Device does not match configured device class filter in iot transport profile')) {
+            // ----- Get oldest queued action for device
+            // We don't have any action_id nor action_type, so we thought this error 
+            // is from the oldest gatt request for the device
+            $v_action_item = $this->gattQueueGetActionOldest($v_device->getMac());
+            if ($v_action_item !== null) {
+              ArubaWssTool::log('debug', "Found an oldest action in gatt queue for this device.");
+              ArubaWssTool::log('debug', "value : ".print_r($v_action_item, true));
+              
+              // ----- Remove the action from the queue
+              $this->gattQueueRemoveAction($v_action_item['action_id']);
+              
+              // ----- Do callback
+              if ($v_action_item['action_type'] == 'bleConnect') {
+                $this->apiResponse_ble_connect($v_action_item['cnx_id'], 
+                                               $v_status, 
+                                               $v_device->getMac(),
+                                               $v_action_item['external_id']);
+              }
+              else if ($v_action_item['action_type'] == 'bleDisconnect') {
+                $this->apiResponse_ble_disconnect($v_action_item['cnx_id'], 
+                                                  $v_status, 
+                                                  $v_device->getMac(),
+                                                  $v_action_item['external_id']);
+              }
+            }
+          }
+        
+        
           // ----- The device might be in connecting phase ... the errors means a connect fail
           if ($v_device->getConnectStatus() == AWSS_STATUS_CONNECTED) {
             // ----- Change status to disconnected
@@ -5098,6 +5217,24 @@ enum NbTopic {
     /* -------------------------------------------------------------------------*/
 
     /**---------------------------------------------------------------------------
+     * Method : gattQueueGetActionOldest()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    private function gattQueueGetActionOldest($p_device_mac='') {    
+      $v_result = null;
+      
+      foreach ($this->gatt_queue as $v_item) {
+        if ($v_item['device_mac'] == $p_device_mac) {
+          return($v_item);
+        }
+      }
+      
+      return($v_result);
+    }
+    /* -------------------------------------------------------------------------*/
+
+    /**---------------------------------------------------------------------------
      * Method : gattQueueCleaning()
      * Description :
      *   Clean the old GATT message that are in the queue for more than 5 minutes.
@@ -6034,7 +6171,26 @@ enum NbTopic {
       
       ArubaWssTool::log('debug', 'args='.print_r($p_args, true));
       
-      if ($p_notification == 'device_status') {
+      if ($p_notification == 'device_add') {
+      
+        $v_device = $this->getDeviceByMac($p_args['mac_address']);
+      
+        foreach ($this->notification_queue as $v_item) {
+          if (   ($v_item['notification_type'] == 'device_add') ) {
+            // ----- API Notify response
+            if ($v_item['cb_type'] == 'ws_api') {
+              $v_data = array();
+              $v_data['type'] = 'device_add';
+              $v_data['device_mac'] = $v_device->getMac();
+              ArubaWssTool::log('debug', 'Trigger device add notification for :'.$v_device->getMac());       
+              $this->apiNotify_notification($v_item['cb_id'], $v_data, $v_item['cb_id']);
+            }
+          }
+        }
+      
+      }
+      
+      else if ($p_notification == 'device_status') {
       
         $v_device = $this->getDeviceByMac($p_args['mac_address']);
       
@@ -6174,6 +6330,7 @@ enum NbTopic {
     
     // ----- Aruba Telemetry Classname
     protected $classname = 'auto';
+    protected $classname_autolearn = true;
     
     // ----- Device identification
     // ArubaWss internal specification
@@ -6427,6 +6584,27 @@ enum NbTopic {
       return($this->connect_status);
     }
 
+
+    /**---------------------------------------------------------------------------
+     * Method : getDeviceModelFullName()
+     * Description :
+     * ---------------------------------------------------------------------------
+     */
+    public function getDeviceModelFullName() {
+      $v_name = '';
+      
+      $v_list = ArubaWssTool::getVendorDeviceList();
+      if (isset($v_list[$this->vendor_id]['devices'][$this->model_id])) {
+        $v_name = $v_list[$this->vendor_id]['name'].'-'.$v_list[$this->vendor_id]['devices'][$this->model_id]['name'];
+      }
+      else {
+        $v_name = $this->name;
+      }
+      
+      return($v_name);
+    }
+    /* -------------------------------------------------------------------------*/
+
     /**---------------------------------------------------------------------------
      * Method : getClassname()
      * Description :
@@ -6526,6 +6704,7 @@ enum NbTopic {
       $v_item['mac'] = $this->getMac();
       $v_item['name'] = $this->getName();
       $v_item['classname'] = $this->getClassname();
+      $v_item['classname_autolearn'] = $this->classname_autolearn;
       
       $v_item['vendor_id'] = $this->vendor_id;
       $v_item['model_id'] = $this->model_id;
@@ -6570,8 +6749,8 @@ enum NbTopic {
       }
 
       // ----- Set default value          
-      $this->vendor_id = 'generic';
-      $this->model_id = 'generic';
+      $this->vendor_id = 'unclassified';
+      $this->model_id = 'unclassified';
       
       // ----- Look for external regex file
       $v_filename = __DIR__."/awss/data/devices/class_regex.json";
@@ -6885,29 +7064,6 @@ enum NbTopic {
       }
     }
     /* -------------------------------------------------------------------------*/
-
-    /**---------------------------------------------------------------------------
-     * Method : setTelemetryBatteryValue()
-     * Description :
-     * Return Value :
-     * ---------------------------------------------------------------------------
-     */
-    public function setTelemetryBatteryValue_DEPRECATED($p_value) {
-    
-      if (($p_value < 0) || ($p_value > 101)) {
-        $p_value = 101; // means unknown
-      }
-      
-      // ----- Flag only if new value
-      if ($this->battery_value != $p_value) {
-        $this->battery_value = $p_value;
-        $this->setChangedFlag('battery');
-      }
-
-      $this->battery_timestamp = time();
-    }
-    /* -------------------------------------------------------------------------*/
-
 
     /**---------------------------------------------------------------------------
      * Method : updateNearestAP()
@@ -7373,18 +7529,9 @@ enum NbTopic {
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function updateObjectClass($p_telemetry, $p_class_name) {
-        
-      if ($this->classname == 'auto') {
-        $this->classname = $p_class_name;
-        $this->setChangedFlag('classname');
-        ArubaWssTool::log('debug', "Change classname to '".$this->classname."' for device '".$this->getMac()."' ");
-      }
-      else if ($this->classname != $p_class_name) {
-        ArubaWssTool::log('debug', "Device '".$this->getMac()."' is announcing type '".$p_class_name."', when type '".$this->classname."' is expected. Skip telemetry data.");
-        return(0);
-      }
-     
+    public function updateObjectClass($p_telemetry, $p_new_classname) {
+
+      // ----- Need to update the BLE values first to have the setDeviceClassFromRegex() working.
       if (($this->vendor_name == '') && ($p_telemetry->hasVendorName())) {
         $this->vendor_name = $p_telemetry->getVendorName();
         $this->setChangedFlag('vendor_name');
@@ -7401,30 +7548,26 @@ enum NbTopic {
         ArubaWssTool::log('debug', "Change model to '".$this->model."' for device '".$this->getMac()."' ");
       }
       
-      if ($this->vendor_id == '') {
-        if ($this->classname == 'generic') {
-          // TBC
+      // ----- Look for classname auto learn
+      if (   ($this->classname_autolearn) 
+          && (($p_new_classname != $this->vendor_id.':'.$this->model_id) || ($this->vendor_id.':'.$this->model_id == 'unclassified:unclassified')) ) {
+        if ($p_new_classname == 'unclassified:unclassified') {
+          // ----- Run regex to find device class
           $this->setDeviceClassFromRegex();
-          /*
-          if ($this->local_name == 'Jinou_Sensor_HumiTemp') {
-            $this->vendor_id = 'Jinou';
-            $this->model_id = 'Sensor_HumiTemp';
-          }
-          else if (preg_match('/ATC_[0-9,A-F]{6}$/', $this->local_name) === 1) {
-            $this->vendor_id = 'ATC';
-            $this->model_id = 'LYWSD03MMC';
-          }
-          */
+          
+          // ----- In case of not anymore unclassified, stop the autolearn, if not will rerun at each telemetry msg
+          $this->classname_autolearn = false;
         }
         else {
-          // ----- Look to find exact vendor and device model
-          // ----- First look from Aruba classname
-          $v_value = ArubaWssTool::arubaClassToVendor($p_class_name);
-          $this->vendor_id = $v_value['vendor_id'];
-          $this->model_id = $v_value['model_id'];
+          ArubaWssTool::log('debug', "Change classname to '".$p_new_classname."' for device '".$this->getMac()."' ");
+          $v_item = explode(':', $p_new_classname);
+          $this->vendor_id = $v_item[0];
+          $this->model_id = $v_item[1];
         }
+        $this->classname = $this->vendor_id.':'.$this->model_id;
+        $this->setChangedFlag('classname');
       }
-
+      
       return(1);
     }
     /* -------------------------------------------------------------------------*/
@@ -7434,7 +7577,7 @@ enum NbTopic {
      * Description :
      * ---------------------------------------------------------------------------
      */
-    public function updateTelemetryData(&$p_reporter, $p_telemetry, $p_class_name) {
+    public function updateTelemetryData(&$p_reporter, $p_telemetry) {
 
       $v_changed_flag = false;
 
@@ -7535,6 +7678,7 @@ enum NbTopic {
     
     // ----- Timestamps
     protected $date_created;
+    protected $uptime;
     protected $lastseen;
 
     // ----- Cnx id depending of the types, empty if no cnx    
@@ -7573,6 +7717,7 @@ enum NbTopic {
       $this->software_version = '';
       $this->software_build = '';
       $this->date_created = time();
+      $this->uptime = 0;
       $this->lastseen = 0;
 
       $this->stat_telemetry_payload_sum = 0;
@@ -7594,6 +7739,12 @@ enum NbTopic {
       
       if ($p_status != $this->status) {
         $this->status = $p_status;
+        if ($this->status == 'active') {
+          $this->uptime = time();
+        }
+        else {
+          $this->uptime = 0;
+        }
 
         ArubaWssTool::notification('reporter_status', ['mac_address'=>$this->mac_address, 
                                                        'status'=>$this->status]);      
@@ -7706,10 +7857,13 @@ enum NbTopic {
       return($this->lastseen);
     }
 
-    public function getUptime() {
+    public function getDateCreated() {
       return($this->date_created);
     }
 
+    public function getUptime() {
+      return($this->uptime);
+    }
 
     /**---------------------------------------------------------------------------
      * Method : isAvailableToConnectWith()

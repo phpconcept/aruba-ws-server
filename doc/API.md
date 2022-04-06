@@ -36,6 +36,7 @@ General response or notification format is :
     "status_msg": "<text_mesage>",
     "from_event": "<event_name>",
     "event_id": "<event_id>",
+    "aruba_ws_version": "1.5",
     "data": {
       "data_1":"value_1",
       "data_2":"value_2"
@@ -70,12 +71,13 @@ Response (sample) :
     "status_msg": "",
     "from_event": "websocket_info",
     "event_id": "<event_id>",
+    "aruba_ws_version": "1.5",
     "data": {
         "websocket": {
-            "aruba_ws_version": "1.0-dev",
+            "aruba_ws_version": "1.5",
             "ip_address": "0.0.0.0",
             "tcp_port": "8081",
-            "up_time": 1631885139,
+            "up_time": 1649240688,
             "presence_timeout": 90,
             "presence_min_rssi": -90,
             "presence_rssi_hysteresis": 5,
@@ -84,23 +86,25 @@ Response (sample) :
             "nearest_ap_min_rssi": -90,
             "reporters_allow_list": "",
             "access_token": "",
-            "reporters_nb": 0,
+            "telemetry_max_timestamp": 60,
+            "reporters_nb": 1,
             "devices_nb": 0,
-            "include_mode": 0,
+            "include_mode": 1,
             "include_device_count": 0,
-            "device_type_allow_list": "",
-            "include_generic_with_local": 0,
-            "include_generic_with_mac": 0,
-            "include_generic_mac_prefix": "",
-            "include_generic_max_devices": 3,
+            "device_type_allow_list": "enocean:sensor,enocean:switch,unclassified:unclassified,unclassified:unclassified",
+            "include_unclassified_with_local": 1,
+            "include_unclassified_with_mac": 0,
+            "include_unclassified_mac_prefix": "",
+            "include_unclassified_max_devices": "5",
             "stats": {
-                "payload_data": 0,
-                "raw_data": 413
+                "payload_data": 2519,
+                "raw_data": 5864
             },
             "gatt_queue_nb": 0
         }
     }
 }
+
 ```
 
 ## API : Device List
@@ -129,52 +133,56 @@ Response (sample) :
     "status_msg": "",
     "from_event": "device_list",
     "event_id": "<event_id>",
+    "aruba_ws_version": "1.5",
     "data": {
         "devices": [
             {
-                "mac": "E6:FE:37:0D:A4:D7",
-                "name": "Jinou_Sensor_HumiTemp",
-                "classname": "generic",
-                "vendor_id": "Jinou",
-                "model_id": "Sensor_HumiTemp",
-                "nearest_ap_mac": "9C:8C:D8:C9:39:9E",
-                "rssi": -49,
-                "vendor_name": "",
-                "local_name": "Jinou_Sensor_HumiTemp",
-                "model": "",
-                "presence": 1,
-                "connect_status": "disconnected",
-                "is_connectable": "unknown",
-                "is_discoverable": "unknown",
-                "services": [],
-                "telemetry_values": []
-            },
-            {
                 "mac": "A4:C1:38:07:FC:EE",
-                "name": "LYWSD03MMC",
-                "classname": "generic",
-                "vendor_id": "",
-                "model_id": "",
-                "nearest_ap_mac": "9C:8C:D8:C9:39:9E",
-                "rssi": -39,
+                "name": "ATC_07FCEE",
+                "classname": "ATC:LYWSD03MMC",
+                "classname_autolearn": false,
+                "vendor_id": "ATC",
+                "model_id": "LYWSD03MMC",
+                "nearest_ap_mac": "BC:9F:E4:CA:6D:3A",
+                "rssi": -72,
+                "nearest_ap_last_seen": 1649244487,
                 "vendor_name": "",
-                "local_name": "LYWSD03MMC",
+                "local_name": "ATC_07FCEE",
                 "model": "",
                 "presence": 1,
                 "connect_status": "disconnected",
                 "is_connectable": "unknown",
                 "is_discoverable": "unknown",
                 "services": [],
-                "telemetry_values": []
+                "telemetry_values": {
+                    "temperatureC": {
+                        "name": "temperatureC",
+                        "type": "",
+                        "value": 18.9,
+                        "timestamp": 1649240822
+                    },
+                    "humidity": {
+                        "name": "humidity",
+                        "type": "",
+                        "value": 44,
+                        "timestamp": 1649240788
+                    }
+                },
+                "battery": {
+                    "value": 48,
+                    "timestamp": 1649240847
+                }
             },
             {
                 "mac": "E5:00:00:00:03:F7",
-                "name": "enoceanSensor E5:00:00:00:03:F7",
-                "classname": "enoceanSensor",
-                "vendor_id": "Enocean",
-                "model_id": "Sensor",
-                "nearest_ap_mac": "9C:8C:D8:C9:39:9E",
-                "rssi": -35,
+                "name": "EnOcean-Sensor (00:03:F7)",
+                "classname": "enocean:sensor",
+                "classname_autolearn": true,
+                "vendor_id": "enocean",
+                "model_id": "sensor",
+                "nearest_ap_mac": "BC:9F:E4:CA:6D:3A",
+                "rssi": -49,
+                "nearest_ap_last_seen": 1649244469,
                 "vendor_name": "",
                 "local_name": "",
                 "model": "",
@@ -187,15 +195,19 @@ Response (sample) :
                     "illumination": {
                         "name": "illumination",
                         "type": "",
-                        "value": 136,
-                        "timestamp": 1631885797
+                        "value": 16,
+                        "timestamp": 1649240846
                     },
                     "occupancy": {
                         "name": "occupancy",
                         "type": "",
-                        "value": 50,
-                        "timestamp": 1631885797
+                        "value": 0,
+                        "timestamp": 1649240846
                     }
+                },
+                "battery": {
+                    "value": 99,
+                    "timestamp": 1649240848
                 }
             }
         ]
@@ -230,16 +242,19 @@ Response (sample) :
     "status_msg": "",
     "from_event": "device_info",
     "event_id": "<event_id>",
+    "aruba_ws_version": "1.5",
     "data": {
         "device_mac": "E5:00:00:00:03:F7",
         "device": {
             "mac": "E5:00:00:00:03:F7",
-            "name": "enoceanSensor E5:00:00:00:03:F7",
-            "classname": "enoceanSensor",
-            "vendor_id": "Enocean",
-            "model_id": "Sensor",
-            "nearest_ap_mac": "9C:8C:D8:C9:39:9E",
-            "rssi": -35,
+            "name": "EnOcean-Sensor (00:03:F7)",
+            "classname": "enocean:sensor",
+            "classname_autolearn": true,
+            "vendor_id": "enocean",
+            "model_id": "sensor",
+            "nearest_ap_mac": "BC:9F:E4:CA:6D:3A",
+            "rssi": -48,
+            "nearest_ap_last_seen": 1649244788,
             "vendor_name": "",
             "local_name": "",
             "model": "",
@@ -252,15 +267,19 @@ Response (sample) :
                 "illumination": {
                     "name": "illumination",
                     "type": "",
-                    "value": 121,
-                    "timestamp": 1631886158
+                    "value": 16,
+                    "timestamp": 1649241116
                 },
                 "occupancy": {
                     "name": "occupancy",
                     "type": "",
                     "value": 50,
-                    "timestamp": 1631886158
+                    "timestamp": 1649241148
                 }
+            },
+            "battery": {
+                "value": 99,
+                "timestamp": 1649241148
             }
         }
     }
@@ -293,21 +312,82 @@ Response (sample) :
     "status_msg": "",
     "from_event": "reporter_list",
     "event_id": "<event_id>",
+    "aruba_ws_version": "1.5",
     "data": {
         "websocket": {
-            [... see above ...]
+            "aruba_ws_version": "1.5",
+            "ip_address": "0.0.0.0",
+            "tcp_port": "8081",
+            "up_time": 1649240688,
+            "presence_timeout": 90,
+            "presence_min_rssi": -90,
+            "presence_rssi_hysteresis": 5,
+            "nearest_ap_hysteresis": 5,
+            "nearest_ap_timeout": 90,
+            "nearest_ap_min_rssi": -90,
+            "reporters_allow_list": "",
+            "access_token": "",
+            "telemetry_max_timestamp": 60,
+            "reporters_nb": 3,
+            "devices_nb": 6,
+            "include_mode": 1,
+            "include_device_count": 6,
+            "device_type_allow_list": "enocean:sensor,enocean:switch,unclassified:unclassified,unclassified:unclassified",
+            "include_unclassified_with_local": 1,
+            "include_unclassified_with_mac": 0,
+            "include_unclassified_mac_prefix": "",
+            "include_unclassified_max_devices": 0,
+            "stats": {
+                "payload_data": 151285,
+                "raw_data": 169139
+            },
+            "gatt_queue_nb": 0
         },
         "reporters": [
             {
                 "mac": "9C:8C:D8:C9:39:9E",
-                "name": "AP-515-Lab",
-                "local_ip": "192.168.102.100",
-                "remote_ip": "192.168.22.156",
+                "name": "AP-515",
+                "status": "active",
+                "local_ip": "192.168.30.14",
+                "remote_ip": "192.168.30.14",
                 "model": "AP-515",
-                "version": "8.9.0.0-8.9.0.0",
-                "telemetry": 1,
-                "rtls": 0,
-                "lastseen": 1631885947
+                "version": "8.9.0.3-8.9.0.3",
+                "telemetry": true,
+                "rtls": false,
+                "serial": false,
+                "zigbee": false,
+                "lastseen": 1649241214,
+                "uptime": 1649240700
+            },
+            {
+                "mac": "BC:9F:E4:CA:6D:3A",
+                "name": "AP-555",
+                "status": "active",
+                "local_ip": "192.168.30.16",
+                "remote_ip": "192.168.22.6",
+                "model": "AP-555",
+                "version": "8.9.0.3",
+                "telemetry": true,
+                "rtls": false,
+                "serial": false,
+                "zigbee": false,
+                "lastseen": 1649244849,
+                "uptime": 1649240728
+            },
+            {
+                "mac": "20:4C:03:34:44:4C",
+                "name": "AP-303H",
+                "status": "active",
+                "local_ip": "192.168.30.15",
+                "remote_ip": "192.168.22.6",
+                "model": "AP-303H",
+                "version": "8.9.0.3",
+                "telemetry": true,
+                "rtls": false,
+                "serial": false,
+                "zigbee": false,
+                "lastseen": 1649244852,
+                "uptime": 1649240731
             }
         ]
     }
@@ -342,15 +422,37 @@ Response (sample) :
 Request :
 
 ```json
-
-
+{
+    "api_version": "1.0",
+    "api_key": "123",
+    "event": {
+        "name": "include_mode",
+        "event_id":"<event_id>",
+        "data": {
+            "state": 1,
+            "type": "enocean:sensor,enocean:switch,unclassified:unclassified,unclassified:unclassified",
+            "unclassified_with_local": 1,
+            "unclassified_with_mac": 1,
+            "unclassified_mac_prefix": "E4:E5:E6",
+            "unclassified_max_devices": "5"
+        }
+    }
+}
 ```
 
 Response (sample) :
 
 ```json
-
-
+{
+    "status": "success",
+    "status_msg": "",
+    "from_event": "include_mode",
+    "event_id": "<event_id>",
+    "aruba_ws_version": "1.5",
+    "data": {
+        "state": 1
+    }
+}
 ```
 
 
@@ -374,5 +476,60 @@ Response (sample) :
 
 ---
 
+## API : Add / Remove Notification
+
+Supported notification types are :
+- reporter_status : no attributes
+- device_status : mandatory device_mac attribute
+- device_add : no attributes
+
+Add Request :
+
+```json
+{
+    "api_version": "1.0",
+    "api_key": "123",
+    "event": {
+        "name": "notification_add",
+        "data": {
+            "type": "device_status",
+            "device_mac": "A4:C1:38:D6:DF:51"
+        }
+    }
+}
+```
+
+Remove Request :
+
+```json
+{
+    "api_version": "1.0",
+    "api_key": "123",
+    "event": {
+        "name": "notification_remove",
+        "data": {
+            "type": "device_status",
+            "device_mac": "E9:46:B0:1C:DA:92"
+        }
+    }
+}
+```
+
+Response (sample) :
+
+```json
+{
+    "status": "success",
+    "status_msg": "",
+    "from_event": "notification_add",
+    "event_id": "",
+    "aruba_ws_version": "1.5",
+    "data": {
+        "type": "device_status"
+    }
+}
+```
+
+---
 
 [Back to Readme](../README.md)

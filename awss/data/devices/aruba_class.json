@@ -1,19 +1,23 @@
 {
-  "Aruba" : {
+  "aruba" : {
+    "vendor_id": "aruba",
     "name": "Aruba",
     "description": "",
     "devices": {
-      "Beacon" : {
+      "beacon" : {
+        "model_id": "beacon",
         "aruba_class": "arubaBeacon", 
         "name": "Beacon",
         "description": ""
       },
-      "Tag" : {
+      "tag" : {
+        "model_id": "tag",
         "aruba_class": "arubaTag", 
         "name": "Tag",
         "description": ""
       },
-      "Sensor" : {
+      "sensor" : {
+        "model_id": "sensor",
         "aruba_class": "arubaSensor", 
         "name": "Sensor",
         "description": ""
@@ -21,11 +25,13 @@
     }
   },
   
-  "ZF" : {
+  "zf" : {
+    "vendor_id": "zf",
     "name": "ZF",
     "description": "",
     "devices": {
-      "Tag" : {
+      "tag" : {
+        "model_id": "tag",
         "aruba_class": "zfTag", 
         "name": "Tag",
         "description": ""
@@ -33,11 +39,13 @@
     }
   },
   
-  "Stanley" : {
+  "stanley" : {
+    "vendor_id": "stanley",
     "name": "Stanley",
     "description": "",
     "devices": {
-      "Tag" : {
+      "Ttg" : {
+        "model_id": "tag",
         "aruba_class": "stanleyTag", 
         "name": "Tag",
         "description": ""
@@ -45,11 +53,13 @@
     }
   },
   
-  "Virgin" : {
+  "virgin" : {
+    "vendor_id": "virgin",
     "name": "Virgin",
     "description": "",
     "devices": {
-      "Beacon" : {
+      "beacon" : {
+        "model_id": "beacon",
         "aruba_class": "virginBeacon", 
         "name": "Beacon",
         "description": ""
@@ -57,16 +67,19 @@
     }
   },
   
-  "EnOcean" : {
+  "enocean" : {
+    "vendor_id": "enocean",
     "name": "EnOcean",
     "description": "",
     "devices": {
-      "Sensor" : {
+      "sensor" : {
+        "model_id": "sensor",
         "aruba_class": "enoceanSensor", 
         "name": "Sensor",
         "description": ""
       },
-      "Switch" : {
+      "switch" : {
+        "model_id": "switch",
         "aruba_class": "enoceanSwitch", 
         "name": "Switch",
         "description": ""
@@ -74,11 +87,13 @@
     }
   },
   
-  "ABB" : {
+  "abb" : {
+    "vendor_id": "abb",
     "name": "ABB",
     "description": "",
     "devices": {
-      "Sensor" : {
+      "sensor" : {
+        "model_id": "sensor",
         "aruba_class": "abbSensor", 
         "name": "Sensor",
         "description": ""
@@ -86,109 +101,142 @@
     }
   },
   
-  "MySphera" : {
+  "mysphera" : {
+    "vendor_id": "mysphera",
     "name": "MySphera",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
+        "model_id": "unclassified",
         "aruba_class": "mysphera", 
-        "name": "generic",
+        "name": "Default",
         "description": ""
       }
     }
   },
   
-  "Wiliot" : {
+  "wiliot" : {
+    "vendor_id": "wiliot",
     "name": "Wiliot",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
+        "model_id": "unclassified",
         "aruba_class": "wiliot", 
-        "name": "generic",
+        "name": "Default",
         "description": ""
       }
     }
   },
   
-  "Onity" : {
+  "onity" : {
+    "vendor_id": "onity",
     "name": "Onity",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
+        "model_id": "unclassified",
         "aruba_class": "onity", 
-        "name": "generic",
+        "name": "Default",
         "description": ""
       }
     }
   },
   
-  "Minew" : {
+  "minew" : {
+    "vendor_id": "minew",
     "name": "Minew",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
+        "model_id": "unclassified",
         "aruba_class": "minew", 
-        "name": "generic",
+        "name": "Default",
         "description": ""
       }
     }
   },
   
-  "Google" : {
+  "google" : {
+    "vendor_id": "google",
     "name": "Google",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
+        "model_id": "unclassified",
         "aruba_class": "google", 
-        "name": "generic",
+        "name": "Default",
         "description": ""
       }
     }
   },
   
-  "Polestar" : {
+  "polestar" : {
+    "vendor_id": "polestar",
     "name": "Polestar",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
+        "model_id": "unclassified",
         "aruba_class": "polestar", 
-        "name": "generic",
+        "name": "Default",
         "description": ""
       }
     }
   },
   
-  "Blyott" : {
+  "blyott" : {
+    "vendor_id": "blyott",
     "name": "Blyott",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
+        "model_id": "unclassified",
         "aruba_class": "blyott", 
-        "name": "generic",
+        "name": "Default",
         "description": ""
       }
     }
   },
   
-  "Diract" : {
+  "diract" : {
+    "vendor_id": "diract",
     "name": "Diract",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
+        "model_id": "unclassified",
         "aruba_class": "diract", 
-        "name": "generic",
+        "name": "Default",
         "description": ""
       }
     }
   },
   
-  "Gwahygiene" : {
+  "gwahygiene" : {
+    "vendor_id": "gwahygiene",
     "name": "Gwahygiene",
     "description": "",
     "devices": {
-      "generic" : {
+      "unclassified" : {
+        "model_id": "unclassified",
         "aruba_class": "gwahygiene", 
-        "name": "generic",
+        "name": "Default",
+        "description": ""
+      }
+    }
+  },
+  
+  "unclassified" : {
+    "vendor_id": "unclassified",
+    "type": "unclassified",
+    "name": "UnClassified",
+    "description": "",
+    "devices": {
+      "unclassified" : {
+        "model_id": "unclassified",
+        "aruba_class": "unclassified", 
+        "name": "UnClassified",
         "description": ""
       }
     }

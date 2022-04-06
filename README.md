@@ -320,6 +320,9 @@ When available, a click on the "read" button will read the characteristic value.
 Buttons "Connect" and "Disconnect" will allow for starting a manual BLE GATT connect/disconnect to the device. This is mainly to test the BLE connection to the device.
 In normal case, discovery is a more efficient solution.
 
+Note that the Aruba AP will initiate a GATT connection to a BLE device only if this device is a known one, or, if unclassified, only if the device is in the filter list (local name, MAC OUI, ...). So a BLE device can be in the list of included device but with no GATT access if the device is not in the filtering list of the Aruba AP/Controller configuration.
+
+
 #### Device Telemetry
 
 Depending on device nature, multiple telemetry types and values may be available. These values can be received from Aruba Telemetry payload (for known device classes), or from BLE scaning results (bleData configuration). The telemetry payloads are received automatically at the frequency configured in the Access Point configuration, BLE advertissements are received in real time by the AP and forwarded to the server.
@@ -347,6 +350,14 @@ The Websocket Server can be accessed by JSON API, description of the API is here
 
 
 ## Change Logs
+
+Release v1.5 :
+- Add AWSS version in API response messages.
+- Improve client updates on new clients ou new reporters.
+- Add a notification 'device_add' for the API.
+- Change the classname names for include_mode API. Need to use now the internal format of AWSS 'vendor_id:model_id' rather than the Aruba classname
+- Replace "generic" term to "unclassified" to be more aligned with Aruba term. 
+- Add an API to get the list of supported vendors/devices.
 
 Release v1.4 :
 - Improve Web client, with improved display of datas.
@@ -392,6 +403,7 @@ As of today, some known caveats are :
 - In case of controller based deployment, resiliency (swap to the backup controller) was never tested and may show unexpected behaviour.
 - AWSS was not tested in environment using Aruba Central IOT Connector.
 - In some situation BLE connection is rejected by IAP, but AWSS keep the "connected" status for the AP. Thus no more BLE connect can be initiated. Workaround is to restart AWSS.
+- BLE devices with multiple aruba classname are not well managed and may finish as classified as "unclassified". 
 
 ## WARNING :
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
