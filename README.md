@@ -352,7 +352,8 @@ The Websocket Server can be accessed by JSON API, description of the API is here
 ## Change Logs
 
 Release v1.6-dev :
-
+- Update PHP source files for supporting Aruba proto-files in version 8.10. This version is very similar to previous one. Only attribute "apb mac" is added to identify AP with multiple radios. This multiple radio capability is not yet supported by AWSS.
+ 
 Release v1.5 :
 - Add AWSS version in API response messages.
 - Improve client updates on new clients ou new reporters.
