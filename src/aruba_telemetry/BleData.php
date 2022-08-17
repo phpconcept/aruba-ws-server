@@ -60,6 +60,13 @@ class BleData extends \Protobuf\AbstractMessage
     protected $addrType = null;
 
     /**
+     * apbMac optional bytes = 6
+     *
+     * @var \Protobuf\Stream
+     */
+    protected $apbMac = null;
+
+    /**
      * Check if 'mac' has a value
      *
      * @return bool
@@ -218,6 +225,40 @@ class BleData extends \Protobuf\AbstractMessage
     }
 
     /**
+     * Check if 'apbMac' has a value
+     *
+     * @return bool
+     */
+    public function hasApbMac()
+    {
+        return $this->apbMac !== null;
+    }
+
+    /**
+     * Get 'apbMac' value
+     *
+     * @return \Protobuf\Stream
+     */
+    public function getApbMac()
+    {
+        return $this->apbMac;
+    }
+
+    /**
+     * Set 'apbMac' value
+     *
+     * @param \Protobuf\Stream $value
+     */
+    public function setApbMac($value = null)
+    {
+        if ($value !== null && ! $value instanceof \Protobuf\Stream) {
+            $value = \Protobuf\Stream::wrap($value);
+        }
+
+        $this->apbMac = $value;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function extensions()
@@ -256,7 +297,8 @@ class BleData extends \Protobuf\AbstractMessage
             'frameType' => null,
             'data' => null,
             'rssi' => null,
-            'addrType' => null
+            'addrType' => null,
+            'apbMac' => null
         ], $values);
 
         $message->setMac($values['mac']);
@@ -264,6 +306,7 @@ class BleData extends \Protobuf\AbstractMessage
         $message->setData($values['data']);
         $message->setRssi($values['rssi']);
         $message->setAddrType($values['addrType']);
+        $message->setApbMac($values['apbMac']);
 
         return $message;
     }
@@ -307,6 +350,12 @@ class BleData extends \Protobuf\AbstractMessage
                     'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_ENUM(),
                     'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
                     'type_name' => '.aruba_telemetry.MacAddrType'
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 6,
+                    'name' => 'apbMac',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_BYTES(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
                 ]),
             ],
         ]);
@@ -359,6 +408,11 @@ class BleData extends \Protobuf\AbstractMessage
         if ($this->addrType !== null) {
             $writer->writeVarint($stream, 40);
             $writer->writeVarint($stream, $this->addrType->value());
+        }
+
+        if ($this->apbMac !== null) {
+            $writer->writeVarint($stream, 50);
+            $writer->writeByteStream($stream, $this->apbMac);
         }
 
         if ($this->extensions !== null) {
@@ -435,6 +489,14 @@ class BleData extends \Protobuf\AbstractMessage
                 continue;
             }
 
+            if ($tag === 6) {
+                \Protobuf\WireFormat::assertWireType($wire, 12);
+
+                $this->apbMac = $reader->readByteStream($stream);
+
+                continue;
+            }
+
             $extensions = $context->getExtensionRegistry();
             $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
@@ -489,6 +551,11 @@ class BleData extends \Protobuf\AbstractMessage
             $size += $calculator->computeVarintSize($this->addrType->value());
         }
 
+        if ($this->apbMac !== null) {
+            $size += 1;
+            $size += $calculator->computeByteStreamSize($this->apbMac);
+        }
+
         if ($this->extensions !== null) {
             $size += $this->extensions->serializedSize($context);
         }
@@ -506,6 +573,7 @@ class BleData extends \Protobuf\AbstractMessage
         $this->data = null;
         $this->rssi = null;
         $this->addrType = null;
+        $this->apbMac = null;
     }
 
     /**
@@ -522,6 +590,7 @@ class BleData extends \Protobuf\AbstractMessage
         $this->data = ($message->data !== null) ? $message->data : $this->data;
         $this->rssi = ($message->rssi !== null) ? $message->rssi : $this->rssi;
         $this->addrType = ($message->addrType !== null) ? $message->addrType : $this->addrType;
+        $this->apbMac = ($message->apbMac !== null) ? $message->apbMac : $this->apbMac;
     }
 
 

@@ -172,6 +172,13 @@ class Reported extends \Protobuf\AbstractMessage
     protected $identity = null;
 
     /**
+     * companyIdentifier repeated message = 24
+     *
+     * @var \Protobuf\Collection<\aruba_telemetry\BTCompanyID>
+     */
+    protected $companyIdentifier = null;
+
+    /**
      * Check if 'mac' has a value
      *
      * @return bool
@@ -838,6 +845,50 @@ class Reported extends \Protobuf\AbstractMessage
     }
 
     /**
+     * Check if 'companyIdentifier' has a value
+     *
+     * @return bool
+     */
+    public function hasCompanyIdentifierList()
+    {
+        return $this->companyIdentifier !== null;
+    }
+
+    /**
+     * Get 'companyIdentifier' value
+     *
+     * @return \Protobuf\Collection<\aruba_telemetry\BTCompanyID>
+     */
+    public function getCompanyIdentifierList()
+    {
+        return $this->companyIdentifier;
+    }
+
+    /**
+     * Set 'companyIdentifier' value
+     *
+     * @param \Protobuf\Collection<\aruba_telemetry\BTCompanyID> $value
+     */
+    public function setCompanyIdentifierList(\Protobuf\Collection $value = null)
+    {
+        $this->companyIdentifier = $value;
+    }
+
+    /**
+     * Add a new element to 'companyIdentifier'
+     *
+     * @param \aruba_telemetry\BTCompanyID $value
+     */
+    public function addCompanyIdentifier(\aruba_telemetry\BTCompanyID $value)
+    {
+        if ($this->companyIdentifier === null) {
+            $this->companyIdentifier = new \Protobuf\MessageCollection();
+        }
+
+        $this->companyIdentifier->add($value);
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function extensions()
@@ -892,7 +943,8 @@ class Reported extends \Protobuf\AbstractMessage
             'sensorTimestamp' => null,
             'flags' => null,
             'localName' => null,
-            'identity' => null
+            'identity' => null,
+            'companyIdentifier' => []
         ], $values);
 
         $message->setMac($values['mac']);
@@ -921,6 +973,10 @@ class Reported extends \Protobuf\AbstractMessage
 
         foreach ($values['beacons'] as $item) {
             $message->addBeacons($item);
+        }
+
+        foreach ($values['companyIdentifier'] as $item) {
+            $message->addCompanyIdentifier($item);
         }
 
         return $message;
@@ -1070,6 +1126,13 @@ class Reported extends \Protobuf\AbstractMessage
                     'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_STRING(),
                     'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
                 ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 24,
+                    'name' => 'companyIdentifier',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_REPEATED(),
+                    'type_name' => '.aruba_telemetry.BTCompanyID'
+                ]),
             ],
         ]);
     }
@@ -1214,6 +1277,14 @@ class Reported extends \Protobuf\AbstractMessage
         if ($this->identity !== null) {
             $writer->writeVarint($stream, 186);
             $writer->writeString($stream, $this->identity);
+        }
+
+        if ($this->companyIdentifier !== null) {
+            foreach ($this->companyIdentifier as $val) {
+                $writer->writeVarint($stream, 194);
+                $writer->writeVarint($stream, $val->serializedSize($sizeContext));
+                $val->writeTo($context);
+            }
         }
 
         if ($this->extensions !== null) {
@@ -1489,6 +1560,25 @@ class Reported extends \Protobuf\AbstractMessage
                 continue;
             }
 
+            if ($tag === 24) {
+                \Protobuf\WireFormat::assertWireType($wire, 11);
+
+                $innerSize    = $reader->readVarint($stream);
+                $innerMessage = new \aruba_telemetry\BTCompanyID();
+
+                if ($this->companyIdentifier === null) {
+                    $this->companyIdentifier = new \Protobuf\MessageCollection();
+                }
+
+                $this->companyIdentifier->add($innerMessage);
+
+                $context->setLength($innerSize);
+                $innerMessage->readFrom($context);
+                $context->setLength($length);
+
+                continue;
+            }
+
             $extensions = $context->getExtensionRegistry();
             $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
@@ -1654,6 +1744,16 @@ class Reported extends \Protobuf\AbstractMessage
             $size += $calculator->computeStringSize($this->identity);
         }
 
+        if ($this->companyIdentifier !== null) {
+            foreach ($this->companyIdentifier as $val) {
+                $innerSize = $val->serializedSize($context);
+
+                $size += 2;
+                $size += $innerSize;
+                $size += $calculator->computeVarintSize($innerSize);
+            }
+        }
+
         if ($this->extensions !== null) {
             $size += $this->extensions->serializedSize($context);
         }
@@ -1687,6 +1787,7 @@ class Reported extends \Protobuf\AbstractMessage
         $this->flags = null;
         $this->localName = null;
         $this->identity = null;
+        $this->companyIdentifier = null;
     }
 
     /**
@@ -1719,6 +1820,7 @@ class Reported extends \Protobuf\AbstractMessage
         $this->flags = ($message->flags !== null) ? $message->flags : $this->flags;
         $this->localName = ($message->localName !== null) ? $message->localName : $this->localName;
         $this->identity = ($message->identity !== null) ? $message->identity : $this->identity;
+        $this->companyIdentifier = ($message->companyIdentifier !== null) ? $message->companyIdentifier : $this->companyIdentifier;
     }
 
 

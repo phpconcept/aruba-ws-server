@@ -32,6 +32,13 @@ class NbSerialData extends \Protobuf\AbstractMessage
     protected $nbSerialPayload = null;
 
     /**
+     * nbDeviceId optional string = 2
+     *
+     * @var string
+     */
+    protected $nbDeviceId = null;
+
+    /**
      * Check if 'nbSerialPayload' has a value
      *
      * @return bool
@@ -63,6 +70,36 @@ class NbSerialData extends \Protobuf\AbstractMessage
         }
 
         $this->nbSerialPayload = $value;
+    }
+
+    /**
+     * Check if 'nbDeviceId' has a value
+     *
+     * @return bool
+     */
+    public function hasNbDeviceId()
+    {
+        return $this->nbDeviceId !== null;
+    }
+
+    /**
+     * Get 'nbDeviceId' value
+     *
+     * @return string
+     */
+    public function getNbDeviceId()
+    {
+        return $this->nbDeviceId;
+    }
+
+    /**
+     * Set 'nbDeviceId' value
+     *
+     * @param string $value
+     */
+    public function setNbDeviceId($value = null)
+    {
+        $this->nbDeviceId = $value;
     }
 
     /**
@@ -100,10 +137,12 @@ class NbSerialData extends \Protobuf\AbstractMessage
     {
         $message = new self();
         $values  = array_merge([
-            'nbSerialPayload' => null
+            'nbSerialPayload' => null,
+            'nbDeviceId' => null
         ], $values);
 
         $message->setNbSerialPayload($values['nbSerialPayload']);
+        $message->setNbDeviceId($values['nbDeviceId']);
 
         return $message;
     }
@@ -120,6 +159,12 @@ class NbSerialData extends \Protobuf\AbstractMessage
                     'number' => 1,
                     'name' => 'nbSerialPayload',
                     'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_BYTES(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 2,
+                    'name' => 'nbDeviceId',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_STRING(),
                     'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
                 ]),
             ],
@@ -153,6 +198,11 @@ class NbSerialData extends \Protobuf\AbstractMessage
         if ($this->nbSerialPayload !== null) {
             $writer->writeVarint($stream, 10);
             $writer->writeByteStream($stream, $this->nbSerialPayload);
+        }
+
+        if ($this->nbDeviceId !== null) {
+            $writer->writeVarint($stream, 18);
+            $writer->writeString($stream, $this->nbDeviceId);
         }
 
         if ($this->extensions !== null) {
@@ -197,6 +247,14 @@ class NbSerialData extends \Protobuf\AbstractMessage
                 continue;
             }
 
+            if ($tag === 2) {
+                \Protobuf\WireFormat::assertWireType($wire, 9);
+
+                $this->nbDeviceId = $reader->readString($stream);
+
+                continue;
+            }
+
             $extensions = $context->getExtensionRegistry();
             $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
@@ -231,6 +289,11 @@ class NbSerialData extends \Protobuf\AbstractMessage
             $size += $calculator->computeByteStreamSize($this->nbSerialPayload);
         }
 
+        if ($this->nbDeviceId !== null) {
+            $size += 1;
+            $size += $calculator->computeStringSize($this->nbDeviceId);
+        }
+
         if ($this->extensions !== null) {
             $size += $this->extensions->serializedSize($context);
         }
@@ -244,6 +307,7 @@ class NbSerialData extends \Protobuf\AbstractMessage
     public function clear()
     {
         $this->nbSerialPayload = null;
+        $this->nbDeviceId = null;
     }
 
     /**
@@ -256,6 +320,7 @@ class NbSerialData extends \Protobuf\AbstractMessage
         }
 
         $this->nbSerialPayload = ($message->nbSerialPayload !== null) ? $message->nbSerialPayload : $this->nbSerialPayload;
+        $this->nbDeviceId = ($message->nbDeviceId !== null) ? $message->nbDeviceId : $this->nbDeviceId;
     }
 
 

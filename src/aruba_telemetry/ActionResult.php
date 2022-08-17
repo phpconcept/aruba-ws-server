@@ -67,6 +67,13 @@ class ActionResult extends \Protobuf\AbstractMessage
     protected $bondingKey = null;
 
     /**
+     * apbMac optional bytes = 7
+     *
+     * @var \Protobuf\Stream
+     */
+    protected $apbMac = null;
+
+    /**
      * Check if 'actionId' has a value
      *
      * @return bool
@@ -251,6 +258,40 @@ class ActionResult extends \Protobuf\AbstractMessage
     }
 
     /**
+     * Check if 'apbMac' has a value
+     *
+     * @return bool
+     */
+    public function hasApbMac()
+    {
+        return $this->apbMac !== null;
+    }
+
+    /**
+     * Get 'apbMac' value
+     *
+     * @return \Protobuf\Stream
+     */
+    public function getApbMac()
+    {
+        return $this->apbMac;
+    }
+
+    /**
+     * Set 'apbMac' value
+     *
+     * @param \Protobuf\Stream $value
+     */
+    public function setApbMac($value = null)
+    {
+        if ($value !== null && ! $value instanceof \Protobuf\Stream) {
+            $value = \Protobuf\Stream::wrap($value);
+        }
+
+        $this->apbMac = $value;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function extensions()
@@ -290,7 +331,8 @@ class ActionResult extends \Protobuf\AbstractMessage
             'deviceMac' => null,
             'status' => null,
             'statusString' => null,
-            'bondingKey' => null
+            'bondingKey' => null,
+            'apbMac' => null
         ], $values);
 
         $message->setActionId($values['actionId']);
@@ -299,6 +341,7 @@ class ActionResult extends \Protobuf\AbstractMessage
         $message->setStatus($values['status']);
         $message->setStatusString($values['statusString']);
         $message->setBondingKey($values['bondingKey']);
+        $message->setApbMac($values['apbMac']);
 
         return $message;
     }
@@ -349,6 +392,12 @@ class ActionResult extends \Protobuf\AbstractMessage
                     'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
                     'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
                     'type_name' => '.aruba_telemetry.BleBondingKey'
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 7,
+                    'name' => 'apbMac',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_BYTES(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL()
                 ]),
             ],
         ]);
@@ -407,6 +456,11 @@ class ActionResult extends \Protobuf\AbstractMessage
             $writer->writeVarint($stream, 50);
             $writer->writeVarint($stream, $this->bondingKey->serializedSize($sizeContext));
             $this->bondingKey->writeTo($context);
+        }
+
+        if ($this->apbMac !== null) {
+            $writer->writeVarint($stream, 58);
+            $writer->writeByteStream($stream, $this->apbMac);
         }
 
         if ($this->extensions !== null) {
@@ -498,6 +552,14 @@ class ActionResult extends \Protobuf\AbstractMessage
                 continue;
             }
 
+            if ($tag === 7) {
+                \Protobuf\WireFormat::assertWireType($wire, 12);
+
+                $this->apbMac = $reader->readByteStream($stream);
+
+                continue;
+            }
+
             $extensions = $context->getExtensionRegistry();
             $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
@@ -560,6 +622,11 @@ class ActionResult extends \Protobuf\AbstractMessage
             $size += $calculator->computeVarintSize($innerSize);
         }
 
+        if ($this->apbMac !== null) {
+            $size += 1;
+            $size += $calculator->computeByteStreamSize($this->apbMac);
+        }
+
         if ($this->extensions !== null) {
             $size += $this->extensions->serializedSize($context);
         }
@@ -578,6 +645,7 @@ class ActionResult extends \Protobuf\AbstractMessage
         $this->status = null;
         $this->statusString = null;
         $this->bondingKey = null;
+        $this->apbMac = null;
     }
 
     /**
@@ -595,6 +663,7 @@ class ActionResult extends \Protobuf\AbstractMessage
         $this->status = ($message->status !== null) ? $message->status : $this->status;
         $this->statusString = ($message->statusString !== null) ? $message->statusString : $this->statusString;
         $this->bondingKey = ($message->bondingKey !== null) ? $message->bondingKey : $this->bondingKey;
+        $this->apbMac = ($message->apbMac !== null) ? $message->apbMac : $this->apbMac;
     }
 
 

@@ -170,6 +170,11 @@ class deviceClassEnum extends \Protobuf\Enum
     const gwahygiene_VALUE = 30;
 
     /**
+     * noneBleData = 31
+     */
+    const noneBleData_VALUE = 31;
+
+    /**
      * @var \aruba_telemetry\deviceClassEnum
      */
     protected static $unclassified = null;
@@ -323,6 +328,11 @@ class deviceClassEnum extends \Protobuf\Enum
      * @var \aruba_telemetry\deviceClassEnum
      */
     protected static $gwahygiene = null;
+
+    /**
+     * @var \aruba_telemetry\deviceClassEnum
+     */
+    protected static $noneBleData = null;
 
     /**
      * @return \aruba_telemetry\deviceClassEnum
@@ -697,6 +707,18 @@ class deviceClassEnum extends \Protobuf\Enum
     }
 
     /**
+     * @return \aruba_telemetry\deviceClassEnum
+     */
+    public static function noneBleData()
+    {
+        if (self::$noneBleData !== null) {
+            return self::$noneBleData;
+        }
+
+        return self::$noneBleData = new self('noneBleData', self::noneBleData_VALUE);
+    }
+
+    /**
      * @param int $value
      * @return \aruba_telemetry\deviceClassEnum
      */
@@ -734,6 +756,7 @@ class deviceClassEnum extends \Protobuf\Enum
             case 28: return self::blyott();
             case 29: return self::diract();
             case 30: return self::gwahygiene();
+            case 31: return self::noneBleData();
             default: return null;
         }
     }
