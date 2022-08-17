@@ -2,7 +2,7 @@
 
 aruba-ws-server is a websocket server, written in PHP, to test and demonstrate the IoT capabilities of Aruba Access Points.
 
-AWSS server is supporting Intant AP (IAP) and Controller (ArubaOS) based deployment model of the Access Points.
+AWSS server is supporting Intant AP (IAP) and Controller (ArubaOS) based deployment model of the Access Points. 
 
 Current features are focused on BLE IoT, but the server has capabilities to evolve in order to support Serial, Zigbee and RTLS.
 
@@ -35,7 +35,7 @@ The installation will use existing libraries and packages already available on i
 - Ratchet : A PHP library for asynchronously serving WebSockets (https://github.com/ratchetphp/Ratchet),
 - Protobuf : Protobuf for PHP is an implementation of Google's Protocol Buffers for the PHP language (https://github.com/protobuf-php/protobuf)
 
-The installation will also use development tools and frameworks, like ìcomposerî (https://getcomposer.org/), which is a package installer for PHP libraries, and ìprotobuf-compilerî (https://packages.debian.org/en/jessie/protobuf-compiler) which will be used to generate the PHP classes from the protobuf description files. 
+The installation will also use development tools and frameworks, like ‚Äúcomposer‚Äù (https://getcomposer.org/), which is a package installer for PHP libraries, and ‚Äúprotobuf-compiler‚Äù (https://packages.debian.org/en/jessie/protobuf-compiler) which will be used to generate the PHP classes from the protobuf description files. 
 
 #### Step by step install
 
@@ -437,7 +437,7 @@ Aruba is following the RFC6455 (https://tools.ietf.org/html/rfc6455) for the def
 
 The access point establish a TCP connection with the server. To perform an handshake, It sends an HTTP message with some mandatory field in the header (Upgrade, Connection and Sec-WebSocket-Key). The server must then answer with an HTTP response, including valid fields and a Sec-WebSocket-Accept key value calculated from the client one. This phase ends the handshake process between the two peers. TCP connection stay established, waiting for frames coming from either sides.
 
-RFC6455 define the format of the frames exchanged between the client and the server. Regular ìpingî and ìpongî frames are also exchanged between the peers, waiting for data frames.
+RFC6455 define the format of the frames exchanged between the client and the server. Regular ‚Äúping‚Äù and ‚Äúpong‚Äù frames are also exchanged between the peers, waiting for data frames.
 
 Data frames can be of various sizes, and large payloads can also be splitted on several frames.
 
@@ -470,7 +470,7 @@ https://www.arubanetworks.com/iot
 https://www.arubanetworks.com/partners/programs 
 - WebSocket RFC6455 :
 https://tools.ietf.org/html/rfc6455 
-- Aruba Support Portal, for documentations, firmware downloads, Protocol-buffer description files, Ö :
+- Aruba Support Portal, for documentations, firmware downloads, Protocol-buffer description files, ‚Ä¶ :
 https://asp.arubanetworks.com 
 
 
