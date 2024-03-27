@@ -88,7 +88,7 @@ For more parameters (some may not be yet implemented :-) ) :
 ```cli
 php aruba-ws-server.php -help
 -----
-aruba-ws-server.php [-help] [-console_log] [-server_ip X.X.X.X] [-server_port XXX] [-api_key XXX] [-reporters_key XXX] [-reporters_list X1,X2,X3...] [-devices_list X1,X2,X3...] [-display_ping] [-display_raw_data] [-file <debug_message_filename>]
+aruba-ws-server.php [-help] [-console_log] [-server_ip X.X.X.X] [-server_port XXX] [-api_key XXX] [-use_tls] [-cert_file /xxx/xxx.pem] [-cert_key_file /xxx/xxx.pem] [-reporters_key XXX] [-reporters_list X1,X2,X3...] [-devices_list X1,X2,X3...] [-display_ping] [-display_raw_data] [-file <debug_message_filename>]
 -----
 ```
 
@@ -352,6 +352,7 @@ The Websocket Server can be accessed by JSON API, description of the API is here
 ## Change Logs
 
 Release v1.6-dev :
+- Add support for Websocket Secure Server (WSS) using TLS connection. To enable WSS, use options -use_tls, -cert_file and -cert_key_file to enable, and set the certificate PEM file and private key. If the file are missing AWS will try this defautl files : /etc/ssl/private/aruba-ws-server.pem and /etc/ssl/private/aruba-ws-server.key.pem.
 - Update PHP source files for supporting Aruba proto-files in version 8.10. This version is very similar to previous one. Only attribute "apb mac" is added to identify AP with multiple radios. This multiple radio capability is not yet supported by AWSS.
  
 Release v1.5 :
@@ -402,7 +403,6 @@ Release v1.0 :
 ## Known Caveats
 
 As of today, some known caveats are :
-- /!\ Only ws:// is supported today by the websocket daemon, which means communication is in clear. No support yet of wss:// with certificate.
 - In case of controller based deployment, resiliency (swap to the backup controller) was never tested and may show unexpected behaviour.
 - AWSS was not tested in environment using Aruba Central IOT Connector.
 - In some situation BLE connection is rejected by IAP, but AWSS keep the "connected" status for the AP. Thus no more BLE connect can be initiated. Workaround is to restart AWSS.
