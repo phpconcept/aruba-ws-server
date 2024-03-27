@@ -8281,9 +8281,18 @@ enum NbTopic {
   // ----- Create socket on IP and port
   try {
 
+/*
     // doc : http://socketo.me/api/class-React.Socket.Server.html
     $socket = new \React\Socket\Server($aruba_iot_websocket->getIpAddress().':'.$aruba_iot_websocket->getTcpPort(), $loop);
+*/
 
+    $socket_server = new \React\Socket\Server($aruba_iot_websocket->getIpAddress().':'.$aruba_iot_websocket->getTcpPort(), $loop);
+    $socket = new \React\Socket\SecureServer($socket_server,
+                                             $loop,
+                                             ['local_cert'=>'/etc/ssl/private/wss.phpconcept.net.pem',
+                                              'local_pk'=>'/etc/ssl/private/wss.phpconcept.net.key.pem',
+                                              'allow_self_signed'=>true,
+                                              'verify_peer'=>false]);
 
   $closeFrameChecker = new \Ratchet\RFC6455\Messaging\CloseFrameChecker;
   $negotiator = new \Ratchet\RFC6455\Handshake\ServerNegotiator(new \Ratchet\RFC6455\Handshake\RequestVerifier, PermessageDeflateOptions::permessageDeflateSupported());

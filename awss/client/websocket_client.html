@@ -98,7 +98,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
     g_server['api_key'] = document.getElementById("server_apikey").value;
     
     g_server['url'] = "http://"+g_server['ip_address']+":"+g_server['tcp_port']+"/api";
-    g_server['ws_url'] = "ws://"+g_server['ip_address']+":"+g_server['tcp_port']+"/api";
+    //g_server['ws_url'] = "ws://"+g_server['ip_address']+":"+g_server['tcp_port']+"/api";
+    g_server['ws_url'] = "wss://"+g_server['ip_address']+":"+g_server['tcp_port']+"/api";
     
     g_server['char_list'] = new Array();
     g_server['vendor_list'] = new Array();

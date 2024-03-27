@@ -64,8 +64,8 @@ aruba-ws-server
 Main=
 Selected=aruba-ws-server.php
 [aruba-ws-server.php]
-TopLine=1
-Caret=35,17
+TopLine=8259
+Caret=100,8290
 Mark1=95,3636
 Mark2=35,1039
 Mark3=1,1057
@@ -101,4 +101,4 @@ TopLine=164
 Caret=15,176
 [awss\data\devices\class_regex.json]
 TopLine=1
-Caret=1,22
+Caret=1,21
