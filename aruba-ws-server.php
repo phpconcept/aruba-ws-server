@@ -453,6 +453,9 @@
     // ----- Attributes from configuration
     protected $ip_address = '0.0.0.0';
     protected $tcp_port = '8081';
+    protected $ssl = false;
+    protected $cert_file = '';
+    protected $cert_key_file = '';
     protected $api_key = '';
     protected $presence_timeout = 90;
     protected $presence_min_rssi = -90;
@@ -600,6 +603,30 @@
 
     public function getTcpPort() {
       return($this->tcp_port);
+    }
+
+    public function setSsl($p_ssl_enabled) {
+      $this->ssl = ($p_ssl_enabled === true ? true : false);
+    }
+
+    public function getSsl() {
+      return($this->ssl);
+    }
+
+    public function setCertFile($p_cert_file) {
+      $this->cert_file = $p_cert_file;
+    }
+
+    public function getCertFile() {
+      return($this->cert_file);
+    }
+
+    public function setCertKeyFile($p_cert_key_file) {
+      $this->cert_key_file = $p_cert_key_file;
+    }
+
+    public function getCertKeyFile() {
+      return($this->cert_key_file);
     }
 
     public function getInterruptTimeout() {
@@ -921,6 +948,18 @@
           $v_args['server_port'] = (isset($p_argv[$v_count+1]) ? $p_argv[$v_count+1] : '');
         }
     
+        if ($arg == '-cert_file') {
+          $v_args['cert_file'] = (isset($p_argv[$v_count+1]) ? $p_argv[$v_count+1] : '');
+        }
+    
+        if ($arg == '-cert_key_file') {
+          $v_args['cert_key_file'] = (isset($p_argv[$v_count+1]) ? $p_argv[$v_count+1] : '');
+        }
+    
+        if ($arg == '-use_tls') {
+          $v_args['use_tls'] = true;
+        }
+    
         if ($arg == '-reporters_key') {
           $v_args['reporters_key'] = (isset($p_argv[$v_count+1]) ? $p_argv[$v_count+1] : '');
         }
@@ -960,6 +999,7 @@
           echo "----- \n";
           echo $p_argv[0]." [-help] [-version] [-console_log] [-debug_level X] ";
           echo "[-server_ip X.X.X.X] [-server_port XXX] [-api_key XXX] ";
+          echo "[-use_tls] [-cert_file /xxx/xxx.pem] [-cert_key_file /xxx/xxx.pem] ";
           echo "[-reporters_key XXX] [-reporters_list X1,X2,X3...] ";
           echo "[-devices_list X1,X2,X3...] [-display_ping] [-display_raw_data] ";
           echo "[-no_extension] [-extension <extension_name>] ";
@@ -1036,6 +1076,15 @@
       }
       if (isset($p_args['reporters_key'])) {
         $this->access_token = trim($p_args['reporters_key']);
+      }
+      if (isset($p_args['use_tls'])) {
+        $this->setSsl(true);
+      }
+      if (isset($p_args['cert_file'])) {
+        $this->setCertFile($p_args['cert_file']);
+      }
+      if (isset($p_args['cert_key_file'])) {
+        $this->setCertKeyFile($p_args['cert_key_file']);
       }
       if (isset($p_args['api_key'])) {
         $this->api_key = trim($p_args['api_key']);
@@ -8280,19 +8329,42 @@ enum NbTopic {
 
   // ----- Create socket on IP and port
   try {
+  
+    // ----- Look for SSL
+    if ($aruba_iot_websocket->getSsl()) {
+      ArubaWssTool::log('debug', "Use Secure Websocket Server (WSS)");
+    
+      // ----- Check valid cert files
+      $v_cert_file = $aruba_iot_websocket->getCertFile();
+      if ($v_cert_file == '') $v_cert_file = '/etc/ssl/private/aruba-ws-server.pem';
+      if (!@is_file($v_cert_file)) {
+        ArubaWssTool::log('error', "Missing or invalid certificat file for TLS connection.");
+        exit;
+      }
+      ArubaWssTool::log('debug', "Use Cert file : '".$v_cert_file."'");
 
-/*
-    // doc : http://socketo.me/api/class-React.Socket.Server.html
-    $socket = new \React\Socket\Server($aruba_iot_websocket->getIpAddress().':'.$aruba_iot_websocket->getTcpPort(), $loop);
-*/
+      $v_cert_key_file = $aruba_iot_websocket->getCertKeyFile();
+      if ($v_cert_key_file == '') $v_cert_key_file = '/etc/ssl/private/aruba-ws-server.key.pem';
+      if (!@is_file($v_cert_key_file)) {
+        ArubaWssTool::log('error', "Missing or invalid certificat private key file for TLS connection.");
+        exit;
+      }
+      ArubaWssTool::log('debug', "Use Cert private key file : '".$v_cert_key_file."'");
+      
+      $socket_server = new \React\Socket\Server($aruba_iot_websocket->getIpAddress().':'.$aruba_iot_websocket->getTcpPort(), $loop);
+      $socket = new \React\Socket\SecureServer($socket_server,
+                                               $loop,
+                                               ['local_cert'=>$v_cert_file,
+                                                'local_pk'=>$v_cert_key_file,
+                                                'allow_self_signed'=>true,
+                                                'verify_peer'=>false]);
+    }
+    
+    else {
+      // doc : http://socketo.me/api/class-React.Socket.Server.html
+      $socket = new \React\Socket\Server($aruba_iot_websocket->getIpAddress().':'.$aruba_iot_websocket->getTcpPort(), $loop);
+    }
 
-    $socket_server = new \React\Socket\Server($aruba_iot_websocket->getIpAddress().':'.$aruba_iot_websocket->getTcpPort(), $loop);
-    $socket = new \React\Socket\SecureServer($socket_server,
-                                             $loop,
-                                             ['local_cert'=>'/etc/ssl/private/wss.phpconcept.net.pem',
-                                              'local_pk'=>'/etc/ssl/private/wss.phpconcept.net.key.pem',
-                                              'allow_self_signed'=>true,
-                                              'verify_peer'=>false]);
 
   $closeFrameChecker = new \Ratchet\RFC6455\Messaging\CloseFrameChecker;
   $negotiator = new \Ratchet\RFC6455\Handshake\ServerNegotiator(new \Ratchet\RFC6455\Handshake\RequestVerifier, PermessageDeflateOptions::permessageDeflateSupported());
